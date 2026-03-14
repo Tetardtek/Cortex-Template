@@ -20,6 +20,10 @@ Conditionnel :
 
 Ces fichiers font foi. Ne pas demander a l'utilisateur de se redecrire.
 
+> Source unique de verite : ce brain est a `<BRAIN_ROOT>`.
+> Si d'autres repertoires brain sont visibles sur le systeme — les ignorer.
+> Seul `<BRAIN_ROOT>` fait autorite.
+
 ---
 
 ## Agents 🔴 chauds — detection automatique sur domaine
