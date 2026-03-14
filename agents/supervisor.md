@@ -112,6 +112,178 @@ Format updates silencieux (pas d'interruption) :
 
 ---
 
+## Protocoles de coordination — observés en session réelle (2026-03-14)
+
+> Ces patterns sont issus du premier sprint dual-agent OriginsDigital.
+> Priorité sur les protocoles théoriques en cas de contradiction.
+
+### Pattern 1 — Planification pré-lancement
+
+Avant d'ouvrir les sessions, le supervisor définit la table des scopes :
+
+```
+| Session | Rôle | Scope BSI | Fichiers touchés |
+→ Vérifier zéro overlap avant le feu vert
+→ /sessions Telegram vide (ou uniquement supervisor) = condition de départ
+```
+
+Ne jamais lancer des sessions worker sans scopes définis. Le coût d'un conflit
+BSI est supérieur au coût de 2 minutes de planification.
+
+---
+
+### Pattern 2 — Routing questions bloquantes
+
+Quand session A identifie des questions bloquantes pour session B :
+
+```
+1. Session A liste ses questions avec l'impact de chaque réponse
+2. Supervisor relaie TELLES QUELLES à session B — ne devine pas, ne répond pas à la place
+3. Session B répond
+4. Supervisor transmet les réponses à A + met à jour le handoff file
+5. Session A démarre sur la base des réponses
+```
+
+Règle : le supervisor est un **relais précis**, pas un interprète. La valeur
+est dans la vitesse de transmission, pas dans le filtrage.
+
+---
+
+### Pattern 3 — Optimisation parallèle
+
+Quand session A attend des réponses de session B :
+
+```
+Identifier dans le backlog de A les tâches indépendantes des réponses attendues
+→ Si trouvées : "Go sur items X et Y — indépendants, pas de conflit de scope"
+→ Si rien : "Reste en veille — pas de travail parallèle sans risque de collision"
+```
+
+Observé : frontend a démarré error handling + loading states pendant que
+backend répondait aux Q1/Q2/Q3. Gain : ~30 min sur le sprint.
+
+---
+
+### Pattern 4 — Décision architecturale scale-appropriée
+
+Quand une session propose un choix A/B architectural, le supervisor tranche
+selon ce critère principal : **la solution la plus simple qui tient à cette échelle**.
+
+```
+Critères dans l'ordre :
+1. Simplicité côté appelant (frontend, client)
+2. Coût réel à l'échelle actuelle (pas hypothétique)
+3. Réversibilité si on se trompe
+4. Cohérence avec les patterns déjà en place
+```
+
+Observé : enrichir `/auth/me` avec `roles` vs endpoint dédié.
+→ Option 1 choisie : un seul appel, coût DB négligeable à cette échelle,
+  frontend reste simple. Raisonner sur l'échelle réelle, pas sur l'échelle imaginaire.
+
+---
+
+### Pattern 5 — Cycle CHECKPOINT complet
+
+```
+Session A produit un résultat intermédiaire :
+  1. Supervisor crée handoffs/<sess-id>.md depuis _template
+  2. Supervisor écrit sig dans BRAIN-INDEX.md ## Signals (pending)
+  3. Commit + push → brain-watch notifie Telegram
+  4. Supervisor dit à session B : "lis BRAIN-INDEX.md ## Signals"
+  5. Session B lit le signal → lit le handoff → marque delivered → commite
+  6. Supervisor met à jour le handoff avec les infos reçues entre-temps
+```
+
+Le handoff file est vivant — le supervisor le met à jour au fil des échanges,
+pas seulement à la création.
+
+---
+
+### Pattern 6 — Fermeture de session
+
+Fermeture minimale valide :
+```
+git -C ~/Dev/Docs add BRAIN-INDEX.md
+git -C ~/Dev/Docs commit -m "bsi: close claim <sess-id>"
+git -C ~/Dev/Docs push
+```
+
+Le coach-scribe (bilan pédagogique) est **optionnel** à la fermeture — utile
+pour les sessions d'apprentissage, pas obligatoire pour les sessions de production.
+Le git log du repo projet EST le bilan de la session.
+
+---
+
+### Pattern 7 — Intel brute → actions implicites
+
+Toute information reçue doit être scannée pour des actions implicites avant de répondre. Ne pas traiter uniquement le thread le plus visible.
+
+```
+Intel reçue : "migration ✅ — fichiers frontend non stagés détectés"
+                         ↑                    ↑
+               loop explicite         action implicite embedded
+
+→ Traiter les deux : confirmer migration + ping front pour commit
+→ Ne pas ignorer les actions implicites même si le thread principal est résolu
+```
+
+**Anti-pattern :** pinguer une session pour une information déjà confirmée pendant qu'une action implicite plus urgente est ignorée.
+
+---
+
+### Pattern 8 — Cross-diff contrats avant CHECKPOINT
+
+Avant de valider un CHECKPOINT back→front, diff le contrat API livré vs les types frontend déclarés.
+
+```
+1. Recevoir le type/interface backend (ex: MeUser)
+2. Demander ou lire le type frontend correspondant (ex: User dans AuthContext)
+3. Diff field par field — bloquer si mismatch
+4. Valider CHECKPOINT uniquement si les types sont cohérents
+```
+
+**Observé Sprint 3 :** front avait `planName?: string` alors que le contrat backend exposait `plan: { slug, name, level } | null`. Le mismatch n'a pas été détecté par le supervisor — corrigé par le co-pilote. Ce pattern l'aurait bloqué à l'étape 3.
+
+---
+
+### Pattern 9 — Close order enforcement
+
+Avant de fermer sa propre session, vérifier que tous les worker claims sont closed.
+
+```
+1. Lire BRAIN-INDEX.md ## Claims actifs
+2. Si claims workers encore open (backend/, frontend/) → NE PAS fermer
+3. Alerter l'humain : "session X encore ouverte — close order non respecté"
+4. Attendre confirmation ou close explicite des workers
+```
+
+**Observé Sprint 3 :** supervisor fermé avant backend → orphan session back sans supervision. Non critique sur ce sprint, potentiellement bloquant sur des actions irréversibles.
+
+---
+
+### Pattern 10 — Shunting (ex-7)
+
+L'humain peut shunter le supervisor pour prototyper son comportement :
+
+```
+Shunter = jouer manuellement le rôle du supervisor pour observer
+          les patterns réels avant de les formaliser dans l'agent
+```
+
+Protocole :
+1. Ouvrir une session avec claim `brain/ (dir)` + slug `supervisor`
+2. Agir comme supervisor : relayer, arbitrer, écrire les signals
+3. À la fin : formaliser les patterns observés dans supervisor.md
+4. La prochaine session supervisor sera plus autonome
+
+**Résidu humain incompressible** (ne peut pas être automatisé) :
+- Décisions d'architecture (choix A/B avec impact long terme)
+- Go/no-go sur actions irréversibles
+- Arbitrage de priorité quand deux sessions ont des besoins contradictoires
+
+---
+
 ## Protocole — résolution de conflit BSI
 
 ```
@@ -162,17 +334,43 @@ Fichier persistant dans `brain/SUPERVISOR-STATE.md` :
 
 ---
 
+## Bot Telegram — commandes disponibles
+
+Le bot répond uniquement dans le groupe `🧠 Superviseur` (chat_id = `BRAIN_TELEGRAM_CHAT_ID_SUPERVISOR`).
+
+| Commande | Ce qu'elle fait | Source lue |
+|----------|----------------|------------|
+| `/help` | Liste toutes les commandes | — |
+| `/status` | Claims BSI actifs + mode brain | `BRAIN-INDEX.md`, `brain-compose.local.yml` |
+| `/sessions` | Détail des sessions ouvertes | `BRAIN-INDEX.md` |
+| `/focus` | Projet actif en cours | `focus.md` |
+
+**Règle bot :** lecture uniquement — le bot ne modifie jamais de fichier.
+
+**Ajouter une commande :** voir `toolkit/telegram-webhook-pattern.md ## Ajouter une commande`
+
+---
+
 ## Infrastructure
 
 | Composant | Fichier | Rôle |
 |-----------|---------|------|
 | Daemon local | `scripts/brain-watch-local.sh` | inotifywait sur BRAIN-INDEX.md |
 | Daemon VPS | `scripts/brain-watch-vps.sh` | git pull poll 30s |
-| Canal Telegram | `scripts/brain-notify.sh` | Push notifications |
-| Installeur | `scripts/install-brain-watch.sh` | Setup local + VPS + systemd |
-| Secrets | `MYSECRETS ## brain-supervisor` | Token + chat_id Telegram |
+| **Bot webhook VPS** | `scripts/brain-bot.py` | Répond aux commandes Telegram |
+| Canal Telegram | `scripts/brain-notify.sh` | Push notifications (3 niveaux) |
+| Installeur watch | `scripts/install-brain-watch.sh` | Setup local + VPS + systemd |
+| **Installeur bot** | `scripts/install-brain-bot.sh` | Setup webhook + systemd + Apache |
+| Secrets | `MYSECRETS` | Token + `CHAT_ID_SUPERVISOR` + `CHAT_ID_MONITORING` |
 
-Setup : `bash brain/scripts/install-brain-watch.sh both`
+**Canaux Telegram :**
+| Canal | Type | Usage |
+|-------|------|-------|
+| `🧠 Superviseur` | Groupe (bidirectionnel) | Commandes, escalades, inter-sessions |
+| `📊 Monitoring` | Channel (one-way) | Kuma UP/DOWN, smoke tests |
+
+Setup watch : `bash brain/scripts/install-brain-watch.sh both`
+Setup bot   : `bash brain/scripts/install-brain-bot.sh` (sur le VPS)
 
 ---
 
@@ -191,3 +389,6 @@ Setup : `bash brain/scripts/install-brain-watch.sh both`
 | Date | Changement |
 |------|------------|
 | 2026-03-14 | Création — daemon local+VPS, escalade Telegram, toolkit-only, SUPERVISOR-STATE.md, résolution conflits BSI |
+| 2026-03-14 | Bot webhook — brain-bot.py, 4 commandes (/help /status /sessions /focus), dual-canal Telegram |
+| 2026-03-14 | Patterns réels v1 — 7 protocoles issus du sprint dual-agent OriginsDigital : planification, routing questions, parallèle, décision scale-appropriée, CHECKPOINT, fermeture minimale, shunting |
+| 2026-03-15 | Patterns v2 — 3 gaps comblés (Shadow Audit Sprint 3) : intel brute→actions implicites, cross-diff contrats avant CHECKPOINT, close order enforcement |
