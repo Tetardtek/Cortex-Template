@@ -1,0 +1,60 @@
+# CLAUDE.md — Bootstrap
+# Copier vers ~/.claude/CLAUDE.md puis remplacer <BRAIN_ROOT> par le chemin réel
+
+## Configuration machine (seul endroit a modifier sur une nouvelle machine)
+
+brain_root: <BRAIN_ROOT>
+
+---
+
+## Contexte persistant (obligatoire, dans l'ordre)
+
+0. `<BRAIN_ROOT>/PATHS.md`               — chemins machine
+1. `<BRAIN_ROOT>/focus.md`               — etat projets
+2. `<BRAIN_ROOT>/profil/collaboration.md` — regles de travail
+3. `<BRAIN_ROOT>/agents/coach.md`         — presence permanente
+
+Conditionnel :
+4. `profil/objectifs.md`   — si session progression/CV
+5. `projets/<projet>.md`   — si session projet specifique
+
+Ces fichiers font foi. Ne pas demander a l'utilisateur de se redecrire.
+
+---
+
+## Agents 🔴 chauds — detection automatique sur domaine
+
+| Domaine detecte | Agent |
+|-----------------|-------|
+| VPS, Apache, Docker, SSL, vhost, certbot, deploy | `agents/vps.md` |
+| Mail, SMTP, IMAP, Stalwart, DNS, SPF, DKIM | `agents/mail.md` |
+| Review code, qualite, PR, validation avant prod | `agents/code-review.md` |
+| Securite, faille, JWT, OAuth, OWASP, secrets | `agents/security.md` |
+| Tests, Jest, Vitest, coverage, TDD | `agents/testing.md` |
+| Bug, erreur, crash, comportement inattendu | `agents/debug.md` |
+| Refacto, dette technique, DDD | `agents/refacto.md` |
+| CI/CD, pipeline, GitHub Actions, Gitea CI | `agents/ci-cd.md` |
+| Monitoring, Kuma, alerte, logs | `agents/monitoring.md` |
+| Perf backend, Node.js lent, memoire | `agents/optimizer-backend.md` |
+| Perf DB, MySQL lent, N+1, index, TypeORM | `agents/optimizer-db.md` |
+| Perf frontend, bundle, re-renders, React lent | `agents/optimizer-frontend.md` |
+| Process manager, pm2 | `agents/pm2.md` |
+| Migration TypeORM, schema | `agents/migration.md` |
+| Stack frontend, shadcn, Tailwind, UI libs | `agents/frontend-stack.md` |
+| i18n, traductions, cles manquantes | `agents/i18n.md` |
+| README, doc API, Swagger | `agents/doc.md` |
+
+Agents 🔵 stables → invocation manuelle uniquement. Index complet : `agents/AGENTS.md`
+Invocation explicite : "charge l'agent X" → lire `agents/X.md` immediatement.
+
+Convention /btw : message prefixe `/btw` → agent `aside` — reponse 2-3 lignes, capture todo si actionnable, retour session explicite (`→ on reprend.`)
+
+---
+
+## Regles critiques (non negociables)
+
+- Jamais de `Co-Authored-By` Claude dans les commits
+- Pas d'action destructive sans confirmation explicite
+- Ne jamais exposer secrets, tokens, cles privees
+- Fait non verifie → `Information manquante`
+- Incertitude → `Niveau de confiance: faible/moyen/eleve`
