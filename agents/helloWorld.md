@@ -24,6 +24,8 @@ Charge l'agent helloWorld — lis brain/agents/helloWorld.md et prépare le brie
 | Fichier | Pourquoi |
 |---------|----------|
 | `brain/PATHS.md` | Résolution des chemins machine |
+| `brain-compose.local.yml` | Instance active + feature_set — filtre les agents disponibles |
+| `brain/BRAIN-INDEX.md` | Scan CHECKPOINT avant briefing — reprise si session interrompue |
 | `brain/focus.md` | État des projets actifs |
 | `brain/todo/README.md` | Index des intentions |
 | `brain/todo/*.md` | Todos actifs — seuls les ⬜ et ⚠️ comptent |
@@ -37,6 +39,12 @@ git -C ~/Dev/Docs/progression status --short
 ```
 
 > Si un chemin est absent : "Information manquante — vérifier PATHS.md"
+
+**Ordre de lecture obligatoire :**
+1. `brain-compose.local.yml` → identifier instance active + feature_set
+2. `BRAIN-INDEX.md ## Signals` → détecter CHECKPOINT avant tout briefing
+3. Si CHECKPOINT trouvé → afficher avant le briefing standard
+4. Sinon → briefing standard
 
 ---
 
@@ -57,8 +65,20 @@ Chargées uniquement sur trigger — jamais au démarrage à l'aveugle.
 
 ## Format du briefing — non négociable
 
+Si CHECKPOINT détecté → afficher EN PREMIER :
+```
+⚡ Checkpoint détecté — <date>
+   Tâche en cours  : <...>
+   Prochaine étape : <...>
+   Commits posés   : <...>
+→ On reprend depuis ce point ?
+```
+
+Puis briefing standard :
 ```
 Bonjour. Voici l'état du système — <DATE>.
+
+Instance : <brain_name>@<machine>  [<feature_set>]
 
 Projets actifs
   <projet>    <état emoji> <description courte>
@@ -95,6 +115,23 @@ Concis. Pas de commentaire. Juste les faits. La dernière ligne est toujours une
 | Signal ambigu ou absent | Propose — liste les 3 todos prioritaires, laisse choisir |
 
 > Règle : si le signal est clair → charger sans demander. Si ambigu → une question, pas un formulaire.
+
+## Feature flags — filtrage agents (Phase 3)
+
+helloWorld lit le `feature_set` de l'instance active depuis `brain-compose.local.yml` et ne suggère que les agents disponibles dans ce tier.
+
+```
+feature_set: free  →  suggère uniquement les agents du tier free
+feature_set: pro   →  suggère free + pro
+feature_set: full  →  suggère tout — aucune restriction
+```
+
+**Comportement en pratique :**
+- Quand helloWorld liste des agents à charger → croiser avec `brain-compose.yml` feature_sets
+- Si un agent demandé n'est pas dans le feature_set → "Agent `X` non disponible dans le tier `free`. Tier requis : `pro`."
+- L'agent existe dans le kernel — c'est l'accès qui est contrôlé, pas la présence
+
+> `brain-compose.local.yml` absent → feature_set par défaut : `full` (machine personnelle non configurée)
 
 ---
 
@@ -191,3 +228,4 @@ Ne pas invoquer si :
 | Date | Changement |
 |------|------------|
 | 2026-03-13 | Création — majordome bootstrap, briefing standard, détection hybride, git status 3 repos, vision CLAUDE.md minimal |
+| 2026-03-14 | Phase 3 — lecture feature_set (brain-compose.local.yml), filtrage agents par tier, scan CHECKPOINT avant briefing, Instance dans le briefing |

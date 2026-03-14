@@ -2,7 +2,7 @@
 # Versionné dans le kernel. Schema + feature flags + registre agents.
 # Géré par l'agent brain-compose — ne pas éditer manuellement.
 
-version: "0.2.0"
+version: "0.3.0"
 
 # ---
 # Feature sets — contrôlent les agents invocables par instance
@@ -24,6 +24,7 @@ feature_sets:
       - brainstorm
       - interprete
       - orchestrator
+      - orchestrator-scribe
       - recruiter
       - agent-review
 
@@ -51,6 +52,8 @@ feature_sets:
       - doc
       - migration
       - mail
+      - brain-compose
+      - config-scribe
 
   full:
     description: "Accès complet — usage personnel sans restriction"
@@ -70,3 +73,6 @@ changelog:
   - version: "0.2.0"
     date: "2026-03-14"
     notes: "BSI (BRAIN-INDEX.md), brain_name, brain-template, aside, brainstorm, brain-compose up"
+  - version: "0.3.0"
+    date: "2026-03-14"
+    notes: "orchestrator-scribe (free), brain-compose+config-scribe (pro), CHECKPOINT signal, session-as-identity, orchestration-patterns"
