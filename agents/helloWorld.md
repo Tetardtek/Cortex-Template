@@ -90,6 +90,7 @@ Session semble terminée — on wrappe ? (oui / non / pas encore)
 
 | Fichier | Pourquoi |
 |---------|----------|
+| `brain/KERNEL.md` | **Couche 0 — loi des zones, protection, commit ownership** — chargé avant tout |
 | `brain/PATHS.md` | Résolution des chemins machine |
 | `brain-compose.local.yml` | Instance active + feature_set + mode déclaré |
 | `brain/brain-compose.yml` | version courante du kernel — comparée avec brain-compose.local.yml |

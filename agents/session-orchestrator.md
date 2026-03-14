@@ -78,7 +78,7 @@ fin
    → Si HANDOFF détecté dans BRAIN-INDEX → charger handoff file, mode HANDOFF
 
 3. Charger les couches dans l'ordre :
-   Couche 0 — invariant  : PATHS + collaboration  [toujours]
+   Couche 0 — invariant  : KERNEL.md + PATHS + collaboration  [toujours]
    Couche 1 — intent     : brain | work | deploy | debug | ...
    Couche 2 — domaine    : agent métier ou brain-system
    Couche 3 — projet     : projets/X + todo/X  [seulement si work/deploy/debug]
