@@ -165,16 +165,32 @@ Cas d'usage: <situation réelle et concrète — pas théorique>
 
 ## KPIs — mesure de performance
 
-> Mesurés par l'`integrator` à la clôture de chaque sprint et remontés en feedback.
-> Un KPI dégradé = patch obligatoire avant le sprint suivant.
+> Un KPI sans méthode de collecte n'est pas un KPI — c'est une intention.
+> Deux tiers seulement : mesurables maintenant (Tier 1) vs infrastructure requise (Tier 2).
 
-| KPI | Mesure | Seuil critique |
-|-----|--------|---------------|
-| **Précision contention map** | Fichiers partagés identifiés avant build / total fichiers partagés réels | < 80% → patch contention logic |
-| **Taux blocage pertinent** | Gates STOP qui ont prévenu un vrai problème / total STOP émis | < 70% → trop de faux positifs → recalibrer |
-| **Couverture risques** | Risques signalés en gate / risques découverts en intégration | < 60% → risques non vus → élargir le gate |
-| **Ordre commit fiable** | Sprints sans conflit de merge / total sprints pilotés | < 90% → règle d'ordre défaillante → patcher |
-| **Overflow accuracy** | Overflows validés légitimes / total overflows accordés | < 85% → critères trop laxistes → durcir |
+### Tier 1 — mesurables maintenant
+
+Collecte : `git log` après chaque sprint. Aucun outillage supplémentaire requis.
+
+| KPI | Commande de mesure | Seuil critique |
+|-----|-------------------|---------------|
+| **Ordre commit respecté** | `git log --oneline` — séquence réelle vs recommandée par tech-lead | < 90% → règle d'ordre à patcher |
+| **Conflits de merge évités** | `git log --merges --grep="conflict"` — sprints sans conflit / total | < 90% → contention map défaillante |
+| **Overflow tracé** | `git log --grep="overflow granted"` — chaque overflow est cosigné | Non-tracé → violation du protocole |
+
+### Tier 2 — infrastructure requise avant activation
+
+> Ces métriques sont **désactivées** jusqu'à ce que le sink de collecte existe.
+> Ne pas les évaluer à l'instinct — ce serait de l'auto-validation déguisée.
+
+| KPI | Bloqué sur | Action requise |
+|-----|-----------|---------------|
+| **Précision contention map** | Sink pour stocker la prédiction *avant* le sprint | Créer `handoffs/tech-lead-prediction-<sprint>.md` |
+| **Taux blocage pertinent** | Traçage de chaque STOP + outcome post-sprint | Format feedback integrator à définir |
+| **Couverture risques** | Comparaison prédits vs découverts | Même sink que précision contention map |
+| **Overflow accuracy** | Évaluation post-hoc structurée | Inclure dans feedback integrator |
+
+**Activation Tier 2 :** quand `handoffs/feedback-tech-lead-<sprint>.md` existe et est écrit par l'integrator. Pas avant.
 
 ---
 
@@ -312,3 +328,4 @@ INTEGRATOR → merge + push + handoff
 |------|------------|
 | 2026-03-14 | Création — issu du sprint OriginsDigital Bloc A, formalisé après identification du gap contention map + ordre commit |
 | 2026-03-14 | Patch 1 — KPIs (5 métriques), feedback loop integrator→tech-lead, auto-calibration protocol, règle "patcher tôt" |
+| 2026-03-14 | Patch 2 — KPIs split Tier 1 (mesurables git) / Tier 2 (désactivés sans sink) — honnêteté sur ce qui est réellement mesurable |
