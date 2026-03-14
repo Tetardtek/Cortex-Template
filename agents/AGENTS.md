@@ -55,6 +55,7 @@
 | `capital-scribe` | Capital CV — milestones → formulations recruteur | 🧪 forgé 2026-03-13 |
 | `config-scribe` | Configuration brain — wizard first run, hydration Sources | 🧪 forgé 2026-03-13 |
 | `brain-compose` | Multi-instances brain — symlinks kernel, registre machine | 🧪 forgé 2026-03-13 |
+| `orchestrator-scribe` | Bus inter-sessions — Signals BSI, cycles coworking, HANDOFF | 🧪 forgé 2026-03-14 |
 
 ---
 
@@ -79,6 +80,7 @@ Créer un nouvel agent : copier `_template.md`, remplir, ajouter dans la bonne s
 | Audit système d'agents | `agent-review` → `recruiter` | Review + détection gaps → forge si besoin |
 | Exploration / décision archi | `brainstorm` → `recruiter` ou agent métier | Explorer + challenger → construire |
 | Question hors-scope en session | `aside` | /btw → 2-3 lignes → retour session |
+| Coordination multi-instances | `orchestrator-scribe` | Signals BSI + cycles coworking inter-brains |
 | Fin de session complète | `scribe` + `toolkit-scribe` + `coach-scribe` + `todo-scribe` | Brain + toolkit + progression + intentions |
 | Feature livrée en prod | `git-analyst` + `capital-scribe` | Commits synthétisés + capital CV mis à jour |
 | Projet multi-langue | `i18n` + `frontend-stack` | Audit traductions + intégration lib |
