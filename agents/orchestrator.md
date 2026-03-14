@@ -36,6 +36,7 @@ Charge l'agent orchestrator — lis brain/agents/orchestrator.md et applique son
 | Trigger | Fichier | Pourquoi |
 |---------|---------|----------|
 | Routing vers domaine infra/deploy | `brain/infrastructure/<domaine>.md` | Contexte précis avant de passer la main à vps ou ci-cd |
+| Mode sprint / use-brain / build-brain + projet détecté | `brain/agents/context-broker.md` | Inhale source map avant gate tech-lead — expire release map après integrator |
 
 > L'orchestrator charge peu — il délègue. Plus un problème est précis, moins il a besoin de contexte.
 > Voir `brain/profil/memory-integrity.md` pour les règles d'écriture sur trigger.
@@ -79,6 +80,22 @@ Problème soumis
        → Liste les agents dans l'ordre logique d'intervention
          (ex: code-review avant optimizer, vps avant ci-cd)
 ```
+
+## Cycle respiratoire — sprint multi-agents
+
+> Activé en mode sprint / use-brain / build-brain avec projet identifié.
+
+```
+[1] INHALE  — context-broker produit la source map (≤ 2 sources/agent)
+[2] GATE    — tech-lead valide approche + contention map
+[3] SPRINT  — agents build exécutent
+[4] MERGE   — integrator absorbe + valide critères
+[5] EXPIRE  — context-broker produit la release map + breath metrics
+[6] CLOSE   — metabolism-scribe reçoit les métriques
+```
+
+Règle : l'orchestrateur ne charge aucune source project-specific avant l'inhale.
+L'inhale est la seule porte d'entrée du contexte projet dans un sprint.
 
 ---
 
@@ -145,6 +162,8 @@ L'orchestrator est ancré dans AGENTS.md — il évolue automatiquement quand de
 | Avec | Pour quoi |
 |------|-----------|
 | Tous les agents | Il les convoque — il ne travaille jamais seul |
+| `context-broker` | Inhale source map avant sprint, expire release map après — couplage fort |
+| `tech-lead` | Reçoit la source map de context-broker, valide avant exécution |
 
 ---
 
@@ -181,3 +200,4 @@ Ne pas invoquer si :
 | 2026-03-12 | Création — coordinateur pur, extensible à tous les agents AGENTS.md, ne produit rien lui-même |
 | 2026-03-13 | [CONFIRMÉ] Ajout brain/todo/README.md aux sources + branche "que fait-on aujourd'hui ?" |
 | 2026-03-13 | Fondements — Sources conditionnelles, Cycle de vie |
+| 2026-03-15 | Patch — cycle respiratoire sprint câblé (inhale/expire via context-broker), composition étendue |

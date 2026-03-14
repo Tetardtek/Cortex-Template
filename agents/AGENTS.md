@@ -32,6 +32,7 @@
 | `i18n` | Internationalisation — audit traductions, clés manquantes | 🧪 forgé 2026-03-13 |
 | `doc` | Documentation — README, API Swagger, cohérence doc ↔ code | 🧪 forgé 2026-03-13 |
 | `content-orchestrator` | Sentinelle content layer — détecte signaux, active storyteller/doc | 🧪 forgé 2026-03-14 |
+| `tech-lead` | Leadership technique — gate d'entrée sprint, contention map, overflow zones | 🧪 forgé 2026-03-14 |
 
 ---
 
@@ -63,6 +64,9 @@
 | `metabolism-scribe` | Métriques session — health_score, agents_loaded, prix par agent | 🧪 forgé 2026-03-14 |
 | `storyteller` | Production contenu FR — script vidéo, Reddit, depuis journal | 🧪 forgé 2026-03-14 |
 | `content-scribe` | Persistance content layer — drafts, captures, content-logs | 🧪 forgé 2026-03-14 |
+| `architecture-scribe` | Mémoire architecturale — git-analyst → ADR → profil/decisions/ | 🧪 forgé 2026-03-15 |
+| `integrator` | Intégration multi-agents — absorption, validation critères, handoff next team | 🧪 forgé 2026-03-14 |
+| `context-broker` | Cycle respiratoire de contexte — inhale source map + expire release map + breath metrics | 🧪 forgé 2026-03-15 |
 
 ---
 
@@ -99,6 +103,8 @@
 | Projet multi-langue | `i18n` + `frontend-stack` | Audit traductions + intégration lib |
 | Release / PR importante | `doc` + `code-review` | Doc à jour + code validé |
 | Fin de session content-worthy | `content-orchestrator` → `storyteller` + `content-scribe` | Signal détecté → draft produit → persisté |
+| Sprint multi-agents complet | `context-broker` inhale → `tech-lead` → `orchestrator` → build agents → `integrator` → `context-broker` expire | Cycle respiratoire complet : source map → gate → build → merge → release map + breath metrics |
+| Débordement de zone requis | agent demandeur → `tech-lead` | Overflow request validé par use case concret avant écriture hors zone |
 | Activation content-logs | `content-orchestrator` → `content-scribe` | Session capturée exhaustivement |
 | Audit complet avant prod | `security` + `code-review` + `testing` | Validation complète feature sensible |
 | Bug prod complexe | `debug` + `vps` | Isolation + infra |
