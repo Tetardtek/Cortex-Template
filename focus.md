@@ -1,7 +1,7 @@
 # Focus actuel
 
-> Brain installé depuis brain-template.
-> Dernière mise à jour : (à remplir)
+> Instance : **<BRAIN_NAME>** — `<BRAIN_ROOT>`
+> Installé depuis brain-template. Dernière mise à jour : (à remplir)
 
 ---
 

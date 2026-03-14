@@ -36,8 +36,11 @@ cd ~/Dev/Docs
 
 ```bash
 cp profil/CLAUDE.md.example ~/.claude/CLAUDE.md
-# Remplacer <BRAIN_ROOT> par ton chemin réel
+# Remplacer les deux variables machine
 sed -i 's|<BRAIN_ROOT>|/home/<user>/Dev/Docs|g' ~/.claude/CLAUDE.md
+sed -i 's|<BRAIN_NAME>|prod|g' ~/.claude/CLAUDE.md
+# Choisir un nom parlant : prod / dev-laptop / template-test
+# Ce nom identifie l'instance — critique si plusieurs brains sur la même machine
 ```
 
 ### Étape 3 — Configurer PATHS.md

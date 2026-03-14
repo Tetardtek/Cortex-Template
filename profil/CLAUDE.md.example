@@ -4,6 +4,7 @@
 ## Configuration machine (seul endroit a modifier sur une nouvelle machine)
 
 brain_root: <BRAIN_ROOT>
+brain_name: <BRAIN_NAME>     ← prod / dev-laptop / template-test / etc.
 
 ---
 
@@ -20,9 +21,9 @@ Conditionnel :
 
 Ces fichiers font foi. Ne pas demander a l'utilisateur de se redecrire.
 
-> Source unique de verite : ce brain est a `<BRAIN_ROOT>`.
+> Source unique de verite : brain `<BRAIN_NAME>` a `<BRAIN_ROOT>`.
 > Si d'autres repertoires brain sont visibles sur le systeme — les ignorer.
-> Seul `<BRAIN_ROOT>` fait autorite.
+> En cas de doute sur l'instance active : lire `brain_name` ci-dessus.
 
 ---
 
