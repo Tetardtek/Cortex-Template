@@ -73,17 +73,22 @@ fin
 
 ```
 1. Lire le premier message / intent déclaré
+   → Détecter flag `+coach` : message contient "+coach" → activer mode co-pilote (voir coach.md ## Mode +coach)
+   → Auto-trigger +coach si : metabolism ratio ≤ 0.40 (build-brain dominant) OU health_score < 0.80
+
 2. Résoudre le type de session (voir session-types.md ## Signal au boot)
    → Si ambigu : poser 1 question "brain ou work ?"
    → Si HANDOFF détecté dans BRAIN-INDEX → charger handoff file, mode HANDOFF
 
-3. Charger les couches dans l'ordre :
+3. Si +coach actif → insérer orientation coach après le briefing helloWorld (voir coach.md ## Mode +coach)
+
+4. Charger les couches dans l'ordre :
    Couche 0 — invariant  : KERNEL.md + PATHS + collaboration  [toujours]
    Couche 1 — intent     : brain | work | deploy | debug | ...
    Couche 2 — domaine    : agent métier ou brain-system
    Couche 3 — projet     : projets/X + todo/X  [seulement si work/deploy/debug]
 
-4. MYSECRETS — règle non négociable :
+5. MYSECRETS — règle non négociable :
    → Confirmer présence : [[ -f "$BRAIN_ROOT/MYSECRETS" ]] → ✓ disponible
    → NE PAS charger les valeurs
    → secrets-guardian en écoute passive (4 surfaces)
@@ -212,3 +217,4 @@ Invoquer explicitement pour fermer la session quand les déclencheurs naturels n
 |------|------------|
 | 2026-03-14 | Création — boot protocol 4 couches, close protocol séquencé, rapport coach BLOCKING, prix par agent mandatory, MYSECRETS passive listening |
 | 2026-03-14 | Câblage helloWorld — reçoit handoff après briefing (type_session + sess_id + intent), activation section Activation |
+| 2026-03-15 | +coach flag — détection étape 1 boot (manuel +coach ou auto ratio ≤ 0.40 / health < 0.80) |
