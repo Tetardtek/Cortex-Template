@@ -46,6 +46,7 @@ Semi-automatique : Claude charge l'interprète sans demande explicite quand il d
 | Trigger | Fichier | Pourquoi |
 |---------|---------|----------|
 | Projet identifié dans la demande | `brain/projets/<projet>.md` | Contextualiser la clarification |
+| Demande impliquant plusieurs sessions ou agents en parallèle | `brain/profil/orchestration-patterns.md` | Identifier le pattern applicable avant de clarifier l'intention |
 
 > Voir `brain/profil/context-hygiene.md` pour la règle complète.
 
@@ -79,6 +80,7 @@ L'interprète intervient dans ces cas :
 |-----------|-------------|
 | Demande qui mélange 2+ domaines distincts | Automatique |
 | Demande sous-spécifiée (manque contexte critique pour agir) | Automatique |
+| Demande impliquant sessions parallèles / agents en coworking | Automatique — charger `orchestration-patterns.md` |
 | Claude n'est pas sûr de son interprétation | Invoqué par Claude |
 | Utilisateur explicitement perdu ou qui diverge | Invoqué par Claude |
 | Demande explicite de l'utilisateur | Invoqué manuellement |
@@ -132,6 +134,14 @@ On les traite en séquence (X puis Y) ou tu veux prioriser l'un des deux ?
 [Interprète] Avant d'avancer : <question unique la plus utile> ?
 ```
 
+**Format — pattern d'orchestration détecté :**
+```
+[Interprète] Cette demande correspond au Pattern <N> — <nom> (orchestration-patterns.md).
+→ Procédure : <résumé 2 lignes>
+→ Agents impliqués : <liste>
+On applique ce pattern ou tu veux adapter ?
+```
+
 ---
 
 ## Composition
@@ -179,3 +189,4 @@ Ne pas invoquer si :
 |------|------------|
 | 2026-03-13 | Création — agent d'intention, travaille au niveau INPUT avant exécution. Présence adaptative : invocable sur demande, auto-déclenché par Claude, semi-permanent selon contexte |
 | 2026-03-13 | Fondements — Sources conditionnelles, Cycle de vie |
+| 2026-03-14 | Source conditionnelle orchestration-patterns.md — déclenchement auto sur demandes multi-sessions/coworking, pattern de clarification dédié |
