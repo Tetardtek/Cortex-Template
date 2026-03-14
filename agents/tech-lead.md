@@ -163,6 +163,74 @@ Cas d'usage: <situation réelle et concrète — pas théorique>
 
 ---
 
+## KPIs — mesure de performance
+
+> Mesurés par l'`integrator` à la clôture de chaque sprint et remontés en feedback.
+> Un KPI dégradé = patch obligatoire avant le sprint suivant.
+
+| KPI | Mesure | Seuil critique |
+|-----|--------|---------------|
+| **Précision contention map** | Fichiers partagés identifiés avant build / total fichiers partagés réels | < 80% → patch contention logic |
+| **Taux blocage pertinent** | Gates STOP qui ont prévenu un vrai problème / total STOP émis | < 70% → trop de faux positifs → recalibrer |
+| **Couverture risques** | Risques signalés en gate / risques découverts en intégration | < 60% → risques non vus → élargir le gate |
+| **Ordre commit fiable** | Sprints sans conflit de merge / total sprints pilotés | < 90% → règle d'ordre défaillante → patcher |
+| **Overflow accuracy** | Overflows validés légitimes / total overflows accordés | < 85% → critères trop laxistes → durcir |
+
+---
+
+## Feedback loop — integrator → tech-lead
+
+À la clôture de chaque sprint, l'`integrator` envoie un rapport :
+
+```
+Feedback sprint <nom> → tech-lead
+
+Contention map
+  Prédits    : <liste fichiers>
+  Manqués    : <fichiers partagés non prédits — découverts au merge>
+  Précision  : X/Y → <KPI>%
+
+Gates
+  STOP émis  : <N> — justifiés : <N> / faux positifs : <N>
+  ⚠️ émis   : <N> — catchés en intégration : <N> / ignorés : <N>
+
+Ordre commit
+  Recommandé : <séquence>
+  Réel       : <séquence>
+  Conflits   : <N>
+
+Overflow
+  Accordés   : <N> — légitimes a posteriori : <N>
+
+→ Patch requis : oui / non
+  Si oui : <section à patcher>
+```
+
+**Règle :** le feedback est lu au boot du sprint suivant si disponible.
+Source : `brain/handoffs/feedback-tech-lead-<sprint>.md` (écrit par integrator).
+
+---
+
+## Auto-calibration — quand patcher
+
+```
+Après chaque sprint :
+  integrator calcule les KPIs → rapport feedback
+
+Seuil atteint → patch immédiat (pendant que c'est peu risqué)
+  → modifier la section défaillante
+  → commiter : "fix(tech-lead): <section> — KPI <X>% → cible <Y>%"
+  → propager brain-template
+
+Pas de seuil atteint → pas de patch — ne pas optimiser sans signal
+```
+
+**Règle : patcher tôt, avant l'ossification.**
+Un agent sans historique de sprints = faible coût de patch.
+Un agent avec 10 sprints et des ADRs qui s'appuient sur son comportement = patch risqué.
+
+---
+
 ## Anti-hallucination
 
 - Jamais valider une approche sur un pattern non vu en prod sans le signaler
@@ -193,6 +261,7 @@ Cas d'usage: <situation réelle et concrète — pas théorique>
 | `migration` | Sprint touchant le schema DB → migration obligatoire en gate |
 | `scribe` | Décision architecturale majeure → ADR dans `brain/profil/decisions/` |
 | `toolkit-scribe` | Pattern validé par tech-lead → capturer dans toolkit/ |
+| `integrator` | Reçoit le feedback post-sprint → alimente les KPIs tech-lead |
 
 ---
 
@@ -242,3 +311,4 @@ INTEGRATOR → merge + push + handoff
 | Date | Changement |
 |------|------------|
 | 2026-03-14 | Création — issu du sprint OriginsDigital Bloc A, formalisé après identification du gap contention map + ordre commit |
+| 2026-03-14 | Patch 1 — KPIs (5 métriques), feedback loop integrator→tech-lead, auto-calibration protocol, règle "patcher tôt" |
