@@ -80,19 +80,23 @@ orchestrator-scribe, je passe la main à template-test@laptop — HANDOFF depuis
 
 ```
 1. Générer ID : sig-YYYYMMDD-<seq> (ex: sig-20260314-001)
-2. Remplir : De (instance active), Pour (instance cible), Type, Concerné, Payload
-3. Ajouter dans ## Signals avec état : pending
-4. Confirmer : "Signal [ID] envoyé → [instance cible]"
+2. Choisir la cible :
+   → brain_name@machine  =  toutes les sessions actives de ce brain (broadcast)
+   → sess-YYYYMMDD-HHMM-<role>@machine  =  une session précise (message direct)
+3. Remplir : De (instance active), Pour (cible choisie), Type, Concerné, Payload
+4. Ajouter dans ## Signals avec état : pending
+5. Confirmer : "Signal [ID] envoyé → [cible]"
 ```
 
 ### Recevoir un signal (watchdog démarrage)
 
 ```
-1. Lire ## Signals — filtrer Pour == instance active
-2. Pour chaque signal pending :
+1. Lire ## Signals
+2. Filtrer : Pour == brain_name@machine  OU  Pour == sess-id@machine (session active)
+3. Pour chaque signal pending correspondant :
    → Afficher : "Signal reçu de [De] : [Type] sur [Concerné] — [Payload]"
    → Demander action : traiter / ignorer / reporter
-3. Signal traité → passer à état : delivered
+4. Signal traité → passer à état : delivered
 ```
 
 ### Cycle de vie d'un signal
@@ -146,12 +150,31 @@ prod@laptop   →  reçoit HANDOFF
                →  continue sans perte de contexte
 ```
 
+### Sessions parallèles — même brain, rôles distincts
+
+```
+Même machine, même brain, N sessions — pas de fork nécessaire :
+
+sess-20260314-0900-build@desktop   →  produit du code
+sess-20260314-0901-review@desktop  →  review en parallèle
+sess-20260314-0902-test@desktop    →  tests en parallèle
+
+Signal ciblé :
+  De : sess-20260314-0900-build@desktop
+  Pour : sess-20260314-0901-review@desktop   ← message direct, pas broadcast
+  Type : READY_FOR_REVIEW
+  Concerné : agents/security.md
+```
+
+> Un brain par machine. N sessions par brain. Le slug de session IS l'identité de routage.
+
 ---
 
 ## Anti-hallucination
 
 - Jamais affirmer qu'un signal a été reçu sans lire BRAIN-INDEX.md
 - Jamais écrire un signal sans confirmer l'instance cible (elle doit exister dans brain-compose.local.yml)
+- Signal ciblant `sess-id@machine` : vérifier que cette session a un claim actif dans BRAIN-INDEX.md — sinon "Information manquante — session inconnue ou déjà fermée"
 - Deadlock détecté (A attend B, B attend A) → alerter humain immédiatement, ne pas résoudre seul
 - Signal adressé à une instance inconnue → "Information manquante — vérifier brain-compose.local.yml"
 
@@ -197,3 +220,4 @@ Ne pas invoquer si :
 | Date | Changement |
 |------|------------|
 | 2026-03-14 | Création — bus Signals, cycles coworking, patterns HANDOFF/READY_FOR_REVIEW, frontière scribe/orchestrator-scribe |
+| 2026-03-14 | `Pour` accepte `sess-id@machine` — sessions parallèles sans fork de brain, pattern N sessions / 1 brain |
