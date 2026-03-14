@@ -104,6 +104,8 @@ Fin de session
 ## Triggers — quand intervenir
 
 **Automatique (le scribe doit réagir sans qu'on le demande) :**
+- L'utilisateur dit `checkpoint`, `/checkpoint` ou `pose un checkpoint` → déclencher le protocole CHECKPOINT via orchestrator-scribe (payload structuré + signal posé dans BRAIN-INDEX.md)
+- Breakpoint naturel atteint en session longue (item important terminé, avant une pause) → proposer un checkpoint
 - Une tâche listée dans `focus.md` vient d'être complétée → la marquer ✅
 - Un projet vient d'être déployé → mettre à jour la fiche projet + focus
 - Une décision d'architecture importante est prise → la documenter
@@ -166,10 +168,14 @@ Le scribe est le **gardien unique** du BSI. Il est le seul à écrire dans `BRAI
 ### Watchdog — début de session (automatique)
 
 ```
-1. Lire brain/BRAIN-INDEX.md ## Claims actifs
-2. Pour chaque claim : vérifier si "Expire le" < maintenant
-3. Si expiré → déplacer vers ## Claims stale, annoter raison
-4. Reporter : "[N] actifs, [M] stale détectés"
+1. Lire brain/BRAIN-INDEX.md ## Signals — filtrer Type == CHECKPOINT, De == instance active
+   → Si trouvé : afficher payload AVANT tout autre action
+   → "Checkpoint détecté [date] — Prochaine étape : <prochaine étape>"
+   → Demander : reprendre depuis ce point ? (oui → marquer delivered, continuer)
+2. Lire brain/BRAIN-INDEX.md ## Claims actifs
+3. Pour chaque claim : vérifier si "Expire le" < maintenant
+4. Si expiré → déplacer vers ## Claims stale, annoter raison
+5. Reporter : "[N] actifs, [M] stale détectés"
    → stale > 0 : demander action humaine avant de continuer
 ```
 
@@ -178,11 +184,12 @@ Le scribe est le **gardien unique** du BSI. Il est le seul à écrire dans `BRAI
 ```
 Signal : "scribe, ouvre un claim sur <scope>"
 1. Générer ID : sess-YYYYMMDD-HHMM-<4chars>
-2. Choisir TTL : 2h (court) / 4h (deep) / 8h (archi) — selon contexte
-3. Vérifier conflit dans ## Claims actifs (scope A ∩ scope B ≠ ∅)
+2. Lire brain_name + machine depuis brain-compose.local.yml → instance = brain_name@machine
+3. Choisir TTL : 2h (court) / 4h (deep) / 8h (archi) — selon contexte
+4. Vérifier conflit dans ## Claims actifs (scope A ∩ scope B ≠ ∅)
    → Conflit → alerter humain, NE PAS créer
-4. Ajouter dans ## Claims actifs
-5. Confirmer : "Claim ouvert — [scope] / [session ID] / expire [TTL]"
+5. Ajouter dans ## Claims actifs avec colonne Instance
+6. Confirmer : "Claim ouvert — [instance] / [scope] / [session ID] / expire [TTL]"
 ```
 
 ### Fermer un claim
@@ -190,8 +197,9 @@ Signal : "scribe, ouvre un claim sur <scope>"
 ```
 Signal : "scribe, ferme le claim <session-id>" ou fin de session
 1. Retirer de ## Claims actifs
-2. Ajouter dans ## Historique : session, scope, ouvert, fermé, statut=completed
-3. Confirmer : "Claim fermé — [session ID]"
+2. Récupérer les commits de la session : git log --oneline --since="<ouvert le>"
+3. Ajouter dans ## Historique : session, scope, ouvert, fermé, commits, statut=completed
+4. Confirmer : "Claim fermé — [session ID] — [N commits]"
 ```
 
 ### Règles BSI non négociables
@@ -280,3 +288,4 @@ Ne pas invoquer si :
 | 2026-03-13 | [CONFIRMÉ] Non-overlap coach-scribe + gap infra signal + vérifier AGENTS.md fin de session |
 | 2026-03-13 | Fondements — Sources conditionnelles structurées, Écrit où, Cycle de vie |
 | 2026-03-14 | BSI — Brain Session Index intégré : watchdog, open/close claim, règles non négociables |
+| 2026-03-14 | CHECKPOINT — watchdog détecte CHECKPOINT au démarrage, trigger utilisateur + auto breakpoints, commits dans Historique |

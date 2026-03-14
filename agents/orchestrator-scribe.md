@@ -115,6 +115,7 @@ archived  → 24h après delivered, retiré de ## Signals et mis dans ## Histori
 | `REVIEWED` | B → A | A lit `reviews/<fichier>.md`, continue son travail |
 | `BLOCKED_ON` | A → B | B prend connaissance, libère le scope si possible |
 | `HANDOFF` | A → B | B charge le contexte et reprend depuis le point précis |
+| `CHECKPOINT` | A → A | Même session — snapshot mid-session, reprise après compactage ou coupure |
 | `INFO` | A → B | B prend connaissance, aucune action requise |
 
 ---
@@ -149,6 +150,42 @@ prod@laptop   →  reçoit HANDOFF
                →  charge le fichier concerné depuis ## Section X
                →  continue sans perte de contexte
 ```
+
+### CHECKPOINT — snapshot mid-session
+
+Déclenché par l'utilisateur (`checkpoint`, `/checkpoint`, `pose un checkpoint`) ou par scribe à un breakpoint naturel.
+
+```
+Format payload CHECKPOINT :
+  Tâche en cours  : <ce qu'on était en train de faire>
+  Fichiers touchés: <liste des fichiers modifiés depuis ouverture du claim>
+  Commits         : <git log --oneline depuis début session>
+  Prochaine étape : <exactement quoi faire au redémarrage — précis, actionnable>
+  Contexte non-git: <décisions, discussions, intentions pas encore commitées>
+```
+
+```
+Procédure :
+1. Générer ID signal : sig-YYYYMMDD-<seq>
+2. De  : sess-YYYYMMDD-HHMM-<role>@machine  (session actuelle)
+   Pour : sess-YYYYMMDD-HHMM-<role>@machine  (même session — HANDOFF vers soi)
+3. Type : CHECKPOINT
+4. Remplir payload structuré ci-dessus
+5. État : pending
+6. Confirmer : "Checkpoint posé — reprise depuis : <prochaine étape>"
+```
+
+Watchdog au redémarrage — détection CHECKPOINT :
+```
+1. Lire ## Signals — filtrer Type == CHECKPOINT, De == instance active
+2. Si trouvé :
+   → Afficher le payload complet AVANT tout autre action
+   → "Checkpoint détecté [date] — Prochaine étape : <prochaine étape>"
+   → Demander : reprendre depuis ce point ?
+3. Marquer delivered après confirmation
+```
+
+---
 
 ### Sessions parallèles — même brain, rôles distincts
 
@@ -221,3 +258,4 @@ Ne pas invoquer si :
 |------|------------|
 | 2026-03-14 | Création — bus Signals, cycles coworking, patterns HANDOFF/READY_FOR_REVIEW, frontière scribe/orchestrator-scribe |
 | 2026-03-14 | `Pour` accepte `sess-id@machine` — sessions parallèles sans fork de brain, pattern N sessions / 1 brain |
+| 2026-03-14 | Signal `CHECKPOINT` — snapshot mid-session A→A, payload structuré, watchdog reprise |
