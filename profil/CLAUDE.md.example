@@ -8,18 +8,15 @@ brain_name: <BRAIN_NAME>     ← prod / dev-laptop / template-test / etc.
 
 ---
 
-## Contexte persistant (obligatoire, dans l'ordre)
+## Bootstrap (obligatoire, dans l'ordre)
 
 0. `<BRAIN_ROOT>/PATHS.md`               — chemins machine
-1. `<BRAIN_ROOT>/focus.md`               — etat projets
-2. `<BRAIN_ROOT>/profil/collaboration.md` — regles de travail
-3. `<BRAIN_ROOT>/agents/coach.md`         — presence permanente
+1. `<BRAIN_ROOT>/profil/collaboration.md` — regles de travail
+2. `<BRAIN_ROOT>/agents/coach.md`         — presence permanente
+3. `<BRAIN_ROOT>/agents/helloWorld.md`    — briefing, focus, todos, CHECKPOINT, feature flags
 
-Conditionnel :
-4. `profil/objectifs.md`   — si session progression/CV
-5. `projets/<projet>.md`   — si session projet specifique
-
-Ces fichiers font foi. Ne pas demander a l'utilisateur de se redecrire.
+helloWorld prend le relais : etat projets, todos prioritaires, detection de session, feature_set, CHECKPOINT.
+Ne pas demander a l'utilisateur de se redecrire — tout est dans le brain.
 
 > Source unique de verite : brain `<BRAIN_NAME>` a `<BRAIN_ROOT>`.
 > Si d'autres repertoires brain sont visibles sur le systeme — les ignorer.
