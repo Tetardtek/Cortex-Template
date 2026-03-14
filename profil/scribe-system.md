@@ -29,13 +29,16 @@ Le scribe est le seul responsable de la cohérence de son repo.
 | Scribe | Écrit où | Repo | Couche | Exportable | Cycle de vie |
 |--------|----------|------|--------|------------|-------------|
 | `scribe` | `focus.md`, `projets/`, `infrastructure/`, `agents/AGENTS.md`, `profil/objectifs.md` | `brain/` | Universel | ✅ | Permanent |
-| `todo-scribe` | `todo/` | `brain/` (→ `todo/` futur) | Universel | ✅ structure | Stable quand todo en régime |
-| `toolkit-scribe` | `toolkit/` | `toolkit/` | Universel | ✅ | Actif tant que nouveaux patterns |
+| `todo-scribe` | `todo/` | `brain-todo/` | Universel | ✅ structure | Stable quand todo en régime |
+| `toolkit-scribe` | `toolkit/` | `brain-toolkit/` | Universel | ✅ | Actif tant que nouveaux patterns |
+| `orchestrator-scribe` | `BRAIN-INDEX.md ## Signals` uniquement | `brain/` | Universel | ✅ protocole | Permanent — multi-instance actif |
+| `config-scribe` | `PATHS.md`, `infrastructure/` d'une instance | instance locale | Universel | ✅ structure | Invoqué sur `brain-compose new` |
 | `git-analyst` | Commits git (narration sémantique) | Tous repos | Universel | ✅ | Ponctuel — invoqué sur demande |
-| `coach-scribe` | `journal/`, `skills/`, `milestones/` | `progression/` | Personnel | ❌ | Suit le coach — retraité ensemble |
-| `capital-scribe` | `profil/capital.md` | `brain/` | Personnel | ❌ strippé | Suit objectifs — veille quand CV stabilisé |
+| `coach-scribe` | `journal/`, `skills/`, `milestones/` | `brain-progression/` | Personnel | ❌ | Suit le coach — retraité ensemble |
+| `capital-scribe` | `profil/capital.md` | `brain-profil/` | Personnel | ❌ strippé | Suit objectifs — veille quand CV stabilisé |
 
 > `helloWorld` et `coach` ne sont **pas** des scribes — ils observent et rapportent, jamais n'écrivent.
+> `orchestrator-scribe` n'écrit QUE dans `## Signals` — jamais dans `## Claims` (→ `scribe`).
 
 ---
 
@@ -44,12 +47,13 @@ Le scribe est le seul responsable de la cohérence de son repo.
 Quand plusieurs scribes écrivent dans la même session :
 
 ```
-1. todo-scribe    → commit brain/  "todo(<domaine>): <intention>"
-2. capital-scribe → commit brain/  "feat(capital): <milestone>"     si signal reçu
-3. scribe         → commit brain/  "feat(brain): <bilan session>"    toujours en dernier sur brain/
-4. toolkit-scribe → commit toolkit/ "feat(toolkit): <pattern>"       si signal reçu
-5. coach-scribe   → commit progression/ "feat(progression): <bilan>" si session coach
-6. git-analyst    → valide cohérence sémantique des commits           optionnel
+1. todo-scribe         → commit brain-todo/       "todo(<domaine>): <intention>"
+2. toolkit-scribe      → commit brain-toolkit/    "feat(toolkit): <pattern>"        si signal reçu
+3. coach-scribe        → commit brain-progression/ "feat(progression): <bilan>"     si session coach
+4. capital-scribe      → commit brain-profil/     "feat(capital): <milestone>"      si signal reçu
+5. scribe              → commit brain/            "feat(brain): <bilan session>"    toujours en dernier sur brain/
+6. orchestrator-scribe → commit brain/            "feat(signals): <signal posé>"    si inter-sessions actives
+7. git-analyst         → valide cohérence sémantique des commits                    optionnel
 ```
 
 **Règle :** `scribe` est toujours le dernier à commiter sur `brain/` — il a la vue complète de ce que les autres ont écrit.
@@ -110,3 +114,4 @@ Quelqu'un qui fork récupère le moteur d'écriture. Pas le cerveau, pas la prog
 | Date | Changement |
 |------|------------|
 | 2026-03-13 | Création — émergé de la session agent-review + architecture multi-repos + Scribe Pattern |
+| 2026-03-14 | Ajout orchestrator-scribe (## Signals) + config-scribe — 8 scribes, repos satellites mis à jour, ordre de commit v2 |
