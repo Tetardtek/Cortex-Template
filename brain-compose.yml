@@ -1,0 +1,72 @@
+# brain-compose.yml — Kernel spec
+# Versionné dans le kernel. Schema + feature flags + registre agents.
+# Géré par l'agent brain-compose — ne pas éditer manuellement.
+
+version: "0.2.0"
+
+# ---
+# Feature sets — contrôlent les agents invocables par instance
+# Les agents "bloqués" existent dans le kernel, brain-compose contrôle l'accès.
+# ---
+
+feature_sets:
+
+  free:
+    description: "Agents fondamentaux — exploration et maintenance brain"
+    agents:
+      - coach
+      - scribe
+      - todo-scribe
+      - debug
+      - mentor
+      - helloWorld
+      - aside
+      - brainstorm
+      - interprete
+      - orchestrator
+      - recruiter
+      - agent-review
+
+  pro:
+    description: "Agents métier — développement complet"
+    extends: free
+    agents:
+      - code-review
+      - security
+      - testing
+      - refacto
+      - vps
+      - ci-cd
+      - monitoring
+      - pm2
+      - frontend-stack
+      - optimizer-backend
+      - optimizer-db
+      - optimizer-frontend
+      - toolkit-scribe
+      - coach-scribe
+      - git-analyst
+      - capital-scribe
+      - i18n
+      - doc
+      - migration
+      - mail
+
+  full:
+    description: "Accès complet — usage personnel sans restriction"
+    extends: pro
+    agents: "*"
+
+# ---
+# Changelog — semver
+# v0.x.x : kernel en évolution rapide, breaking changes possibles
+# v1.0.0 : interface contractuelle stable
+# ---
+
+changelog:
+  - version: "0.1.0"
+    date: "2026-03-13"
+    notes: "Initial — 30+ agents, config-scribe, brain-compose Phase 1, symlinks, feature flags"
+  - version: "0.2.0"
+    date: "2026-03-14"
+    notes: "BSI (BRAIN-INDEX.md), brain_name, brain-template, aside, brainstorm, brain-compose up"

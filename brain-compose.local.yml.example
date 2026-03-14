@@ -1,0 +1,23 @@
+# brain-compose.local.yml — Registre machine
+# NON VERSIONNÉ — gitignored. Spécifique à cette machine.
+# Copier depuis brain-compose.local.yml.example, remplir, NE PAS commiter.
+
+kernel_path: <BRAIN_ROOT>
+kernel_version: "0.2.0"
+last_kernel_sync: "<YYYY-MM-DD>"
+
+instances:
+  prod:
+    path: <BRAIN_ROOT>
+    brain_name: prod
+    feature_set: full
+    config_status: hydrated   # hydrated / partial / empty
+    active: true
+
+  # Exemple — instance client ou template-test :
+  # template-test:
+  #   path: <BRAIN_ROOT>-test
+  #   brain_name: template-test
+  #   feature_set: full
+  #   config_status: partial
+  #   active: false

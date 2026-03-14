@@ -43,6 +43,20 @@ sed -i 's|<BRAIN_NAME>|prod|g' ~/.claude/CLAUDE.md
 # Ce nom identifie l'instance — critique si plusieurs brains sur la même machine
 ```
 
+### Étape 2b — Initialiser brain-compose
+
+```bash
+cp brain-compose.local.yml.example brain-compose.local.yml
+# Éditer brain-compose.local.yml :
+# - kernel_path → ton chemin réel
+# - instances.prod.path → ton chemin réel
+# - instances.prod.brain_name → même valeur que brain_name dans CLAUDE.md
+```
+
+> Si tu as plusieurs brains sur la même machine (prod + dev-laptop) :
+> ajouter chaque instance dans brain-compose.local.yml.
+> Switcher d'instance : `brain-compose, active l'instance dev-laptop`
+
 ### Étape 3 — Configurer PATHS.md
 
 Ouvrir `PATHS.md` et remplacer tous les placeholders :
