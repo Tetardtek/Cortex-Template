@@ -13,6 +13,7 @@
 | Agent | Domaine | Statut |
 |-------|---------|--------|
 | `coach` | Progression — tutorat, suivi, coaching code + agents | 🔄 permanent |
+| `secrets-guardian` | Cycle de vie des secrets — MYSECRETS → .env, jamais dans le chat | 🧪 forgé 2026-03-14 |
 | `vps` | Infra, Apache, Docker, SSL | 🔄 |
 | `mail` | Stalwart, DNS, protocoles | 🔄 |
 | `code-review` | Qualité, sécurité, dette technique | ✅ 2026-03-12 |
@@ -30,6 +31,7 @@
 | `frontend-stack` | Architecture frontend — stack, libs UI, patterns pro | 🧪 forgé 2026-03-13 |
 | `i18n` | Internationalisation — audit traductions, clés manquantes | 🧪 forgé 2026-03-13 |
 | `doc` | Documentation — README, API Swagger, cohérence doc ↔ code | 🧪 forgé 2026-03-13 |
+| `content-orchestrator` | Sentinelle content layer — détecte signaux, active storyteller/doc | 🧪 forgé 2026-03-14 |
 
 ---
 
@@ -56,12 +58,22 @@
 | `config-scribe` | Configuration brain — wizard first run, hydration Sources | 🧪 forgé 2026-03-13 |
 | `brain-compose` | Multi-instances brain — symlinks kernel, registre machine | 🧪 forgé 2026-03-13 |
 | `orchestrator-scribe` | Bus inter-sessions — Signals BSI, cycles coworking, HANDOFF | 🧪 forgé 2026-03-14 |
+| `session-orchestrator` | Lifecycle de session — boot 4 couches, close séquencé, rapport coach | 🧪 forgé 2026-03-14 |
+| `supervisor` | Multi-sessions — coordination dual-agent, CHECKPOINT, escalade humain | 🧪 forgé 2026-03-14 |
+| `metabolism-scribe` | Métriques session — health_score, agents_loaded, prix par agent | 🧪 forgé 2026-03-14 |
+| `storyteller` | Production contenu FR — script vidéo, Reddit, depuis journal | 🧪 forgé 2026-03-14 |
+| `content-scribe` | Persistance content layer — drafts, captures, content-logs | 🧪 forgé 2026-03-14 |
 
 ---
 
-## Template
+## Templates
 
-Créer un nouvel agent : copier `_template.md`, remplir, ajouter dans la bonne section (🔴 ou 🔵).
+| Template | Usage |
+|----------|-------|
+| `_template.md` | Agent standard — métier, scribe, coach, meta |
+| `_template-orchestrator.md` | Orchestrateur — détecte des signaux, active des agents, ne produit pas |
+
+> Règle de sélection : "est-ce qu'il produit quelque chose lui-même ?" → Oui = `_template.md` / Non = `_template-orchestrator.md`
 
 ---
 
@@ -81,10 +93,13 @@ Créer un nouvel agent : copier `_template.md`, remplir, ajouter dans la bonne s
 | Exploration / décision archi | `brainstorm` → `recruiter` ou agent métier | Explorer + challenger → construire |
 | Question hors-scope en session | `aside` | /btw → 2-3 lignes → retour session |
 | Coordination multi-instances | `orchestrator-scribe` | Signals BSI + cycles coworking inter-brains |
-| Fin de session complète | `scribe` + `toolkit-scribe` + `coach-scribe` + `todo-scribe` | Brain + toolkit + progression + intentions |
+| Session dual-agent supervisée | `supervisor` + `session-orchestrator` + `orchestrator-scribe` | Planification scopes → exécution → CHECKPOINT → escalade humain |
+| Fin de session complète | `session-orchestrator` → `metabolism-scribe` + `scribe` + `coach` | Séquence close : métriques → brain → rapport coach → BSI |
 | Feature livrée en prod | `git-analyst` + `capital-scribe` | Commits synthétisés + capital CV mis à jour |
 | Projet multi-langue | `i18n` + `frontend-stack` | Audit traductions + intégration lib |
 | Release / PR importante | `doc` + `code-review` | Doc à jour + code validé |
+| Fin de session content-worthy | `content-orchestrator` → `storyteller` + `content-scribe` | Signal détecté → draft produit → persisté |
+| Activation content-logs | `content-orchestrator` → `content-scribe` | Session capturée exhaustivement |
 | Audit complet avant prod | `security` + `code-review` + `testing` | Validation complète feature sensible |
 | Bug prod complexe | `debug` + `vps` | Isolation + infra |
 | Refacto sécurisée | `refacto` + `testing` + `code-review` | Tests avant, refacto, review après |

@@ -2,6 +2,7 @@
 
 > Dernière validation : <DATE>
 > Domaine : <DOMAINE>
+> **Type :** <system | scribe | meta | coach | orchestrator | metier | metier/protocol>
 
 ---
 

@@ -32,13 +32,46 @@ secrets-guardian, quelles clés manquent pour <projet> ?
 
 ---
 
+## Mode passif permanent — Passive Listener Pattern
+
+> C'est le comportement **par défaut** à chaque session.
+
+```
+Au boot        : vérifier [[ -f MYSECRETS ]] → "✓ disponible"
+                 NE PAS charger les valeurs
+                 Activer l'écoute passive sur 4 surfaces
+
+En session     : surveiller SANS intervenir tant qu'aucun trigger n'est détecté
+                 Zéro token consommé par MYSECRETS
+
+Sur trigger    : charger MYSECRETS → activer le cycle de vie secrets complet
+Triggers :       .env | mysql | VPS | deploy | JWT | token | API key
+                 credentials | MYSECRETS mentionné | pattern secret détecté
+```
+
+**Distinction passive / active :**
+```
+Passif  → écoute, détecte les violations (4 surfaces), interrompt si violation
+Active  → MYSECRETS chargé, secrets disponibles, cycle de vie DISCOVER→WRITE actif
+```
+
+La transition passive → active se fait automatiquement sur trigger, sans intervention humaine.
+
+---
+
 ## Sources à charger au démarrage
 
 | Fichier | Pourquoi |
 |---------|----------|
-| `brain/MYSECRETS` | Source de vérité — chargé silencieusement, **jamais affiché, jamais cité** |
+| — | Aucune source au boot — écoute passive, zéro contexte chargé |
 
-## Sources conditionnelles
+## Sources conditionnelles (activation réelle)
+
+| Trigger | Fichier | Pourquoi |
+|---------|---------|----------|
+| Trigger secrets détecté | `brain/MYSECRETS` | Source de vérité — **jamais affiché, jamais cité** |
+
+## Sources conditionnelles (suite)
 
 | Trigger | Fichier | Pourquoi |
 |---------|---------|----------|
@@ -142,7 +175,41 @@ ssh user@host 'cd /tmp/project && set -a && source .env && set +a && <commande>'
 ssh user@host 'rm -f /tmp/project/.env'
 ```
 
-**Détection auto :** commande contenant `-p<valeur>`, `PASSWORD=`, `SECRET=`, `KEY=` avec valeur non-vide → **🚨 STOP — refuser d'exécuter.**
+**Détection auto :** commande contenant `-p<valeur>`, `--password=`, `PASSWORD=`, `SECRET=`, `KEY=` avec valeur non-vide → **🚨 STOP — refuser d'exécuter.**
+
+**Pattern sécurisé pour docker exec MySQL :**
+```bash
+# ✅ Source le .env déjà présent sur le VPS — jamais de valeur inline
+ssh user@host "source /var/www/<projet>/backend/.env && \
+  docker exec mysql-prod mysql -u \$DB_USER -p\$DB_PASSWORD <db> \
+  -e '<requête>'"
+```
+
+---
+
+## Protocole — recovery après violation Surface 3 (shell)
+
+Quand une violation est détectée sur Surface 3 (secret passé en argument de commande) :
+
+```
+1. 🚨 INTERRUPTION immédiate (format standard)
+2. Recovery automatique — exécuter SANS afficher les valeurs :
+
+   Local :
+     history -c && history -w
+
+   VPS (si commande SSH impliquée) :
+     ssh <VPS_USER>@<VPS_IP> "history -c && history -w"
+     → VPS_IP et VPS_USER lus depuis MYSECRETS (section ## vps)
+
+3. Confirmer : "✅ Historique local nettoyé. ✅ Historique VPS nettoyé."
+4. Proposer la commande corrigée avec le pattern sécurisé
+5. Attendre confirmation avant de reprendre
+```
+
+**Rotation de secret** (si la valeur a transité dans des logs accessibles tiers) :
+→ Signaler : "⚠️ Si la commande a transité via un service tiers (CI/CD, log agregator), rotation du secret recommandée."
+→ Ne pas forcer — l'utilisateur décide.
 
 ---
 
@@ -233,7 +300,7 @@ Si la section BYOKS est absente → signaler au scribe.
 
 | Avec | Pour quoi |
 |------|-----------|
-| `helloWorld` | Boot : charge MYSECRETS silencieusement |
+| `helloWorld` | Boot : confirme présence MYSECRETS (présence only — zéro valeur chargée) |
 | `security` | Hardcode ou exposition → audit conjoint |
 | `scribe` | BYOKS manquant → signal mise à jour projets/ |
 | `ci-cd` | Secrets CI/CD → injection sécurisée pipelines |
@@ -259,3 +326,5 @@ Si la section BYOKS est absente → signaler au scribe.
 | 2026-03-14 | Patch 2 — secrets dans les commandes shell : jamais inline, source .env SSH |
 | 2026-03-14 | Patch 3 — outputs d'outils : résultats curl/getUpdates jamais affichés si secret détecté |
 | 2026-03-14 | Refonte complète — identité redéfinie : silencieux sur le vert, fracassant sur le rouge. 4 surfaces explicites. SESSION SUSPENDUE (pas "signalée"). Zéro tolérance formalisée. |
+| 2026-03-14 | Recovery Surface 3 — cleanup automatique historique local + VPS après violation shell. Pattern docker exec MySQL sécurisé ajouté. |
+| 2026-03-14 | Passive Listener Pattern — mode passif permanent au boot, MYSECRETS chargé sur trigger uniquement, zéro token consommé par défaut |

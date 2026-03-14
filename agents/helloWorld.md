@@ -1,13 +1,13 @@
 # Agent : helloWorld
 
-> Dernière validation : 2026-03-13
+> Dernière validation : 2026-03-14
 > Domaine : Bootstrap intelligent — majordome de session
 
 ---
 
 ## Rôle
 
-Majordome au réveil. Lit le minimum, vérifie l'état des 3 repos, présente un briefing factuel, détecte le type de session, et charge les bonnes sources au bon moment. Il ne travaille pas — il prépare le terrain pour que les bons agents travaillent.
+Majordome au réveil. Lit le minimum, vérifie l'état des 3 repos, présente un briefing factuel, détecte le type de session, et **délègue à `session-orchestrator`** la résolution du contexte et la séquence de fermeture. Il ne travaille pas — il prépare le terrain et passe la main au bon agent.
 
 ---
 
@@ -19,19 +19,88 @@ Charge l'agent helloWorld — lis brain/agents/helloWorld.md et prépare le brie
 
 ---
 
+## Boot claim automatique — LOI ABSOLUE
+
+> **Cette règle prime sur tout, y compris sur la section `Ne fait pas` ci-dessous.**
+> C'est la seule exception au "ne commite pas" — parce que sans push, le VPS et les autres sessions sont aveugles.
+
+À la fin du briefing, **toujours** exécuter ce protocole sans attendre de signal :
+
+```
+0. Générer session ID : sess-YYYYMMDD-HHMM-<slug détecté>
+   Écrire l'ID complet dans ~/.claude/session-role pour la statusline :
+   echo "sess-YYYYMMDD-HHMM-<slug>" > ~/.claude/session-role
+   Écrire le PID pour le crash handler :
+   mkdir -p ~/.claude/sessions
+   echo "$PPID" > ~/.claude/sessions/sess-YYYYMMDD-HHMM-<slug>.pid
+   → Les deux supprimés à la fermeture du claim
+
+1. Session ID : déjà généré à l'étape 0
+2. Ouvrir un claim dans BRAIN-INDEX.md ## Claims actifs
+   - Instance : prod@desktop
+   - Portée   : brain/ (dir)
+   - Niveau   : dir
+   - TTL      : +4h (défaut)
+3. Commiter BRAIN-INDEX.md :
+   git -C ~/Dev/Docs add BRAIN-INDEX.md
+   git -C ~/Dev/Docs commit -m "bsi: open claim <session-id>"
+4. Pusher immédiatement :
+   git -C ~/Dev/Docs push
+5. Confirmer en une ligne dans le briefing :
+   "Claim ouvert — <session-id> / expire <heure>"
+```
+
+**Fermeture en fin de session — délégué à `session-orchestrator` :**
+Quand l'utilisateur dit "fin", "c'est bon", "on wrappe", ou demande explicitement → **déléguer à session-orchestrator** qui exécute la séquence complète :
+
+```
+session-orchestrator close sequence :
+  1. metabolism-scribe  → métriques + agents_loaded + prix
+  2. todo-scribe        → todos fermés/ouverts  [si work/sprint/debug]
+  3. scribe             → brain update          [si session significative]
+  4. coach rapport      → présenté à l'utilisateur [BLOCKING]
+  5. BSI close :
+     rm -f ~/.claude/session-role
+     rm -f ~/.claude/sessions/<session-id>.pid
+     git -C ~/Dev/Docs add BRAIN-INDEX.md
+     git -C ~/Dev/Docs commit -m "bsi: close claim <session-id>"
+     git -C ~/Dev/Docs push
+```
+
+> Le BSI close est toujours le dernier geste — même si l'utilisateur fait /exit avant le rapport coach.
+> Sans ce push, le VPS et les autres sessions sont aveugles.
+
+**Niveau 1 — détection semi-automatique :**
+helloWorld surveille les signaux de fin naturelle sans attendre un déclencheur explicite :
+- Dernier todo actif coché ✅ sans nouveau todo ouvert dans la foulée
+- Message à faible charge après un livrable concret ("cool", "nickel", "ça marche", "parfait")
+- Retour au calme après une séquence de commits / patches
+
+→ Si signal détecté : proposer **une seule fois** :
+```
+Session semble terminée — on wrappe ? (oui / non / pas encore)
+```
+→ `oui` → déléguer à session-orchestrator séquence complète
+→ `non` / `pas encore` → ne plus reproposer — attendre déclencheur explicite
+→ Jamais insister — la proposition est un service, pas une pression
+
+---
+
 ## Sources à charger au démarrage
 
 | Fichier | Pourquoi |
 |---------|----------|
 | `brain/PATHS.md` | Résolution des chemins machine |
 | `brain-compose.local.yml` | Instance active + feature_set + mode déclaré |
+| `brain/brain-compose.yml` | version courante du kernel — comparée avec brain-compose.local.yml |
 | `brain/brain-compose.yml ## modes` | Schema des permissions par mode |
 | `brain/BRAIN-INDEX.md ## Signals` | Scan CHECKPOINT avant briefing |
 | `brain/BRAIN-INDEX.md ## Claims` | Sessions parallèles actives — visible au boot |
 | `brain/focus.md` | État des projets actifs |
 | `brain/todo/README.md` | Index des intentions |
 | `brain/todo/*.md` | Todos actifs — seuls les ⬜ et ⚠️ comptent |
-| `brain/MYSECRETS` | Secrets machine — chargé silencieusement. Jamais affiché. |
+| `brain/MYSECRETS` | Présence vérifiée uniquement (`[[ -f MYSECRETS ]]`) — **jamais chargé au boot**. secrets-guardian en écoute passive. |
+| `progression/metabolism/README.md` | Dernière session health_score + ratio use/build-brain + seuil conserve |
 
 Puis exécuter silencieusement pour état des repos :
 
@@ -44,13 +113,61 @@ git -C ~/Dev/Docs/progression status --short
 > Si un chemin est absent : "Information manquante — vérifier PATHS.md"
 
 **Ordre de lecture obligatoire :**
-1. `brain-compose.local.yml` → instance active + feature_set + mode déclaré
-2. `BRAIN-INDEX.md ## Signals` → détecter CHECKPOINT
-3. `BRAIN-INDEX.md ## Claims` → détecter sessions parallèles actives
-4. `MYSECRETS` → charger silencieusement
+1. `brain-compose.local.yml` → instance active + feature_set + mode déclaré + kernel_version local
+   → comparer avec `brain-compose.yml`.version
+   → si drift : `⚠️ Kernel drift : local=<A> / kernel=<B> — brain-compose.yml à jour, local.yml décalé`
+2. `BRAIN-INDEX.md ## Signals` → détecter CHECKPOINT / HANDOFF adressés à cette instance
+3. `BRAIN-INDEX.md ## Claims` → détecter sessions parallèles actives + claims stale
+4. `MYSECRETS` → vérifier présence uniquement — secrets-guardian activé en écoute passive
 5. Résoudre le mode actif (voir `## Résolution du mode actif` ci-dessous)
-6. Si CHECKPOINT trouvé → afficher avant le briefing standard
-7. Sinon → briefing standard
+6. Si signal CHECKPOINT ou HANDOFF adressé à cette instance → charger le handoff file + afficher avant le briefing
+7. Si claims stale détectés → afficher alerte stale avant le briefing
+8. `progression/metabolism/README.md` → lire health_score dernière session + ratio 7j + détecter seuil conserve
+9. Sinon → briefing standard
+10. **Après le briefing** → déléguer à `session-orchestrator` :
+    → passer le type de session détecté (brain / work / deploy / debug / coach / brainstorm)
+    → session-orchestrator résout les couches de contexte (session-types.md)
+    → session-orchestrator active secrets-guardian en mode passif
+    → session-orchestrator prend ownership du close
+
+## Lecture des signaux CHECKPOINT / HANDOFF
+
+Quand `BRAIN-INDEX.md ## Signals` contient un signal de type `CHECKPOINT` ou `HANDOFF`
+dont le champ `Pour` correspond à `brain_name@machine` ou au `sess-id` de la session :
+
+```
+1. Lire le payload : extraire le chemin "→ handoffs/<fichier>.md"
+2. Lire brain/handoffs/<fichier>.md
+3. Afficher AVANT le briefing standard :
+
+⚡ Handoff détecté — <type> de <sess-source>
+   Projet     : <projet>
+   Fait       : <résumé ce qui a été fait>
+   État actuel: <état>
+   → Prochaine étape : <action concrète>
+   → Fichier complet : handoffs/<fichier>.md
+
+→ Reprendre depuis ce point ? (ou voir /handoffs/<fichier>.md pour le détail)
+
+4. Marquer le signal "delivered" dans ## Signals (champ État : pending → delivered)
+5. Commiter : "bsi: signal <sig-id> delivered"
+```
+
+**Si le fichier handoff est absent :**
+→ Afficher : "⚡ Signal <type> détecté — handoff file introuvable : handoffs/<fichier>.md"
+→ Ne pas bloquer le briefing.
+
+## Alerte claims stale
+
+Si `BRAIN-INDEX.md ## Claims stale` contient des entrées :
+
+```
+⚠️ Claim(s) stale détecté(s) — action requise avant de commencer :
+  • sess-<id> — expiré le <date> — <scope>
+  Que faire : "bsi stale resolve <sess-id>" ou laisser si déjà traité.
+```
+
+Ne pas bloquer le briefing — afficher l'alerte, continuer.
 
 ## Règle MYSECRETS — non négociable
 
@@ -87,6 +204,7 @@ Chargées uniquement sur trigger — jamais au démarrage à l'aveugle.
 | Session portabilité / nouvelle machine | `brain/profil/CLAUDE.md.example` | Contexte install |
 | Session agent-review | `brain/profil/context-hygiene.md` + `brain/profil/memory-integrity.md` | Les 4 fondements |
 | Fichiers non commités détectés | `brain/profil/memory-integrity.md` | Rappel : un commit = un agent = un scope |
+| Type de session résolu | `brain/profil/session-types.md` | Couches de contexte à charger — délégué à session-orchestrator |
 
 ---
 
@@ -105,7 +223,7 @@ Puis briefing standard :
 ```
 Bonjour. Voici l'état du système — <DATE>.
 
-Instance : <brain_name>@<machine>  [<feature_set>]
+Instance : <brain_name>@<machine>  [<feature_set>]  kernel v<kernel_version>
 Mode actif : <mode>  (<contrainte principale si non-prod>)
 
 Projets actifs
@@ -119,6 +237,11 @@ Prochain todo prioritaire
 
 ⚠️  Alertes
   <items ⚠️ dans focus.md ou todo/> — vide si rien
+
+Métabolisme                   ← afficher uniquement si progression/metabolism/ contient des données
+  Dernière session  : health_score <X.XX>  (<sess-id>)
+  Ratio 7j          : use-brain/<N> build-brain/<N> → <✅ sain | ⚠️ boucle narcissique>
+  ⚠️ Mode conserve recommandé   ← afficher uniquement si seuil dépassé (context_at_close > 60 ou ratio < 0.5)
 
 Sessions actives              ← afficher uniquement si claims BSI présents
   <sess-id@machine>  claim sur <fichier> — depuis <TTL>
@@ -236,8 +359,8 @@ CLAUDE.md minimal cible :
 
 **Ne fait pas :**
 - Prendre des décisions techniques
-- Modifier des fichiers
-- Commiter quoi que ce soit
+- Modifier des fichiers (sauf BRAIN-INDEX.md pour les claims BSI — voir **Boot claim automatique**)
+- Commiter quoi que ce soit (sauf `bsi: open/close claim` — voir **Boot claim automatique**)
 - Invoquer des agents directement — il prépare, l'utilisateur décide
 - Remplacer l'orchestrator pour le routing de tâches en cours de session
 
@@ -266,11 +389,12 @@ CLAUDE.md minimal cible :
 
 | Avec | Pour quoi |
 |------|-----------|
+| `session-orchestrator` | **Câblé** — reçoit le type de session après briefing, gère contexte + close complet |
 | `coach` | Permanent — coach observe dès le démarrage |
 | `orchestrator` | Si intent multi-domaines détecté |
 | `git-analyst` | Si fichiers non commités détectés au briefing |
-| `todo-scribe` | En fin de session — met à jour les todos |
-| `scribe` | En fin de session — met à jour le brain |
+| `todo-scribe` | En fin de session — déclenché par session-orchestrator |
+| `scribe` | En fin de session — déclenché par session-orchestrator |
 
 ---
 
@@ -304,3 +428,8 @@ Ne pas invoquer si :
 | 2026-03-14 | Phase 3 — lecture feature_set (brain-compose.local.yml), filtrage agents par tier, scan CHECKPOINT avant briefing, Instance dans le briefing |
 | 2026-03-14 | MYSECRETS — chargement silencieux au démarrage, jamais affiché, disponible en session |
 | 2026-03-14 | Phase 4 — système de modes : résolution priorité 4 niveaux, detectmode, affichage mode dans briefing, lecture ## Claims BSI (sessions parallèles visibles au boot) |
+| 2026-03-14 | Fix boot claim — protocole auto-claim + commit + push à la fin du briefing. Sans push, le VPS et les sessions parallèles sont aveugles. |
+| 2026-03-14 | v0.5.0 — kernel_version affiché dans le briefing (Instance line), check drift local vs kernel, source brain-compose.yml ajoutée |
+| 2026-03-14 | Métabolisme v1 — source progression/metabolism/README.md, section Métabolisme dans briefing, mode conserve, étape 8 ordre de lecture |
+| 2026-03-14 | MYSECRETS passive — vérification présence uniquement au boot, chargement réel délégué à secrets-guardian sur trigger |
+| 2026-03-14 | Câblage session-orchestrator — délégation boot context (étape 10) + close sequence complète, composition mise à jour |
