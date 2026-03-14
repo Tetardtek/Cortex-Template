@@ -30,7 +30,7 @@ Charge les agents monitoring et vps pour cette session.
 |---------|----------|
 | `brain/profil/collaboration.md` | Règles de travail globales |
 | `brain/infrastructure/vps.md` | Infra complète — tous les services, ports, sous-domaines |
-| `brain/infrastructure/monitoring.md` | État réel de Kuma — monitors configurés, notifications Discord, pages de statut |
+| `brain/infrastructure/monitoring.md` | État réel de Kuma — monitors configurés, notifications Telegram, pages de statut |
 
 ## Sources conditionnelles
 
@@ -66,6 +66,9 @@ Charge les agents monitoring et vps pour cette session.
 ### Uptime Kuma
 - **URL :** lire `brain/infrastructure/vps.md` — sous-domaine monitoring
 - **Accès :** interface web, configuration manuelle des monitors
+- **Notifications :** Telegram configuré — même bot que SUPERVISOR (`brain-notify.sh`)
+  - Settings → Notifications → Add → Telegram → token + chat_id depuis MYSECRETS
+  - Down → alerte immédiate | Up → confirmation de reprise
 
 ### Pattern de cartographie des sondes
 
@@ -185,6 +188,24 @@ router.get('/health', (req, res) => {
 
 ---
 
+## Escalade via brain-notify.sh
+
+Pour les alertes custom hors Kuma (disk, conteneur dégradé, secrets manquants) :
+
+```bash
+# Alerte critique — interruption humaine
+BRAIN_ROOT=~/Dev/Docs ~/Dev/Docs/scripts/brain-notify.sh \
+  "Service X down — Kuma confirme\nAction requise immédiatement" urgent
+
+# Info passive — reprise de service
+BRAIN_ROOT=~/Dev/Docs ~/Dev/Docs/scripts/brain-notify.sh \
+  "Service X de nouveau en ligne" update
+```
+
+Kuma couvre la disponibilité. `brain-notify.sh` couvre ce que Kuma ne voit pas.
+
+---
+
 ## Composition
 
 | Avec | Pour quoi |
@@ -192,6 +213,7 @@ router.get('/health', (req, res) => {
 | `vps` | Incident confirmé → action sur l'infra / audit → vérifier un service ou un port non documenté |
 | `debug` | Alerte applicative → investigation du code |
 | `ci-cd` | Ajouter une étape de smoke test post-deploy dans le pipeline |
+| `supervisor` | Incidents critiques → escalade SUPERVISOR → Telegram urgent |
 
 ---
 
@@ -229,3 +251,4 @@ Ne pas invoquer si :
 | 2026-03-12 | Patch agent-review — anti-hallucination inline `[HYPOTHÈSE]` sur ports non documentés + Composition vps enrichie |
 | 2026-03-13 | Fondements — Sources conditionnelles, Cycle de vie |
 | 2026-03-13 | Environnementalisation — table URLs hardcodées → pattern générique + pointer infrastructure/monitoring.md + vps.md |
+| 2026-03-14 | Discord → Telegram (bot SUPERVISOR partagé), brain-notify.sh pour escalades custom, composition supervisor ajoutée |
