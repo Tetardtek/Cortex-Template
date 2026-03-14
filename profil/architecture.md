@@ -1,8 +1,8 @@
-# ARCHITECTURE — Brain System
+# architecture.md — Mémoire des décisions fondatrices
 
-> Archivé dans `profil/architecture.md` — mémoire épisodique du brain.
-> Ce fichier reste à la racine comme point d'entrée lisible pour les humains et les forks.
-> La loi active du système est dans `KERNEL.md`.
+> **Type :** Invariant — mémoire épisodique du brain
+> Propriétaire : lecture seule — jamais modifié rétroactivement, uniquement enrichi
+> Usage : brainstorm, content, compréhension du système par une nouvelle instance
 >
 > Rédigé : 2026-03-14 — pendant que c'est chaud.
 > Les décisions non-évidentes, les pourquoi, les trade-offs assumés.
