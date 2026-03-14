@@ -2,7 +2,162 @@
 # Versionné dans le kernel. Schema + feature flags + registre agents.
 # Géré par l'agent brain-compose — ne pas éditer manuellement.
 
-version: "0.3.0"
+version: "0.4.0"
+
+# ---
+# Modes — comportement de session (permissions BSI + agents autorisés)
+# Priorité : déclaration explicite > detectmode > brain-compose.local.yml > prod (safe default)
+# ---
+
+modes:
+
+  prod:
+    description: "Session normale — Invariants protégés, écriture confirmée"
+    permissions:
+      invariant: confirm
+      contexte: confirm
+      reference: write
+      personnel: write
+      brain_write: false
+      forge: false
+    agents: "*"
+
+  dev:
+    description: "Forge — pleine puissance, écriture libre sur le brain"
+    permissions:
+      invariant: confirm          # même en dev, les Invariants demandent confirmation
+      contexte: write
+      reference: write
+      personnel: write
+      brain_write: true
+      forge: true
+    agents: "*"
+
+  toolkit-only:
+    description: "Croissance autonome — toolkit source unique, docs officielles si inconnu"
+    permissions:
+      invariant: false
+      contexte: false
+      reference: read
+      personnel: false
+      brain_write: toolkit-scribe-only
+      forge: false
+    docs_fetch: ask               # always | ask | never
+    agents: [toolkit-scribe, debug, code-review]
+    behavior: |
+      Pattern connu dans toolkit → agit seul
+      Pattern inconnu → docs officielles (selon docs_fetch) → toolkit-scribe écrit
+      Jamais d'invention
+
+  brainstorm:
+    description: "Réflexion scopée — pas d'écriture système"
+    permissions:
+      invariant: false
+      contexte: scope-only
+      reference: read
+      personnel: false
+      brain_write: false
+      forge: false
+    agents: [brainstorm, coach]
+
+  coach:
+    description: "Mentorat — progression en écriture, brain en lecture"
+    permissions:
+      invariant: false
+      contexte: false
+      reference: read
+      personnel: write
+      brain_write: progression-only
+      forge: false
+    agents: [coach, coach-scribe, scribe]
+
+  deploy:
+    description: "Déploiement — agents infra uniquement"
+    permissions:
+      invariant: false
+      contexte: false
+      reference: read
+      personnel: false
+      brain_write: false
+      forge: false
+    agents: [vps, ci-cd, pm2, secrets-guardian]
+
+  debug:
+    description: "Debug — lecture + agents debug"
+    permissions:
+      invariant: false
+      contexte: scope-only
+      reference: read
+      personnel: false
+      brain_write: false
+      forge: false
+    agents: [debug, code-review]
+
+  projet-audit:
+    description: "Audit lecture seule — todo-scribe uniquement en écriture"
+    permissions:
+      invariant: false
+      contexte: false
+      reference: read
+      personnel: false
+      brain_write: todo-scribe-only
+      forge: false
+    agents: [coach, agent-review]
+
+  review-front:
+    description: "Review frontend"
+    permissions:
+      invariant: false
+      contexte: false
+      reference: read
+      personnel: false
+      brain_write: false
+      forge: false
+    agents: [code-review, frontend-stack, testing]
+
+  review-back:
+    description: "Review backend/sécu"
+    permissions:
+      invariant: false
+      contexte: false
+      reference: read
+      personnel: false
+      brain_write: false
+      forge: false
+    agents: [code-review, security, testing]
+
+  HANDOFF:
+    description: "Reprise propre depuis une session précédente"
+    permissions:
+      invariant: false
+      contexte: scope-only
+      reference: read
+      personnel: false
+      brain_write: false
+      forge: false
+    agents: "*"
+
+# ---
+# detectmode — helloWorld détecte le mode selon les signaux de session
+# ---
+
+detectmode:
+  signals:
+    - match: [vps, ci-cd, pm2]
+      mode: deploy
+    - match: [code-review, frontend-stack]
+      mode: review-front
+    - match: [code-review, security]
+      mode: review-back
+    - match: [debug]
+      mode: debug
+    - match: [brainstorm]
+      mode: brainstorm
+    - match: [coach, progression]
+      mode: coach
+    - bsi_claim: HANDOFF
+      mode: HANDOFF
+  default: prod
 
 # ---
 # Feature sets — contrôlent les agents invocables par instance
@@ -76,3 +231,6 @@ changelog:
   - version: "0.3.0"
     date: "2026-03-14"
     notes: "orchestrator-scribe (free), brain-compose+config-scribe (pro), CHECKPOINT signal, session-as-identity, orchestration-patterns"
+  - version: "0.4.0"
+    date: "2026-03-14"
+    notes: "Système de modes — 11 modes, permissions BSI par mode, detectmode, toolkit-only autonome avec docs_fetch"

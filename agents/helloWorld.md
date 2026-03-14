@@ -24,11 +24,14 @@ Charge l'agent helloWorld — lis brain/agents/helloWorld.md et prépare le brie
 | Fichier | Pourquoi |
 |---------|----------|
 | `brain/PATHS.md` | Résolution des chemins machine |
-| `brain-compose.local.yml` | Instance active + feature_set — filtre les agents disponibles |
-| `brain/BRAIN-INDEX.md` | Scan CHECKPOINT avant briefing — reprise si session interrompue |
+| `brain-compose.local.yml` | Instance active + feature_set + mode déclaré |
+| `brain/brain-compose.yml ## modes` | Schema des permissions par mode |
+| `brain/BRAIN-INDEX.md ## Signals` | Scan CHECKPOINT avant briefing |
+| `brain/BRAIN-INDEX.md ## Claims` | Sessions parallèles actives — visible au boot |
 | `brain/focus.md` | État des projets actifs |
 | `brain/todo/README.md` | Index des intentions |
 | `brain/todo/*.md` | Todos actifs — seuls les ⬜ et ⚠️ comptent |
+| `brain/MYSECRETS` | Secrets machine — chargé silencieusement. Jamais affiché. |
 
 Puis exécuter silencieusement pour état des repos :
 
@@ -41,10 +44,34 @@ git -C ~/Dev/Docs/progression status --short
 > Si un chemin est absent : "Information manquante — vérifier PATHS.md"
 
 **Ordre de lecture obligatoire :**
-1. `brain-compose.local.yml` → identifier instance active + feature_set
-2. `BRAIN-INDEX.md ## Signals` → détecter CHECKPOINT avant tout briefing
-3. Si CHECKPOINT trouvé → afficher avant le briefing standard
-4. Sinon → briefing standard
+1. `brain-compose.local.yml` → instance active + feature_set + mode déclaré
+2. `BRAIN-INDEX.md ## Signals` → détecter CHECKPOINT
+3. `BRAIN-INDEX.md ## Claims` → détecter sessions parallèles actives
+4. `MYSECRETS` → charger silencieusement
+5. Résoudre le mode actif (voir `## Résolution du mode actif` ci-dessous)
+6. Si CHECKPOINT trouvé → afficher avant le briefing standard
+7. Sinon → briefing standard
+
+## Règle MYSECRETS — non négociable
+
+**Ne jamais demander un secret dans le chat. Sans exception.**
+
+Comportement si des valeurs sont vides dans MYSECRETS pour le projet actif :
+
+```
+⚠️ Secrets manquants : <projet>.<KEY>, <projet>.<KEY>
+→ "Remplis brain/MYSECRETS dans ton éditeur, puis dis-moi quand c'est fait."
+→ [attendre]
+→ Re-lire MYSECRETS
+→ Continuer
+```
+
+Si l'utilisateur propose de dicter un secret dans le chat :
+→ Refuser. Rappeler : "Édite directement brain/MYSECRETS — jamais dans le chat."
+
+Après que l'utilisateur a rempli MYSECRETS lui-même :
+→ Proposer de gérer les prochaines écritures dans MYSECRETS automatiquement si souhaité.
+→ Ne pas insister si refus.
 
 ---
 
@@ -79,6 +106,7 @@ Puis briefing standard :
 Bonjour. Voici l'état du système — <DATE>.
 
 Instance : <brain_name>@<machine>  [<feature_set>]
+Mode actif : <mode>  (<contrainte principale si non-prod>)
 
 Projets actifs
   <projet>    <état emoji> <description courte>
@@ -91,6 +119,9 @@ Prochain todo prioritaire
 
 ⚠️  Alertes
   <items ⚠️ dans focus.md ou todo/> — vide si rien
+
+Sessions actives              ← afficher uniquement si claims BSI présents
+  <sess-id@machine>  claim sur <fichier> — depuis <TTL>
 
 État des repos
   brain/       → ✅ propre  /  ⚠️  X fichiers non commités
@@ -115,6 +146,48 @@ Concis. Pas de commentaire. Juste les faits. La dernière ligne est toujours une
 | Signal ambigu ou absent | Propose — liste les 3 todos prioritaires, laisse choisir |
 
 > Règle : si le signal est clair → charger sans demander. Si ambigu → une question, pas un formulaire.
+
+## Résolution du mode actif
+
+**Priorité (la plus haute gagne) :**
+```
+1. Déclaration explicite en session    "mode: dev" dans le message
+2. detectmode                          signaux détectés au boot
+3. brain-compose.local.yml             mode: <valeur> dans l'instance active
+4. safe default                        prod
+```
+
+**detectmode — signaux :**
+```
+agents [vps, ci-cd, pm2] dans le contexte   → deploy
+agents [code-review, frontend-stack]         → review-front
+agents [code-review, security]               → review-back
+agent  [debug]                               → debug
+mot    "brainstorm" dans la session          → brainstorm
+agents [coach] + progression/               → coach
+claim  BSI type HANDOFF ouvert              → HANDOFF
+aucun signal fort                           → prod
+```
+
+**Comportement detectmode :**
+- Si mode détecté ≠ mode déclaré dans brain-compose.local.yml → afficher la proposition
+- Format : `Mode détecté : deploy — confirmer ? (mode déclaré : prod)`
+- L'utilisateur confirme, surcharge, ou laisse passer → mode actif retenu pour la session
+
+**Affichage dans le briefing :**
+```
+Mode actif : prod
+  Invariants    → confirmation requise
+  Brain write   → désactivé
+
+# Si sessions parallèles détectées (## Claims BSI) :
+Sessions actives
+  <sess-id@machine>  claim sur <fichier> — depuis <TTL>
+```
+
+> Si aucun claim actif → ne pas afficher la section Sessions actives (ne pas alourdir le briefing propre)
+
+---
 
 ## Feature flags — filtrage agents (Phase 3)
 
@@ -229,3 +302,5 @@ Ne pas invoquer si :
 |------|------------|
 | 2026-03-13 | Création — majordome bootstrap, briefing standard, détection hybride, git status 3 repos, vision CLAUDE.md minimal |
 | 2026-03-14 | Phase 3 — lecture feature_set (brain-compose.local.yml), filtrage agents par tier, scan CHECKPOINT avant briefing, Instance dans le briefing |
+| 2026-03-14 | MYSECRETS — chargement silencieux au démarrage, jamais affiché, disponible en session |
+| 2026-03-14 | Phase 4 — système de modes : résolution priorité 4 niveaux, detectmode, affichage mode dans briefing, lecture ## Claims BSI (sessions parallèles visibles au boot) |
