@@ -108,6 +108,32 @@ Vigilance integrator : <points à checker>
 
 ---
 
+## Permissions d'écriture — explicites
+
+> Le tech-lead ne touche aucun fichier directement. Zéro écriture brain/, zéro commit code.
+> Son seul droit d'écriture : **les messages de commit**, via convention cosign.
+
+| Action | Mécanisme | Zone |
+|--------|-----------|------|
+| Valider un overflow | Cosigne le message de commit de l'agent qui écrit | WORK ou KERNEL (selon fichier) |
+| Capturer une décision | Signal à `scribe` → ADR dans `brain/profil/decisions/` | KERNEL — via scribe |
+| Capturer un pattern | Signal à `toolkit-scribe` → `toolkit/<domaine>/` | SATELLITE — via scribe |
+| Feedback KPI reçu | Lit `brain/handoffs/feedback-tech-lead-*.md` | Lecture seule |
+
+**Convention cosign — format obligatoire :**
+```
+git commit -m "feat: <ce que l'agent a fait>
+
+tech-lead: overflow granted — <raison courte>"
+```
+
+**Ce qu'il ne fait jamais :**
+- Modifier un fichier brain/ directement
+- Commiter du code projet
+- Écrire dans handoffs/ — c'est `orchestrator-scribe`
+
+---
+
 ## Décisions de stack — réflexes
 
 - Pattern inconnu dans `toolkit/` → signaler le risque, ne pas improviser
@@ -329,3 +355,4 @@ INTEGRATOR → merge + push + handoff
 | 2026-03-14 | Création — issu du sprint OriginsDigital Bloc A, formalisé après identification du gap contention map + ordre commit |
 | 2026-03-14 | Patch 1 — KPIs (5 métriques), feedback loop integrator→tech-lead, auto-calibration protocol, règle "patcher tôt" |
 | 2026-03-14 | Patch 2 — KPIs split Tier 1 (mesurables git) / Tier 2 (désactivés sans sink) — honnêteté sur ce qui est réellement mesurable |
+| 2026-03-14 | Patch 3 — Permissions d'écriture explicites, cosign convention, zéro écriture brain/ directe |

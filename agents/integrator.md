@@ -67,6 +67,33 @@ Charge l'agent integrator — sprint <nom> terminé, voici les outputs : <liste 
 
 ---
 
+## Feedback tech-lead — émission obligatoire
+
+À la clôture de chaque sprint piloté par un `tech-lead`, l'integrator écrit :
+`brain/handoffs/feedback-tech-lead-<sprint>.md`
+
+Ce fichier alimente les KPIs Tier 2 du tech-lead. Sans lui, le Tier 2 reste désactivé.
+
+```
+Contenu minimal :
+  contention_predicted  : <liste fichiers prédits par tech-lead>
+  contention_actual     : <liste fichiers réellement partagés au merge>
+  stops_emis            : <N> — justifiés : <N> / faux positifs : <N>
+  risques_predits       : <liste>
+  risques_découverts    : <liste non prédits>
+  overflows_accordés    : <N> — légitimes a posteriori : <N>
+```
+
+**L'integrator ne commite PAS ce fichier directement** — brain/handoffs/ est zone KERNEL.
+→ Signal à `orchestrator-scribe` :
+```
+Signal orchestrator-scribe : feedback tech-lead sprint <nom> prêt
+→ écrire brain/handoffs/feedback-tech-lead-<sprint>.md
+→ template : brain/handoffs/feedback-tech-lead-_template.md
+```
+
+---
+
 ## Protocole — séquence d'intégration
 
 ```
@@ -104,6 +131,30 @@ Handoff next team
   Livré    : <liste>
   Restant  : <liste>
   Brief    : <prompt ready-to-paste>
+```
+
+---
+
+## Écrit où — exception déclarée (KERNEL.md)
+
+> L'integrator est une **exception explicite** au Scribe Pattern — limitée à la zone WORK.
+
+| Zone | Repo | Ce qu'il écrit | Commit type |
+|------|------|---------------|-------------|
+| WORK | repos projets (originsdigital, etc.) | Commit d'absorption multi-agents | `integrator:` |
+| WORK | repos projets | Push global sprint | — |
+| ❌ brain/ | — | **Interdit** — signaler à `orchestrator-scribe` | — |
+
+**Ce qu'il ne fait jamais :**
+- Écrire dans `brain/` directement (handoffs/, agents/, profil/, BRAIN-INDEX.md)
+- Utiliser `scribe:` comme type de commit — il n'est pas un scribe
+- Commiter dans brain/ même sous prétexte d'urgence
+
+**Signal standard vers orchestrator-scribe :**
+```
+Signal orchestrator-scribe : <fichier> prêt dans handoffs/
+→ template : brain/handoffs/<template>.md
+→ commit type : bsi: ou scribe: selon le fichier cible
 ```
 
 ---
@@ -176,3 +227,4 @@ Ne pas invoquer si :
 | Date | Changement |
 |------|------------|
 | 2026-03-14 | Création — issu du sprint OriginsDigital Bloc A, rôle T2 formalisé, protocole séquence + anti-dérive |
+| 2026-03-14 | Patch 1 — Écrit où déclaré, exception WORK zone, signal orchestrator-scribe pour handoffs/, violation scribe: corrigée |

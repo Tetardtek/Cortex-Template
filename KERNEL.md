@@ -97,6 +97,7 @@ Repos projets : GitHub, Gitea projets clients/perso
 | `feat:` | KERNEL agents/ | recruiter + humain | Nouvel agent forgé, capacité ajoutée |
 | `fix:` | KERNEL agents/ | debug / agent-review | Correction comportement |
 | `bsi:` | KERNEL BRAIN-INDEX | orchestrator-scribe | Open/close claim, signal |
+| `integrator:` | WORK (repos projets) | integrator | Commit d'absorption multi-agents, push sprint |
 | `scribe:` | INSTANCE + KERNEL profil/ | scribe | brain update (focus, projets, profil) |
 | `metabolism:` | SATELLITES progression/ | metabolism-scribe | Fin de session — métriques |
 | `todo:` | SATELLITES todo/ | todo-scribe | Intentions fermées/ouvertes |
@@ -106,6 +107,11 @@ Repos projets : GitHub, Gitea projets clients/perso
 **Règle scribe :**
 > Un agent métier ne commit jamais directement.
 > Il signal → le scribe compétent écrit → dans sa zone uniquement.
+
+**Exceptions explicites (comme `helloWorld` pour `bsi:`) :**
+> `integrator` → commit direct en zone WORK uniquement (repos projets, hors brain/)
+>                Pour brain/handoffs/ → signal à `orchestrator-scribe`
+> `tech-lead`  → aucune écriture directe — cosigne les messages de commit uniquement
 
 ---
 
