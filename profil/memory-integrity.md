@@ -1,5 +1,6 @@
 # Memory Integrity — Règle fondamentale d'écriture
 
+> **Type :** Invariant
 > Décision architecturale — session 2026-03-13
 > Complémentaire de `context-hygiene.md` (chargement) et `scribe-pattern.md` (qui écrit quoi)
 

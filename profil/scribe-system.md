@@ -1,5 +1,6 @@
 # Scribe System — Cartographie officielle du Scribe Pattern
 
+> **Type :** Référence
 > Décision architecturale — session 2026-03-13
 > Complémentaire de `memory-integrity.md` (règles d'écriture) et `context-hygiene.md` (chargement)
 

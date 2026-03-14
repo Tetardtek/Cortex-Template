@@ -1,5 +1,6 @@
 # Context Hygiene — Règle fondamentale du brain
 
+> **Type :** Invariant
 > Décision architecturale — session 2026-03-13
 > Voir aussi `brain/profil/memory-architecture.md` — les trois pilliers (TTL, Sectionnarisation, Stratification)
 

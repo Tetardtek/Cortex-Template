@@ -1,5 +1,6 @@
 # Memory Architecture — Les trois pilliers du brain
 
+> **Type :** Référence
 > Décision architecturale fondatrice — session 2026-03-13
 > Complète `context-hygiene.md` (chargement) et `memory-integrity.md` (écriture)
 

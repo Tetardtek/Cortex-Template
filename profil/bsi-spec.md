@@ -1,5 +1,6 @@
 # BSI — Brain Session Index
 
+> **Type :** Contexte — propriétaire : `scribe`
 > Spécification complète — version 1.0
 > Rédigée : 2026-03-14
 > Registre live : `brain/BRAIN-INDEX.md`

@@ -1,5 +1,6 @@
 # Anti-hallucination — Règle fondamentale d'assertion
 
+> **Type :** Invariant
 > Décision architecturale — session 2026-03-13
 > Complémentaire de `context-hygiene.md` (chargement) et `memory-integrity.md` (écriture)
 

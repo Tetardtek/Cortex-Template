@@ -1,5 +1,6 @@
 # Bootstrap Spec — Auto vs Explicite + Réflexes conventionnels
 
+> **Type :** Contexte — propriétaire : `helloWorld`
 > Rédigé : 2026-03-14
 > Résout : "Audit bootstrap — agents auto-déclenchés vs invocation explicite"
 >          "Réflexes conventionnels — invocations implicites par contexte"

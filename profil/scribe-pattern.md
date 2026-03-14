@@ -1,5 +1,6 @@
 # Scribe Pattern — Idéologie du brain
 
+> **Type :** Invariant
 > Décision architecturale — session 2026-03-13
 
 ---
