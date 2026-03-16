@@ -1,3 +1,9 @@
+---
+name: _template
+type: template
+context_tier: cold
+---
+
 # Agent : <NOM>
 
 > Dernière validation : <DATE>

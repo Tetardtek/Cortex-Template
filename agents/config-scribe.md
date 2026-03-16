@@ -1,3 +1,10 @@
+---
+name: config-scribe
+type: agent
+context_tier: warm
+status: active
+---
+
 # Agent : config-scribe
 
 > Dernière validation : 2026-03-13
@@ -75,9 +82,9 @@ Proposer des valeurs par défaut quand c'est possible.
 Catégorie 1 — Machine
   Nom/identifiant de cette machine
   Chemin racine Dev/ (ex: ~/Dev/)
-  Chemin brain/ (ex: ~/Dev/Docs/)
+  Chemin brain/ (ex: ~/Dev/Brain/)
   Chemin toolkit/ (ex: ~/Dev/toolkit/)
-  Chemin progression/ (ex: ~/Dev/Docs/progression/)
+  Chemin progression/ (ex: ~/Dev/Brain/progression/)
 
 Catégorie 2 — VPS / Serveur
   IP publique

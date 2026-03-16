@@ -10,37 +10,52 @@
 set -euo pipefail
 
 TARGET="${1:-both}"
-BRAIN_ROOT="${BRAIN_ROOT:-$HOME/Dev/Docs}"
+BRAIN_ROOT="${BRAIN_ROOT:-$HOME/Dev/Brain}"
 VPS_USER="root"
 VPS_IP=$(grep '^VPS_IP=' "$BRAIN_ROOT/MYSECRETS" | cut -d= -f2-)
 VPS_WATCH_ROOT="/home/tetardtek/brain-watch"
 GITEA_BRAIN_URL="git@git.tetardtek.com:Tetardtek/brain.git"
 
 install_local() {
-  echo "=== Installation SUPERVISOR local ==="
+  echo "=== Installation SUPERVISOR local (systemd user) ==="
 
   chmod +x "$BRAIN_ROOT/scripts/brain-notify.sh"
   chmod +x "$BRAIN_ROOT/scripts/brain-watch-local.sh"
 
-  # Lancer en background
-  LOGFILE="$HOME/brain-watch.log"
-  nohup "$BRAIN_ROOT/scripts/brain-watch-local.sh" >> "$LOGFILE" 2>&1 &
-  echo "PID $! — logs : $LOGFILE"
+  # Créer le service systemd user
+  SERVICE_DIR="$HOME/.config/systemd/user"
+  mkdir -p "$SERVICE_DIR"
 
-  # Ajouter au .bashrc pour redémarrage automatique (si pas déjà présent)
-  MARKER="# brain-watch-local"
-  if ! grep -q "$MARKER" "$HOME/.bashrc" 2>/dev/null; then
-    cat >> "$HOME/.bashrc" << EOF
+  cat > "$SERVICE_DIR/brain-watch-local.service" << EOF
+[Unit]
+Description=Brain SUPERVISOR local — crash handler + BSI watcher
+After=default.target
 
-$MARKER
-if ! pgrep -f "brain-watch-local.sh" > /dev/null; then
-  nohup $BRAIN_ROOT/scripts/brain-watch-local.sh >> $HOME/brain-watch.log 2>&1 &
-fi
+[Service]
+Type=simple
+ExecStart=$BRAIN_ROOT/scripts/brain-watch-local.sh
+Restart=on-failure
+RestartSec=10
+Environment=BRAIN_ROOT=$BRAIN_ROOT
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=default.target
 EOF
-    echo "Ajouté au .bashrc — démarrage automatique à l'ouverture du terminal"
-  fi
 
-  echo "✅ SUPERVISOR local installé"
+  systemctl --user daemon-reload
+  systemctl --user enable brain-watch-local
+  systemctl --user start  brain-watch-local
+  systemctl --user status brain-watch-local --no-pager | head -8
+
+  # Linger : service actif même sans session ouverte
+  loginctl enable-linger "$USER" 2>/dev/null || true
+
+  echo ""
+  echo "✅ brain-watch-local installé (systemd user)"
+  echo "   Logs : journalctl --user -u brain-watch-local -f"
+  echo "   Stop : systemctl --user stop brain-watch-local"
 }
 
 install_vps() {
@@ -116,4 +131,4 @@ echo "2. Copier le token dans MYSECRETS : BRAIN_TELEGRAM_TOKEN=<token>"
 echo "3. Envoyer /start au bot sur Telegram, puis :"
 echo "   bash brain/scripts/get-telegram-chatid.sh"
 echo "   → écrit BRAIN_TELEGRAM_CHAT_ID dans MYSECRETS directement — valeur jamais affichée"
-echo "4. Tester : BRAIN_ROOT=~/Dev/Docs brain/scripts/brain-notify.sh 'Test SUPERVISOR' urgent"
+echo "4. Tester : BRAIN_ROOT=~/Dev/Brain brain/scripts/brain-notify.sh 'Test SUPERVISOR' urgent"

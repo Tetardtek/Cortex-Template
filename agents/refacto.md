@@ -1,3 +1,11 @@
+---
+name: refacto
+type: agent
+context_tier: hot
+domain: [refacto, dette-technique, DDD]
+status: active
+---
+
 # Agent : refacto
 
 > Dernière validation : 2026-03-12

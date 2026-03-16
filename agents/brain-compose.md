@@ -1,3 +1,10 @@
+---
+name: brain-compose
+type: agent
+context_tier: warm
+status: active
+---
+
 # Agent : brain-compose
 
 > Dernière validation : 2026-03-13
@@ -135,7 +142,7 @@ le kernel. Dépendance unidirectionnelle — mettre à jour le kernel ne casse r
 ```
 Afficher toutes les instances de brain-compose.local.yml :
 
-  perso     ~/Dev/Docs/      full     hydrated    kernel: v0.1.0 ✅
+  perso     ~/Dev/Brain/      full     hydrated    kernel: v0.1.0 ✅
   client-xyz ~/Dev/client-xyz/ pro    partial     kernel: v0.1.0 ✅
   [active: perso]
 ```
@@ -168,6 +175,29 @@ Afficher toutes les instances de brain-compose.local.yml :
       Lire le changelog avant de continuer."
 5. Mettre à jour `last_kernel_sync` dans brain-compose.local.yml
 ```
+
+### `brain-compose up <nom>`
+
+```
+1. Lire brain-compose.local.yml → vérifier que <nom> existe
+2. Lire le chemin et brain_name de l'instance cible
+3. Confirmer le switch :
+   "Je vais activer l'instance <nom> :
+    - brain_root : <path>
+    - brain_name : <nom>
+    Cela met à jour ~/.claude/CLAUDE.md. On y va ?"
+4. Mettre à jour ~/.claude/CLAUDE.md :
+   - brain_root → <path>
+   - brain_name → <nom>
+   - Ligne "Source unique de vérité" → brain `<nom>` à `<path>`
+5. Mettre à jour brain-compose.local.yml :
+   - active: false sur l'instance précédente
+   - active: true sur <nom>
+6. Confirmer : "Instance <nom> active — relancer Claude pour appliquer."
+```
+
+> Règle : ne jamais modifier ~/.claude/CLAUDE.md sans confirmation explicite.
+> Si l'instance n'existe pas dans brain-compose.local.yml → proposer `brain-compose new`.
 
 ### `brain-compose diff <A> <B>`
 
@@ -310,3 +340,4 @@ Ne pas invoquer si :
 | Date | Changement |
 |------|------------|
 | 2026-03-13 | Création — orchestrateur multi-instances, symlinks Linux/Mac, semver v0.x.x, BYOK acté, feature flags Phase 3 |
+| 2026-03-14 | Ajout `brain-compose up` — switch d'instance via ~/.claude/CLAUDE.md + brain_name |

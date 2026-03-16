@@ -1,3 +1,11 @@
+---
+name: optimizer-db
+type: agent
+context_tier: hot
+domain: [MySQL, TypeORM, N+1, index, perf-db]
+status: active
+---
+
 # Agent : optimizer-db
 
 > Dernière validation : 2026-03-12

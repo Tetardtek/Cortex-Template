@@ -1,3 +1,10 @@
+---
+name: recruiter
+type: agent
+context_tier: warm
+status: active
+---
+
 # Agent : recruiter
 
 > Dernière validation : 2026-03-12
@@ -37,7 +44,8 @@ recruiter, je veux un agent qui fait <X>
 |---------|----------|
 | `brain/profil/collaboration.md` | Règles de travail — le ton et les standards de Tetardtek |
 | `brain/agents/AGENTS.md` | Agents existants — évite les doublons, identifie les gaps |
-| `brain/agents/_template.md` | Le moule — tout agent produit DOIT le respecter |
+| `brain/agents/_template.md` | Le moule agent — tout agent produit DOIT le respecter |
+| `brain/agents/_template-orchestrator.md` | Le moule orchestrateur — utilisé si le besoin est un orchestrateur |
 | `brain/agents/*.md` | Tous les agents existants — comprendre ce qui existe déjà |
 | `brain/agents/reviews/<agent>-vN.md` | Si disponible — gaps identifiés en conditions réelles avant d'améliorer |
 | `toolkit/` | Patterns validés en prod — les agents qu'il crée connaissent ces patterns |
@@ -92,6 +100,20 @@ Avant de produire un profil d'agent, le recruiter **pose ces questions** dans l'
    → Pour chaque point : documenter explicitement "si incertain, dire X"
 
 Il ne produit un profil que quand il a les réponses. Pas avant.
+
+### Sélection du template — obligatoire avant de forger
+
+```
+Besoin = agent métier / scribe / coach / meta
+  → fork _template.md
+
+Besoin = orchestrateur (détecte des signaux, active des agents, ne produit pas)
+  → fork _template-orchestrator.md
+  → vérifier : ## Signaux détectés + ## Agents activés + ## Frontières nettes
+```
+
+> Si le besoin est ambigu : poser la question "est-ce qu'il produit quelque chose lui-même ?"
+> Oui → agent. Non → orchestrateur.
 
 ### Format des questions — QCM obligatoire
 
@@ -213,3 +235,4 @@ Revue de code :
 | 2026-03-12 | Création — meta-agent, forge les autres, ne peut qu'orchestrer |
 | 2026-03-12 | Protocole QCM — questions avec propositions lettrées + explications si concept flou |
 | 2026-03-13 | Fondements — Sources conditionnelles (invariants sur trigger), Cycle de vie, Scribe Pattern (signal scribe post-forge) |
+| 2026-03-14 | Sélection template — fork `_template-orchestrator.md` si besoin = orchestrateur, règle "produit quelque chose ?" |

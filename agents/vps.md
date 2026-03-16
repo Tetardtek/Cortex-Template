@@ -1,3 +1,11 @@
+---
+name: vps
+type: agent
+context_tier: hot
+domain: [VPS, Apache, Docker, SSL, vhost, certbot, deploy]
+status: active
+---
+
 # Agent : vps
 
 > Dernière validation : 2026-03-12
@@ -27,7 +35,7 @@ Charge l'agent vps — lis brain/agents/vps.md et applique son contexte.
 | `brain/profil/collaboration.md` | Règles de travail globales |
 | `brain/infrastructure/vps.md` | Architecture, containers, ressources |
 | `brain/infrastructure/apache.md` | Config Apache, vhosts actifs |
-| `brain/infrastructure/ssh.md` | Accès SSH (`root@31.97.154.126`, clé `~/.ssh/id_ed25519`) |
+| `brain/infrastructure/ssh.md` | Accès SSH (`root@$VPS_HOST`, clé `~/.ssh/id_ed25519`) |
 | `toolkit/apache/` | Templates vhosts validés en prod |
 | `toolkit/docker/` | docker-compose validés en prod |
 

@@ -1,3 +1,19 @@
+---
+name: metabolism-scribe
+context_tier: warm
+status: active
+brain:
+  version:   1
+  type:      protocol
+  scope:     kernel
+  owner:     metabolism-scribe
+  writer:    human
+  lifecycle: stable
+  read:      trigger
+  triggers:  [coach, build-brain]
+  export:    true
+---
+
 # Agent : metabolism-scribe
 
 > Dernière validation : 2026-03-14
@@ -22,16 +38,25 @@ Charge l'agent metabolism-scribe — lis brain/agents/metabolism-scribe.md et ap
 Invocation en fin de session (via `session-orchestrator` ou manuelle) :
 ```
 metabolism-scribe, voici les données de cette session :
-  tokens_used     : <depuis /context>
-  context_peak    : <pic observé pendant la session>
-  context_at_close: <valeur actuelle>
-  duration_min    : <durée>
-  commits         : <nombre>
-  todos_closed    : <nombre>
-  mode            : <mode actif>
-  type            : build-brain | use-brain | auto
-  agents_loaded   : [liste des agents chargés pendant la session]
-  notes           : <optionnel>
+  # ── KPI obligatoires ──────────────────────────────────────────────────────
+  tokens_used          : <depuis /context — OBLIGATOIRE>
+  context_peak         : <pic % observé pendant la session — OBLIGATOIRE>
+  context_at_close     : <valeur % actuelle — OBLIGATOIRE>
+  duration_min         : <durée en minutes — OBLIGATOIRE>
+  commits              : <nombre — OBLIGATOIRE>
+  # ── Métadonnées session ───────────────────────────────────────────────────
+  todos_closed         : <nombre>
+  mode                 : <mode actif>
+  type                 : build-brain | use-brain | auto
+  handoff_level        : NO | SEMI | SEMI+ | FULL
+  cold_start_kpi_pass  : true | false | N/A   ← obligatoire si handoff_level: NO, N/A sinon
+  agents_loaded        : [liste des agents chargés pendant la session — OBLIGATOIRE]
+  # ── Content pipeline ──────────────────────────────────────────────────────
+  story_angle          : <optionnel — angle narratif, 1 phrase>
+  notes                : <optionnel>
+
+> ⚠️ Refus si tokens_used / context_peak / context_at_close / duration_min / commits absents.
+> Ces 5 champs sont les KPIs fondamentaux — sans eux le dashboard reste vide.
 ```
 
 ---
@@ -42,6 +67,7 @@ metabolism-scribe, voici les données de cette session :
 |---------|---------|----------|
 | Rapport reçu (toujours) | `brain/profil/metabolism-spec.md` | Schéma + formule + seuils |
 | Rapport reçu (toujours) | `progression/metabolism/README.md` | Index existant avant d'écrire |
+| Rapport reçu (toujours) | `git -C progression/ pull --ff-only` | **Pull satellite avant lecture** — capture les sessions laptop pushées depuis la dernière sync |
 | Ratio 7j demandé | `progression/metabolism/*.md` (7 derniers) | Calcul ratio use-brain/build-brain |
 
 ---
@@ -58,6 +84,7 @@ metabolism-scribe, voici les données de cette session :
 - Calculer le ratio use-brain/build-brain sur les 7 derniers fichiers et l'inclure
 - Signaler les seuils dépassés (saturation, ratio, conserve)
 - Proposer les fichiers à commiter avec chemin exact
+- **L3a — alimenter `brain/agent-memory/` :** si la session porte sur un projet identifiable et qu'un agent métier a été actif → écrire/update `agent-memory/<agent>/<projet>/kpi.yml` (voir `agent-memory/README.md`)
 
 **Ne fait pas :**
 - Collecter les métriques automatiquement — elles sont fournies manuellement en fin de session
@@ -72,6 +99,7 @@ metabolism-scribe, voici les données de cette session :
 | Repo | Fichiers cibles | Jamais ailleurs |
 |------|----------------|-----------------|
 | `progression/` | `metabolism/YYYY-MM-DD-<sess-id>.md`, `metabolism/README.md` | Rien hors progression/metabolism/ |
+| `brain/` | `agent-memory/<agent>/<projet>/kpi.yml` (L3a) | Uniquement si session sur projet identifiable |
 
 ---
 
@@ -91,6 +119,8 @@ metabolism-scribe, voici les données de cette session :
 | commits | <N> |
 | todos_closed | <N> |
 | saturation_flag | true \| false |
+| handoff_level | NO \| SEMI \| SEMI+ \| FULL |
+| cold_start_kpi_pass | true \| false \| N/A |
 | **health_score** | **<X.XX>** |
 
 ## Agents chargés
@@ -116,9 +146,9 @@ metabolism-scribe, voici les données de cette session :
 ```markdown
 # progression/metabolism/ — Index
 
-| Date | Session | Type | Mode | health_score | Seuils |
-|------|---------|------|------|-------------|--------|
-| YYYY-MM-DD | <sess-id> | build-brain | prod | 2.51 | — |
+| Date | Session | Type | Mode | health_score | handoff | kpi | Seuils |
+|------|---------|------|------|-------------|---------|-----|--------|
+| YYYY-MM-DD | <sess-id> | build-brain | prod | 2.51 | SEMI+ | N/A | — |
 | ... | ... | ... | ... | ... | ... |
 
 ## Ratio use-brain / build-brain (7j glissants)

@@ -1,0 +1,30 @@
+# workflows/brain-engine.yml — Workflow Brain Engine (BE-X)
+# Usage : bash scripts/workflow-launch.sh workflows/brain-engine.yml [--step N]
+
+name: brain-engine
+branch: theme/brain-engine
+pilote: ~   # renseigné au lancement
+
+chain:
+
+  - step: 1
+    type: code
+    scope: brain-engine/
+    story_angle: "Implémenter la feature BE-X"
+
+  - step: 2
+    type: test
+    scope: brain-engine/
+    story_angle: "Tests BE-X — suite complète"
+    gate: 0-failures
+
+  - step: 3
+    type: brain-write
+    scope: brain-engine/README.md
+    story_angle: "Mettre à jour README brain-engine"
+
+  - step: 4
+    type: deploy
+    scope: vps/
+    story_angle: "Déployer brain-engine sur VPS"
+    gate: human

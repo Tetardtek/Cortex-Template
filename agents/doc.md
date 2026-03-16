@@ -1,3 +1,11 @@
+---
+name: doc
+type: agent
+context_tier: hot
+domain: [README, doc-api, Swagger]
+status: active
+---
+
 # Agent : doc
 
 > Dernière validation : 2026-03-13

@@ -36,6 +36,40 @@ echo "$LOG_PREFIX Démarré — poll toutes les ${POLL_INTERVAL}s"
 PREV_HASH=$(md5sum "$BRAIN_INDEX" 2>/dev/null | cut -d' ' -f1 || echo "")
 PREV_CLAIMS=$(grep -v '^\*Aucun claim' "$BRAIN_INDEX" 2>/dev/null | grep -c '^\| sess-' || echo 0)
 
+# Dédup stale — évite de respammer la même notif à chaque poll
+STALE_NOTIFIED_FILE="/tmp/brain-watch-stale-notified.txt"
+touch "$STALE_NOTIFIED_FILE"
+
+check_stale_claims() {
+  local now_epoch
+  now_epoch=$(date +%s)
+
+  while IFS= read -r line; do
+    # Extraire l'ID de session (colonne 2) et la date d'expiration (colonne 6)
+    local sess_id expire_raw expire_epoch
+    sess_id=$(echo "$line" | awk -F'|' '{print $2}' | xargs)
+    expire_raw=$(echo "$line" | awk -F'|' '{print $6}' | xargs)
+
+    # Normaliser : "2026-03-14 18:24" ou "2026-03-14 +4h" → epoch
+    # On ne gère que le format "YYYY-MM-DD HH:MM" (format standard du BSI)
+    expire_epoch=$(date -d "$expire_raw" +%s 2>/dev/null || echo 0)
+
+    [[ "$expire_epoch" -eq 0 ]] && continue
+    [[ "$now_epoch" -le "$expire_epoch" ]] && continue
+
+    # TTL expiré — vérifier si déjà notifié
+    if grep -qF "$sess_id" "$STALE_NOTIFIED_FILE" 2>/dev/null; then
+      continue
+    fi
+
+    # Première détection → notifier + mémoriser
+    "$NOTIFY" "Claim stale détecté\n*Session :* \`$sess_id\`\n*Expiré le :* $expire_raw\nRecovery requis dans la session superviseur." "update"
+    echo "$LOG_PREFIX STALE : $sess_id (expiré $expire_raw)"
+    echo "$sess_id" >> "$STALE_NOTIFIED_FILE"
+
+  done < <(grep '^| sess-' "$BRAIN_INDEX" 2>/dev/null | grep 'active' || true)
+}
+
 while true; do
   sleep "$POLL_INTERVAL"
 
@@ -44,6 +78,9 @@ while true; do
     echo "$LOG_PREFIX WARNING : git pull échoué"
     continue
   }
+
+  # Vérification stale à chaque poll (indépendante du hash)
+  check_stale_claims
 
   NEW_HASH=$(md5sum "$BRAIN_INDEX" | cut -d' ' -f1)
   [[ "$NEW_HASH" == "$PREV_HASH" ]] && continue
@@ -54,7 +91,7 @@ while true; do
   NEW_CLAIMS=$(grep -v '^\*Aucun claim' "$BRAIN_INDEX" | grep -c '^\| sess-' 2>/dev/null || echo 0)
 
   if [[ "$NEW_CLAIMS" -gt "$PREV_CLAIMS" ]]; then
-    SESS=$(grep '^\| sess-' "$BRAIN_INDEX" | tail -1 | awk -F'|' '{print $2}' | xargs)
+    SESS=$(grep '^| sess-' "$BRAIN_INDEX" | grep 'active' | tail -1 | awk -F'|' '{print $2}' | xargs)
     "$NOTIFY" "Nouvelle session détectée\n*Session :* \`$SESS\`" "update"
     echo "$LOG_PREFIX Nouveau claim : $SESS"
   fi
@@ -66,10 +103,23 @@ while true; do
 
   PREV_CLAIMS="$NEW_CLAIMS"
 
-  if grep -q 'BLOCKED_ON' "$BRAIN_INDEX" 2>/dev/null; then
-    BLOCKED=$(grep 'BLOCKED_ON' "$BRAIN_INDEX" | head -1)
-    "$NOTIFY" "Conflit inter-sessions (VPS)\n$BLOCKED\nIntervention requise." "urgent"
+  # BLOCKED_ON : uniquement dans les lignes de signaux réels (commence par "| sig-")
+  # Évite le faux positif sur la doc du fichier ("- `BLOCKED_ON` — ...")
+  BLOCKED=$(grep '^| sig-' "$BRAIN_INDEX" 2>/dev/null | grep 'BLOCKED_ON' | head -1 || true)
+  if [[ -n "$BLOCKED" ]]; then
+    "$NOTIFY" "Conflit inter-sessions\n$BLOCKED\nIntervention requise." "urgent"
     echo "$LOG_PREFIX ESCALADE : BLOCKED_ON"
+  fi
+
+  # CHECKPOINT / HANDOFF signal — notifier le supervisor
+  SIGNAL=$(grep '^| sig-' "$BRAIN_INDEX" 2>/dev/null | grep -E 'CHECKPOINT|HANDOFF' | grep 'pending' | head -1 || true)
+  if [[ -n "$SIGNAL" ]]; then
+    SIG_TYPE=$(echo "$SIGNAL" | awk -F'|' '{print $5}' | xargs)
+    SIG_FROM=$(echo "$SIGNAL" | awk -F'|' '{print $3}' | xargs)
+    SIG_TO=$(echo "$SIGNAL" | awk -F'|' '{print $4}' | xargs)
+    SIG_PAYLOAD=$(echo "$SIGNAL" | awk -F'|' '{print $7}' | xargs)
+    "$NOTIFY" "📋 *$SIG_TYPE*\n*De :* \`$SIG_FROM\`\n*Pour :* \`$SIG_TO\`\n*Payload :* $SIG_PAYLOAD\nSession cible : lire le fichier au prochain boot." "update"
+    echo "$LOG_PREFIX SIGNAL : $SIG_TYPE $SIG_FROM → $SIG_TO"
   fi
 
 done

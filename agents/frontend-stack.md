@@ -1,3 +1,11 @@
+---
+name: frontend-stack
+type: agent
+context_tier: hot
+domain: [frontend, shadcn, Tailwind, UI]
+status: active
+---
+
 # Agent : frontend-stack
 
 > Dernière validation : 2026-03-12

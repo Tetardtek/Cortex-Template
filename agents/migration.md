@@ -1,3 +1,11 @@
+---
+name: migration
+type: agent
+context_tier: hot
+domain: [migration, TypeORM, schema]
+status: active
+---
+
 # Agent : migration
 
 > Dernière validation : 2026-03-12

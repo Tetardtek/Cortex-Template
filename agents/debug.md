@@ -1,3 +1,11 @@
+---
+name: debug
+type: agent
+context_tier: hot
+domain: [bug, erreur, crash, comportement-inattendu]
+status: active
+---
+
 # Agent : debug
 
 > Dernière validation : 2026-03-12

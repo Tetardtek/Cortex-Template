@@ -1,3 +1,9 @@
+---
+name: AGENTS
+type: index
+context_tier: cold
+---
+
 # Agents spécialisés — Tetardtek
 
 > Index des agents disponibles.
@@ -33,6 +39,7 @@
 | `doc` | Documentation — README, API Swagger, cohérence doc ↔ code | 🧪 forgé 2026-03-13 |
 | `content-orchestrator` | Sentinelle content layer — détecte signaux, active storyteller/doc | 🧪 forgé 2026-03-14 |
 | `tech-lead` | Leadership technique — gate d'entrée sprint, contention map, overflow zones | 🧪 forgé 2026-03-14 |
+| `game-designer` | Game design — mécanique, équilibrage, progression, systèmes de jeu | 🧪 forgé 2026-03-15 |
 
 ---
 
@@ -53,6 +60,7 @@
 | `toolkit-scribe` | Persistance patterns — gardien du toolkit/ | 🧪 forgé 2026-03-13 |
 | `coach-scribe` | Persistance progression — journal/skills/milestones | 🧪 forgé 2026-03-13 |
 | `todo-scribe` | Persistance intentions — gardien de brain/todo/ | 🧪 forgé 2026-03-13 |
+| `kanban-scribe` | Pipeline kanban — transitions d'état au wrap, détection autonomie | 🧪 forgé 2026-03-15 |
 | `helloWorld` | Bootstrap intelligent — briefing + chargement sélectif | 🧪 forgé 2026-03-13 |
 | `git-analyst` | Historique git sémantique — conventions, synthèse commits | 🧪 forgé 2026-03-13 |
 | `capital-scribe` | Capital CV — milestones → formulations recruteur | 🧪 forgé 2026-03-13 |
@@ -67,6 +75,8 @@
 | `architecture-scribe` | Mémoire architecturale — git-analyst → ADR → profil/decisions/ | 🧪 forgé 2026-03-15 |
 | `integrator` | Intégration multi-agents — absorption, validation critères, handoff next team | 🧪 forgé 2026-03-14 |
 | `context-broker` | Cycle respiratoire de contexte — inhale source map + expire release map + breath metrics | 🧪 forgé 2026-03-15 |
+| `product-strategist` | Stratégie produit — business model, SaaS, monétisation, positionnement | 🧪 forgé 2026-03-15 |
+| `satellite-boot` | Boot loader satellite — Pattern 10, scope unique, zéro overhead, signal retour pilote | 🧪 forgé 2026-03-16 |
 
 ---
 

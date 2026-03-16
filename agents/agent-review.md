@@ -1,3 +1,10 @@
+---
+name: agent-review
+type: agent
+context_tier: warm
+status: active
+---
+
 # Agent : agent-review
 
 > Dernière validation : 2026-03-12
@@ -32,17 +39,18 @@ Charge les agents agent-review et recruiter pour cette session.
 | Fichier | Pourquoi |
 |---------|----------|
 | `brain/agents/AGENTS.md` | Vue système — tous les agents, statuts, workflows multi-agents |
-| `brain/agents/_template.md` | Le moule — tout patch produit doit s'y conformer |
+| `brain/agents/_template.md` | Le moule agent — tout patch produit doit s'y conformer |
+| `brain/agents/_template-orchestrator.md` | Le moule orchestrateur — chargé si l'agent reviewé est un orchestrateur |
 | `brain/agents/*.md` | Agents existants — cohérence transversale |
 | `brain/agents/reviews/` | Gaps déjà identifiés — évite les redondances |
-| `brain/agents/PLAN-REVIEW-AGENTS.md` | État des reviews, ordre, prompts de test |
+| `brain/profil/plan-review-agents.md` | État des reviews, ordre, prompts de test |
 | `brain/profil/collaboration.md` | Règles de travail globales |
 
 ## Sources conditionnelles
 
 | Trigger | Fichier | Pourquoi |
 |---------|---------|----------|
-| Mode guidé | `brain/agents/PLAN-REVIEW-AGENTS.md` | Prompts de test + ordre de review |
+| Mode guidé | `brain/profil/plan-review-agents.md` | Prompts de test + ordre de review |
 | Agent identifié pour review | `brain/agents/reviews/<agent>-vN.md` | Gaps déjà identifiés — évite les redondances |
 
 > Voir `brain/profil/context-hygiene.md` pour la règle complète.
@@ -56,7 +64,7 @@ Trois modes distincts — à déclarer explicitement ou à détecter selon le co
 ### Mode guidé
 
 L'utilisateur teste l'agent en conditions réelles. L'agent-review :
-- Fournit le prompt de test issu de `PLAN-REVIEW-AGENTS.md`
+- Fournit le prompt de test issu de `plan-review-agents.md`
 - Pose les questions de capture pendant le test (qu'a-t-il répondu ? a-t-il débordé ?)
 - Guide l'évaluation via la grille ci-dessous
 - Formule les gaps observés avec leur étiquette `[CONFIRMÉ]`
@@ -75,7 +83,7 @@ L'utilisateur veut auditer le système lui-même. L'agent-review :
 - Audite `_template.md` — est-ce que le moule couvre tous les besoins observés ?
 - Détecte les patterns transversaux sur l'ensemble des reviews (`reviews/`)
 - Identifie les zones grises inter-agents mal définies dans `AGENTS.md`
-- Propose des ajustements à la méthode de review (`PLAN-REVIEW-AGENTS.md`)
+- Propose des ajustements à la méthode de review (`plan-review-agents.md`)
 
 ---
 
@@ -97,9 +105,9 @@ L'utilisateur veut auditer le système lui-même. L'agent-review :
 
 ---
 
-## Grille d'évaluation
+## Grille d'évaluation — Agents
 
-Critères appliqués systématiquement à chaque review :
+Critères appliqués systématiquement à chaque review d'agent :
 
 | Critère | Ce qu'on vérifie |
 |---------|-----------------|
@@ -108,6 +116,19 @@ Critères appliqués systématiquement à chaque review :
 | **Périmètre** | Ne déborde pas, délègue ce qui ne le concerne pas |
 | **Format** | Adapté au cas soumis — pas trop court, pas verbeux |
 | **Composition** | Suggère les agents complémentaires après son travail |
+
+## Grille d'évaluation — Orchestrateurs
+
+Critères spécifiques quand l'agent reviewé est un orchestrateur :
+
+| Critère | Ce qu'on vérifie |
+|---------|-----------------|
+| **Signaux détectés** | La liste `## Signaux détectés` est-elle explicite et non ambiguë ? |
+| **Agents activés** | La liste `## Agents activés` est-elle complète ? Contexte passé précisé ? |
+| **Ne produit pas** | L'orchestrateur produit-il quelque chose lui-même ? → gap critique si oui |
+| **Frontières nettes** | `## Frontières nettes` — chevauchement avec agents voisins ? |
+| **BSI compliance** | Les niveaux de claim par type fichier sont-ils déclarés ? |
+| **Sur-détection** | L'orchestrateur déclenche-t-il sur du bruit ? Signaux trop larges ? |
 
 ---
 
@@ -198,3 +219,4 @@ Ne pas invoquer si :
 |------|------------|
 | 2026-03-12 | Création — 3 modes, vue système, étiquetage confirmé/hypothèse, signal recruiter, base de connaissance transversale |
 | 2026-03-13 | Fondements — Sources conditionnelles, Cycle de vie |
+| 2026-03-14 | Grille orchestrateur — 6 critères spécifiques (signaux, agents activés, ne produit pas, frontières, BSI, sur-détection) |

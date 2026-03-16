@@ -1,3 +1,10 @@
+---
+name: architecture-scribe
+type: agent
+context_tier: warm
+status: active
+---
+
 # Agent : architecture-scribe
 
 > Dernière validation : 2026-03-15

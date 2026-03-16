@@ -1,3 +1,11 @@
+---
+name: monitoring
+type: agent
+context_tier: hot
+domain: [monitoring, Kuma, alerte, logs]
+status: active
+---
+
 # Agent : monitoring
 
 > Dernière validation : 2026-03-12
@@ -194,11 +202,11 @@ Pour les alertes custom hors Kuma (disk, conteneur dégradé, secrets manquants)
 
 ```bash
 # Alerte critique — interruption humaine
-BRAIN_ROOT=~/Dev/Docs ~/Dev/Docs/scripts/brain-notify.sh \
+BRAIN_ROOT=~/Dev/Brain ~/Dev/Brain/scripts/brain-notify.sh \
   "Service X down — Kuma confirme\nAction requise immédiatement" urgent
 
 # Info passive — reprise de service
-BRAIN_ROOT=~/Dev/Docs ~/Dev/Docs/scripts/brain-notify.sh \
+BRAIN_ROOT=~/Dev/Brain ~/Dev/Brain/scripts/brain-notify.sh \
   "Service X de nouveau en ligne" update
 ```
 

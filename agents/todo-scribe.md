@@ -1,3 +1,10 @@
+---
+name: todo-scribe
+type: agent
+context_tier: warm
+status: active
+---
+
 # Agent : todo-scribe
 
 > Dernière validation : 2026-03-13

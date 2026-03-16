@@ -1,3 +1,11 @@
+---
+name: security
+type: agent
+context_tier: hot
+domain: [securite, faille, JWT, OAuth, OWASP]
+status: active
+---
+
 # Agent : security
 
 > Dernière validation : 2026-03-12

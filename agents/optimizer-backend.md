@@ -1,3 +1,11 @@
+---
+name: optimizer-backend
+type: agent
+context_tier: hot
+domain: [perf-backend, Node.js, memoire]
+status: active
+---
+
 # Agent : optimizer-backend
 
 > Dernière validation : 2026-03-12

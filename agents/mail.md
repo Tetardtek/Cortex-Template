@@ -1,3 +1,11 @@
+---
+name: mail
+type: agent
+context_tier: hot
+domain: [mail, SMTP, IMAP, Stalwart, DNS, SPF, DKIM]
+status: active
+---
+
 # Agent : mail
 
 > Dernière validation : 2026-03-12

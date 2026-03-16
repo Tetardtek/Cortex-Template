@@ -1,3 +1,11 @@
+---
+name: optimizer-frontend
+type: agent
+context_tier: hot
+domain: [perf-frontend, bundle, re-renders, React]
+status: active
+---
+
 # Agent : optimizer-frontend
 
 > Dernière validation : 2026-03-12

@@ -1,3 +1,11 @@
+---
+name: context-broker
+type: agent
+context_tier: cold
+# cold — rôle méta, jamais invoqué directement. Chargé sur invocation explicite uniquement.
+status: active
+---
+
 # Agent : context-broker
 
 > Dernière validation : 2026-03-15
@@ -65,7 +73,7 @@ Un projet est **défini** par son contrat dans `brain/projets/<nom>.md` :
 projet:
   id       : "originsdigital"
   fichier  : brain/projets/origins-digital.md
-  repo     : /home/tetardtek/Dev/Gitea/originsdigital
+  repo     : <PATHS.projects>/originsdigital
   domaines :
     auth    : ["auth.middleware.ts", "auth.routes.ts"]
     video   : ["video.routes.ts", "Video.ts"]

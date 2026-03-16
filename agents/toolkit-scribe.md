@@ -1,3 +1,10 @@
+---
+name: toolkit-scribe
+type: agent
+context_tier: warm
+status: active
+---
+
 # Agent : toolkit-scribe
 
 > Dernière validation : 2026-03-13

@@ -1,3 +1,10 @@
+---
+name: mentor
+type: agent
+context_tier: warm
+status: active
+---
+
 # Agent : mentor
 
 > Dernière validation : 2026-03-12

@@ -1,3 +1,11 @@
+---
+name: ci-cd
+type: agent
+context_tier: hot
+domain: [CI/CD, pipeline, GitHub-Actions, Gitea-CI]
+status: active
+---
+
 # Agent : ci-cd
 
 > Dernière validation : 2026-03-12

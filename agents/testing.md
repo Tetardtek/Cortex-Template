@@ -1,3 +1,11 @@
+---
+name: testing
+type: agent
+context_tier: hot
+domain: [tests, Jest, Vitest, coverage, TDD]
+status: active
+---
+
 # Agent : testing
 
 > Dernière validation : 2026-03-12

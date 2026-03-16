@@ -1,0 +1,109 @@
+#!/usr/bin/env bash
+# bsi-query.sh — Requêtes BSI via brain.db (SQLite)
+# Remplace les grep sur BRAIN-INDEX.md pour les opérations courantes.
+#
+# Usage :
+#   bsi-query.sh open          → liste les claims open (sess_id | scope | opened_at | age_h)
+#   bsi-query.sh stale         → claims open depuis > 4h
+#   bsi-query.sh count-open    → nombre de claims open (entier, stdout)
+#   bsi-query.sh count-stale   → nombre de claims stale (entier, stdout)
+#   bsi-query.sh signals       → signaux pending (CHECKPOINT | HANDOFF | BLOCKED_ON)
+#   bsi-query.sh health        → dernière session : health_score + type
+#
+# Retour :
+#   Exit 0 = succès (même si 0 résultats)
+#   Exit 1 = brain.db absent (fallback : utiliser grep BRAIN-INDEX.md)
+#   Exit 2 = erreur Python
+#
+# Sécurité : lecture seule sur brain.db — aucune écriture
+# Fallback  : si brain.db absent → le script sort 1, l'appelant gère
+
+set -euo pipefail
+
+BRAIN_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+DB_PATH="$BRAIN_ROOT/brain.db"
+CMD="${1:-help}"
+
+# Fallback propre si brain.db absent
+if [[ ! -f "$DB_PATH" ]]; then
+    echo "⚠️  brain.db absent ($DB_PATH) — lancer: brain-db-sync.sh (optionnel)" >&2
+    exit 1
+fi
+
+run_query() {
+    python3 - "$DB_PATH" "$@" <<'PYEOF'
+import sqlite3, sys, os
+
+db_path = sys.argv[1]
+cmd     = sys.argv[2] if len(sys.argv) > 2 else 'help'
+
+conn = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
+conn.row_factory = sqlite3.Row
+
+if cmd == 'open':
+    rows = conn.execute("""
+        SELECT sess_id, scope, opened_at,
+               ROUND((julianday('now') - julianday(opened_at)) * 24, 1) AS age_h
+        FROM claims WHERE status = 'open'
+        ORDER BY opened_at DESC
+    """).fetchall()
+    for r in rows:
+        print(f"{r['sess_id']} | {r['scope']} | {r['opened_at']} | {r['age_h']}h")
+
+elif cmd == 'stale':
+    rows = conn.execute("""
+        SELECT sess_id, scope, opened_at,
+               ROUND((julianday('now') - julianday(opened_at)) * 24, 1) AS age_h
+        FROM claims
+        WHERE status = 'open'
+          AND julianday('now') > julianday(opened_at, '+4 hours')
+        ORDER BY age_h DESC
+    """).fetchall()
+    for r in rows:
+        print(f"{r['sess_id']} | {r['scope']} | {r['opened_at']} | {r['age_h']}h")
+
+elif cmd == 'count-open':
+    n = conn.execute("SELECT COUNT(*) FROM claims WHERE status='open'").fetchone()[0]
+    print(n)
+
+elif cmd == 'count-stale':
+    n = conn.execute("""
+        SELECT COUNT(*) FROM claims
+        WHERE status='open'
+          AND julianday('now') > julianday(opened_at, '+4 hours')
+    """).fetchone()[0]
+    print(n)
+
+elif cmd == 'signals':
+    rows = conn.execute("""
+        SELECT sig_id, type, from_sess, to_sess, projet, payload
+        FROM signals
+        WHERE state = 'pending'
+          AND type IN ('CHECKPOINT','HANDOFF','BLOCKED_ON')
+        ORDER BY created_at DESC
+    """).fetchall()
+    for r in rows:
+        print(f"{r['sig_id']} | {r['type']} | {r['from_sess']} → {r['to_sess']} | {r['projet']}")
+
+elif cmd == 'health':
+    row = conn.execute("""
+        SELECT sess_id, date, type, health_score, cold_start_kpi_pass
+        FROM sessions
+        ORDER BY date DESC, sess_id DESC
+        LIMIT 1
+    """).fetchone()
+    if row:
+        kpi = {1:'✅', 0:'❌', None:'—'}.get(row['cold_start_kpi_pass'], '—')
+        print(f"{row['sess_id']} | {row['type']} | health={row['health_score']} | cold_start={kpi}")
+    else:
+        print("aucune session dans brain.db")
+
+else:
+    print("Usage: bsi-query.sh open|stale|count-open|count-stale|signals|health", file=sys.stderr)
+    sys.exit(0)
+
+conn.close()
+PYEOF
+}
+
+run_query "$CMD"

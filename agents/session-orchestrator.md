@@ -1,3 +1,10 @@
+---
+name: session-orchestrator
+type: agent
+context_tier: warm
+status: active
+---
+
 # Agent : session-orchestrator
 
 > Dernière validation : 2026-03-14
@@ -37,8 +44,10 @@ fin
 
 | Fichier | Pourquoi |
 |---------|----------|
-| `brain/profil/session-types.md` | Types de sessions + règles de chargement par couche |
+| `brain/manifest.yml` | Routing table Layer 0/1/2 — source de vérité du chargement |
+| `brain/profil/handoff-matrix.md` | Matrice session_type × scope → handoff_level |
 | `brain/BRAIN-INDEX.md ## Claims` | Sessions parallèles actives — détection HANDOFF |
+| `brain/profil/session-types.md` | Référence legacy — consulter si session_type ambigu |
 
 ---
 
@@ -73,30 +82,51 @@ fin
 
 ```
 1. Lire le premier message / intent déclaré
-   → Détecter flag `+coach` : message contient "+coach" → activer mode co-pilote (voir coach.md ## Mode +coach)
-   → Auto-trigger +coach si : metabolism ratio ≤ 0.40 (build-brain dominant) OU health_score < 0.80
+   → Détecter flag `+coach` : message contient "+coach" → activer mode co-pilote
+   → Auto-trigger +coach si : ratio ≤ 0.40 OU health_score < 0.80
 
-2. Résoudre le type de session (voir session-types.md ## Signal au boot)
-   → Si ambigu : poser 1 question "brain ou work ?"
+2. Résoudre session_type + scope depuis le message
+   → session_type : brain | work | deploy | debug | coach | brainstorm | urgence
+   → scope        : nom projet, domaine, ou "any" si absent
+   → Si ambigu : 1 question max — jamais un formulaire
    → Si HANDOFF détecté dans BRAIN-INDEX → charger handoff file, mode HANDOFF
 
-3. Si +coach actif → insérer orientation coach après le briefing helloWorld (voir coach.md ## Mode +coach)
+3. Déterminer handoff_level via manifest.yml + handoff-matrix.md
+   a. Lire manifest.yml ## handoff_defaults → niveau par défaut pour session_type
+   b. Croiser avec handoff-matrix.md → niveau spécifique session_type × scope
+   c. [Gap 4] Timing check continuation :
+      → Scanner claims/ pour scope identique fermé depuis < 4h
+      → OU message contient "je reprends" / "continuation"
+      → Si oui : élever au niveau FULL (silencieux)
 
-4. Charger les couches dans l'ordre :
-   Couche 0 — invariant  : KERNEL.md + PATHS + collaboration  [toujours]
-   Couche 1 — intent     : brain | work | deploy | debug | ...
-   Couche 2 — domaine    : agent métier ou brain-system
-   Couche 3 — projet     : projets/X + todo/X  [seulement si work/deploy/debug]
+4. Charger la position depuis manifest.yml ## layer1 ## positions
+   → Trouver la position dont le trigger matche session_type
+   → [Gap 1] Si handoff_level = NO → charger position mais IGNORER promote/suppress
+   → Sinon → appliquer promote/suppress normalement
 
-5. MYSECRETS — règle non négociable :
+5. Charger les couches selon handoff_level :
+
+   NO    → Layer 0 uniquement (KERNEL + constitution + PATHS + collaboration + boot-summaries)
+
+   SEMI  → Layer 0
+           + position (promote/suppress actifs)
+           + load_conditional si scope détecté dans le message [Gap 2]
+
+   SEMI+ → Layer 0
+           + position (promote/suppress actifs)
+           + layer1_semi_plus : focus.md + projets/<scope>.md + todo/<scope>.md
+           + load_conditional si scope détecté dans le message [Gap 2]
+
+   FULL  → Layer 0 + SEMI+ complet
+           + Layer 2 : handoffs/ (scope pertinent) + workspace/<sess-id>-<slug>/ [Gap 5]
+
+6. MYSECRETS — règle non négociable :
    → Confirmer présence : [[ -f "$BRAIN_ROOT/MYSECRETS" ]] → ✓ disponible
-   → NE PAS charger les valeurs
-   → secrets-guardian en écoute passive (4 surfaces)
-   → Chargement réel sur trigger seulement (.env / mysql / deploy / JWT / token / API key)
+   → NE PAS charger les valeurs — secrets-guardian en écoute passive
+   → Chargement réel sur trigger (.env / mysql / deploy / JWT / token / API key)
 
-   ⚠️ session-role + PID + claim BSI : propriété de helloWorld (étape 9)
+   ⚠️ session-role + PID + claim BSI : propriété de helloWorld
    → session-orchestrator reçoit le handoff APRÈS que helloWorld a ouvert et pushé le claim
-   → Ne pas réécrire ces étapes ici — source unique : helloWorld ## Boot claim automatique
 ```
 
 ---
@@ -106,20 +136,40 @@ fin
 **Déclencheurs :** `fin` | `on wrappe` | `c'est bon` | `je ferme` | invocation explicite
 
 ```
+0. checkpoint  [si sprint actif dans workspace/]
+   → Écrire workspace/<sprint>/checkpoint.md
+   → Warm restart garanti à la prochaine session
+
 1. metabolism-scribe
    → tokens_used, context_peak, context_at_close, duration
    → agents_loaded (liste de tous les agents invoqués/chargés)
    → prix_par_agent (tokens estimés par agent — voir metabolism-spec.md)
    → commits, todos_closed, health_score
+   → handoff_level : NO | SEMI | SEMI+ | FULL  ← obligatoire depuis Phase 1
+   → cold_start_kpi_pass : true | false | N/A  ← obligatoire si handoff_level = NO
 
-2. todo-scribe  [si type = work | sprint | debug | brainstorm avec todos émergés]
+2. backlog-scribe  ← RÈGLE INVIOLABLE
+   → Lire workspace/backlog-audit-20260315/backlog.md
+   → Tout item complété pendant la session → [ ] → [x]
+   → Recalculer la table métriques (✅ Done +N, ⬜ Open -N, Dernière session = sess-id)
+   → Si aucun item fermé → écrire une ligne dans changelog backlog (pourquoi)
+   → Commit : "backlog: close <item-id> — <titre court>"
+   ⚠️ INTERDIT de fermer la session sans avoir vérifié le backlog
+
+3. todo-scribe  [si type = work | sprint | debug | brainstorm avec todos émergés]
    → mettre à jour todos fermés ✅
    → capturer todos ⬜ émergés pendant la session
 
-3. scribe  [si session significative : commits posés, agents forgés, spec changée]
+4. wiki-scribe  [si nouveau pattern / commande / agent / terme forgé]
+   → Ajouter terme dans wiki/vocabulary.md
+   → Créer / mettre à jour la page wiki concernée
+   → Mettre à jour métriques dans wiki/Home.md
+   → Commit : "wiki: vocabulary +N terms — <domaine>"
+
+5. scribe  [si session significative : commits posés, agents forgés, spec changée]
    → mettre à jour brain/ (focus, projets/, AGENTS si nouvel agent)
 
-4. coach → rapport de session  [si type = brain | work | sprint | debug | coach]
+6. coach → rapport de session  [si type = brain | work | sprint | debug | coach]
    → Format :
      ⚡ Rapport de session — <sess-id>
         Ce qui a été produit : <liste concrète>
@@ -129,9 +179,13 @@ fin
    → Présenté à l'utilisateur — BLOCKING (attend une réponse)
    → L'utilisateur choisit : /exit  OU  discussion avec le coach
 
-5. BSI close claim
+7. BSI close claim
    rm -f ~/.claude/session-role ~/.claude/sessions/<sess-id>.pid
-   git -C $BRAIN_ROOT add BRAIN-INDEX.md
+   → Modifier claims/<sess-id>.yml : status: open → closed, closed_at: <timestamp>
+   → Régénérer la table BRAIN-INDEX.md ## Claims (source unique = claims/*.yml) :
+     bash $BRAIN_ROOT/scripts/brain-index-regen.sh
+   → ⚠️ Ne jamais écrire manuellement dans BRAIN-INDEX.md ## Claims
+   git -C $BRAIN_ROOT add BRAIN-INDEX.md claims/<sess-id>.yml
    git -C $BRAIN_ROOT commit -m "bsi: close claim <sess-id>"
    git -C $BRAIN_ROOT push
    → Mandatory — même si l'utilisateur fait /exit sans lire le rapport
@@ -218,3 +272,4 @@ Invoquer explicitement pour fermer la session quand les déclencheurs naturels n
 | 2026-03-14 | Création — boot protocol 4 couches, close protocol séquencé, rapport coach BLOCKING, prix par agent mandatory, MYSECRETS passive listening |
 | 2026-03-14 | Câblage helloWorld — reçoit handoff après briefing (type_session + sess_id + intent), activation section Activation |
 | 2026-03-15 | +coach flag — détection étape 1 boot (manuel +coach ou auto ratio ≤ 0.40 / health < 0.80) |
+| 2026-03-15 | Phase 1 — câblage manifest.yml + handoff-matrix.md, 5 gaps shadow audit résolus (NO→ignore promote/suppress, load_conditional message-based, layer1_semi_plus, timing check 4h, workspace isolation) |

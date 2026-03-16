@@ -1,3 +1,10 @@
+---
+name: orchestrator-scribe
+type: agent
+context_tier: warm
+status: active
+---
+
 # Agent : orchestrator-scribe
 
 > Dernière validation : 2026-03-14
@@ -39,7 +46,7 @@ orchestrator-scribe, je passe la main à template-test@laptop — HANDOFF depuis
 
 | Trigger | Fichier | Pourquoi |
 |---------|---------|----------|
-| Signal REVIEWED reçu | `brain/reviews/<fichier>.md` | Lire les résultats de la review |
+| Signal REVIEWED reçu | `brain/audits/<fichier>.md` | Lire les résultats de la review |
 | Signal HANDOFF reçu | Fichier concerné dans le signal | Reprendre depuis le point précis |
 | Pattern récurrent détecté | `brain/profil/orchestration-patterns.md` | Vérifier si déjà documenté |
 

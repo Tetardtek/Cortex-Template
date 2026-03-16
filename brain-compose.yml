@@ -2,7 +2,15 @@
 # Versionné dans le kernel. Schema + feature flags + registre agents.
 # Géré par l'agent brain-compose — ne pas éditer manuellement.
 
-version: "0.4.0"
+version: "0.7.0"
+
+# ---
+# Ownership — kerneluser
+# true  : propriétaire de ce brain — écriture zone:kernel autorisée (human-confirmed)
+# false : utilisateur invité (SaaS futur) — zone:kernel bloquée
+# Défaut : true sur tout brain forké (l'owner est toujours kerneluser)
+# ---
+kerneluser: true
 
 # ---
 # Modes — comportement de session (permissions BSI + agents autorisés)
@@ -126,6 +134,20 @@ modes:
       forge: false
     agents: [code-review, security, testing]
 
+  conserve:
+    description: "Économie context — proposé auto si seuil métabolisme dépassé"
+    permissions:
+      invariant: confirm
+      contexte: confirm
+      reference: read
+      personnel: false
+      brain_write: false
+      forge: false
+    agents: [debug, code-review, todo-scribe, metabolism-scribe]
+    behavior: |
+      Cible context < 40%. Pas de chargement de sources non essentielles.
+      metabolism-scribe en fin de session obligatoire.
+
   HANDOFF:
     description: "Reprise propre depuis une session précédente"
     permissions:
@@ -136,6 +158,44 @@ modes:
       brain_write: false
       forge: false
     agents: "*"
+
+  rendering:
+    description: "Instance autonome sur projet — scope strict, zéro drift kernel"
+    permissions:
+      invariant: false
+      contexte: false
+      reference: read
+      personnel: false
+      brain_write: false      # pas d'écriture brain/ — uniquement le repo projet
+      forge: false
+    scope_lock: true          # BLOQUÉ hors du scope déclaré dans le claim
+    zone_lock: project        # zone:kernel → BLOCKED_ON immédiat, pas de négociation
+    circuit_breaker:
+      max_consecutive_fails: 3   # 3 échecs → arrêt + signal BLOCKED_ON vers pilote
+      on_trigger: "signal → BLOCKED_ON pilote"
+    agents: [code-review, security, testing, debug, vps, ci-cd, pm2, migration]
+    behavior: |
+      Instance travaille sur zone:project uniquement.
+      Toute tentative d'accès zone:kernel → BLOCKED_ON immédiat, signal pilote.
+      Fichier hors scope déclaré → vérifier mutex (BSI-v3-7) avant d'écrire.
+      3 on_fail consécutifs → circuit breaker → arrêt complet + signal pilote.
+      Jamais de décision architecturale — signal pilote si ambiguïté.
+
+  cockpit:
+    description: "Mode assisté — coach proactif, routing automatique, pipeline kanban"
+    permissions:
+      invariant: confirm
+      contexte: write
+      reference: write
+      personnel: write
+      brain_write: true
+      forge: false
+    agents: [coach, kanban-scribe, interprete, brainstorm, orchestrator]
+    behavior: |
+      Coach proactif : route avant qu'on cherche, anticipe, propose
+      kanban-scribe  : actif automatiquement au wrap
+      interprete     : écoute en continu — pas besoin d'invocation explicite
+      Human nodes    : décision de valeur uniquement, jamais de mécanique
 
 # ---
 # detectmode — helloWorld détecte le mode selon les signaux de session
@@ -234,3 +294,15 @@ changelog:
   - version: "0.4.0"
     date: "2026-03-14"
     notes: "Système de modes — 11 modes, permissions BSI par mode, detectmode, toolkit-only autonome avec docs_fetch"
+  - version: "0.5.0"
+    date: "2026-03-14"
+    notes: "Multi-sessions BSI v1.2 — CHECKPOINT/HANDOFF signals + handoff files ; brain-watch-vps daemon (stale TTL check, Telegram notifications) ; brain-bot Telegram webhook (/status /sessions /focus /help) ; workspace spec v1.0 (ram.md log.md feedback.md) ; supervisor patterns v1 (7 protocoles) ; statusline session-role ; secrets-guardian recovery protocol ; BLOCKED_ON false-positive fix"
+  - version: "0.5.1"
+    date: "2026-03-14"
+    notes: "Métabolisme v1 — mode conserve, metabolism-scribe, metabolism-spec, progression/metabolism/, helloWorld briefing métabolisme"
+  - version: "0.6.0"
+    date: "2026-03-15"
+    notes: "Constitution v1.1.0 — Section 9 North Star + invariants autonomie + auto-amélioration (ADR-011) ; wiki/concepts.md fondamentaux brain V2 ; brain-engine vision north star"
+  - version: "0.7.0"
+    date: "2026-03-16"
+    notes: "BSI-v3 fondations — tiered-close, zone-aware claims (ADR-014), result contract, exit triggers ; kerneluser: true ancré kernel ; KERNEL.md délégation human-only phase actuelle"

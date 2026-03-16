@@ -1,3 +1,11 @@
+---
+name: pm2
+type: agent
+context_tier: hot
+domain: [pm2, process-manager]
+status: active
+---
+
 # Agent : pm2
 
 > Dernière validation : 2026-03-13

@@ -1,3 +1,11 @@
+---
+name: supervisor
+type: agent
+context_tier: cold
+# cold — daemon VPS, pas agent de session. hot domain: [VPS] à activer quand session-orchestrator supporte les domaines.
+status: active
+---
+
 # Agent : supervisor
 
 > Dernière validation : 2026-03-14
@@ -43,7 +51,7 @@ supervisor, prépare un HANDOFF de sess-A vers sess-B
 | Trigger | Fichier | Pourquoi |
 |---------|---------|----------|
 | Conflit détecté | `brain/profil/bsi-spec.md` | Protocole de résolution |
-| Escalade archi | `brain/ARCHITECTURE.md` | Contexte décisionnel |
+| Escalade archi | `brain/profil/architecture.md` | Contexte décisionnel |
 | Conflit Invariant | `brain/profil/file-types.md` | Protocole inviolabilité |
 
 ---

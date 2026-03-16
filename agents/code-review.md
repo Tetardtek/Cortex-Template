@@ -1,3 +1,11 @@
+---
+name: code-review
+type: agent
+context_tier: hot
+domain: [review, qualite, PR, validation]
+status: active
+---
+
 # Agent : code-review
 
 > Dernière validation : 2026-03-12

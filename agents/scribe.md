@@ -1,3 +1,19 @@
+---
+name: scribe
+context_tier: warm
+status: active
+brain:
+  version:   1
+  type:      protocol
+  scope:     kernel
+  owner:     human
+  writer:    scribe
+  lifecycle: stable
+  read:      trigger
+  triggers:  [on-demand]
+  export:    true
+---
+
 # Agent : scribe
 
 > Dernière validation : 2026-03-12

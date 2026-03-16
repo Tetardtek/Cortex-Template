@@ -1,8 +1,15 @@
+---
+name: KERNEL
+type: reference
+context_tier: always
+---
+
 # KERNEL.md — Loi des zones
 
 > **Type :** Invariant absolu — chargé Couche 0 par helloWorld, avant tout agent.
-> Dernière révision : 2026-03-14
+> Dernière révision : 2026-03-15
 > Propriétaire : kernel (aucun agent ne modifie ce fichier seul — décision humaine requise)
+> Complété par : `brain-constitution.md` — identité + protocoles Layer 0 (ne pas répéter, ne pas surcharger)
 
 ---
 
@@ -24,6 +31,7 @@ Un agent qui sait dans quelle zone il opère sait automatiquement ce qu'il peut 
 
 ```
 Fichiers : KERNEL.md, CLAUDE.md, PATHS.md, brain-compose.yml, BRAIN-INDEX.md
+           brain-constitution.md
            agents/   profil/
 ```
 
@@ -133,10 +141,107 @@ Repos projets : GitHub, Gitea projets clients/perso
 
 | Niveau | Fichiers | Peut modifier | Trigger |
 |--------|----------|---------------|---------|
-| **Absolu** | KERNEL.md, CLAUDE.md, bsi-spec.md | Humain uniquement | Décision architecturale majeure |
+| **Absolu** | KERNEL.md, CLAUDE.md, bsi-spec.md, brain-constitution.md | Humain uniquement | Décision architecturale majeure |
 | **Fort** | profil/ Invariant, agents/ system | Humain + confirmation | Session brain avec signal explicite |
 | **Standard** | agents/ metier, profil/ Contexte | Scribe sur signal | Fin de session significative |
 | **Libre** | Satellites, INSTANCE | Scribe propriétaire | En session, sur livrable |
+
+---
+
+## Mode rendering — instance autonome projet
+
+```
+Mode rendering = satellite autonome sur zone:project
+  → scope_lock: true   — ne sort jamais du scope déclaré
+  → zone_lock: project — zone:kernel = BLOCKED_ON immédiat
+  → circuit_breaker    — 3 fails → arrêt + signal pilote
+  → mutex BSI-v3-7     — vérifie le lock fichier avant chaque écriture
+
+Ce mode NE PEUT PAS :
+  - Modifier agents/, profil/, scripts/, KERNEL.md, brain-compose.yml
+  - Prendre des décisions architecturales
+  - Continuer après 3 échecs consécutifs
+  - Écrire dans un fichier locké par une autre instance
+
+Déclaration dans le claim pilote :
+  mode: rendering
+  scope: superoauth/        ← le seul périmètre autorisé
+```
+
+---
+
+## Isolation kernel — règle de distribution
+
+> Un agent kernel distributable doit fonctionner sur n'importe quel brain forké.
+> Il ne peut pas dépendre de fichiers privés spécifiques à ce brain.
+
+**Règles d'isolation — non négociables :**
+
+```
+INTERDIT dans agents/ distribuables :
+  - Chemin machine absolu hardcodé (/home/tetardtek/..., /root/...)
+  - toolkit/private/ — patterns privés non distribués
+  - require:/load:/source: vers MYSECRETS ou tout fichier zone:personal
+
+AUTORISÉ (références documentaires) :
+  - Mention de MYSECRETS comme concept (l'agent décrit où chercher)
+  - Référence à profil/capital.md, profil/objectifs.md — l'utilisateur fork a les siens
+  - Référence à progression/ — même raison
+  - brain-compose.local — c'est la convention machine, chaque fork a le sien
+```
+
+**Vérification avant chaque distribution :**
+```bash
+bash scripts/kernel-isolation-check.sh          # check standard
+bash scripts/kernel-isolation-check.sh --strict  # zéro tolérance
+```
+
+**Version lock :**
+```bash
+bash scripts/kernel-lock-gen.sh    # régénère kernel.lock après chaque modification kernel
+```
+`kernel.lock` — 79 fichiers kernel checksumés en SHA-256. Permet à un fork de détecter les fichiers modifiés localement avant de puller une update upstream.
+
+---
+
+## Délégation kernel — BSI-v3 + ADR-014
+
+> Connexion entre la protection graduée ci-dessus et le protocole BSI (claims, satellites, zones).
+
+### Mapping zones KERNEL.md → zone BSI
+
+| Zone KERNEL.md | zone BSI (claim) | Satellite autorisé |
+|---------------|-----------------|-------------------|
+| ZONE KERNEL (agents/, profil/, scripts/, KERNEL.md…) | `kernel` | Human-confirmed uniquement |
+| ZONE INSTANCE + SATELLITES (todo/, projets/, workspace…) | `project` | Tout satellite autorisé |
+| ZONE PERSONNELLE (profil/capital, progression/, MYSECRETS) | `personal` | Tier 2 Validated minimum + confirmation |
+
+### Règle de délégation kernel — non négociable
+
+```
+PHASE ACTUELLE (BSI-v3, avant kernel-orchestrator) :
+  zone:kernel write → session humaine uniquement
+  Aucun satellite ne modifie une zone:kernel en autonomie
+  Toute modification kernel = décision humaine explicite dans la session
+
+PHASE FUTURE (après BSI-v3-9 kernel-orchestrator stable) :
+  zone:kernel write → autorisé si kerneluser: true ET satellite lancé par owner
+  Le satellite agit sous délégation explicite — jamais en auto-init
+```
+
+**Pourquoi human-only maintenant :**
+Le kernel-orchestrator (BSI-v3-9) n'existe pas encore. Laisser des satellites écrire en zone kernel sans ce garde-fou = dérive garantie. La promotion se fait quand l'orchestrator est mature et auditable.
+
+### kerneluser
+
+```yaml
+# Dans brain-compose.yml
+kerneluser: true   → propriétaire de ce brain — sudo sur toutes les zones
+kerneluser: false  → utilisateur invité (SaaS futur) — zone:kernel bloquée
+```
+
+`kerneluser: true` est le défaut sur tout brain forké. L'owner est toujours kerneluser.
+La restriction `false` s'active uniquement en contexte multi-user futur.
 
 ---
 
@@ -154,8 +259,9 @@ Repos projets : GitHub, Gitea projets clients/perso
 
 ```
 helloWorld Couche 0 — invariant [toujours, avant tout agent] :
-  KERNEL.md          ← cette loi
-  PATHS.md           ← chemins machine
+  KERNEL.md                ← loi des zones
+  brain-constitution.md    ← invariants identité + protocoles Layer 0
+  PATHS.md                 ← chemins machine
   profil/collaboration.md  ← règles de travail
 ```
 
@@ -166,3 +272,6 @@ helloWorld Couche 0 — invariant [toujours, avant tout agent] :
 | Date | Changement |
 |------|------------|
 | 2026-03-14 | Création — zones typées, protection graduée, commit ownership, session→zone access |
+| 2026-03-15 | brain-constitution.md ajouté — zone KERNEL Absolu, Chargement Couche 0 |
+| 2026-03-16 | ADR-014 ancré — mapping zones BSI, règle délégation kernel human-only phase actuelle, kerneluser |
+| 2026-03-16 | Isolation kernel — règle distribution, scripts kernel-lock-gen + kernel-isolation-check |

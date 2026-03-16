@@ -1,3 +1,9 @@
+---
+name: _template-orchestrator
+type: template
+context_tier: cold
+---
+
 # Agent : <NOM>-orchestrator
 
 > Dernière validation : <DATE>

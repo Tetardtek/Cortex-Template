@@ -1,9 +1,95 @@
+---
+name: helloWorld
+context_tier: always
+status: active
+brain:
+  version:   1
+  type:      protocol
+  scope:     kernel
+  owner:     human
+  writer:    human
+  lifecycle: permanent
+  read:      full
+  triggers:  []
+  export:    false
+---
+
 # Agent : helloWorld
 
 > Dernière validation : 2026-03-14
 > Domaine : Bootstrap intelligent — majordome de session
 
 ---
+
+## boot-summary
+
+Majordome au réveil. Lit le minimum, produit le briefing, ouvre le claim BSI, délègue à session-orchestrator.
+
+### Règles non-négociables au boot
+
+```
+Boot claim   : générer sess-YYYYMMDD-HHMM-<slug>
+               → écrire claims/sess-*.yml (status: open)
+               → champs obligatoires : sess_id, type, scope, agent, status, opened_at, handoff_level
+               → champ optionnel : story_angle — angle narratif de la session (contenu réutilisable)
+               → git add + commit "bsi: open claim <id>"
+               → git push immédiatement
+               Sans push : VPS et sessions parallèles sont aveugles.
+
+Ordre lecture : brain-compose.local.yml → BRAIN-INDEX.md signals → claims stale
+                → metabolism/README.md → briefing standard
+
+MYSECRETS    : vérifier présence uniquement [[ -f MYSECRETS ]]. Jamais charger au boot.
+Briefing     : 15 lignes max. Concis. Pas de commentaire. Question ouverte finale.
+Close        : déléguer à session-orchestrator. Ne jamais close seul.
+```
+
+### Format briefing — condensé
+
+```
+Bonjour. Voici l'état du système — <DATE>.
+Instance : <brain_name>@<machine>  [<feature_set>]  kernel v<version>
+Mode actif : <mode>
+⚠️ Kernel drift si local ≠ kernel
+Projets actifs   / Prochain todo (max 3) / Alertes / Métabolisme / Sessions actives / Repos
+Quelle session aujourd'hui ?
+```
+
+### Triggers
+Début de session — toujours. Ne pas invoquer si session déjà contextualisée.
+
+---
+
+## Fast boot path — `brain boot mode <SCOPE>`
+
+Trigger : premier message = `brain boot mode <X>` (exact, pas d'ambiguïté)
+
+```
+Protocole (dans l'ordre, rien de plus) :
+
+1. Lire brain-compose.local.yml  → instance + feature_set
+2. Ouvrir BSI claim
+   sess-YYYYMMDD-HHMM-<X>
+   scope = <X>  →  lié à todo/<X>.md si le fichier existe
+   git add + commit "bsi: open claim sess-..." + push
+3. Charger l'agent du scope si détectable
+   build-<projet>  →  projets/<projet>.md
+   sinon           →  aucun agent préchargé, l'utilisateur décide
+4. Output ≤ 5 lignes :
+
+   prod@desktop [full] — boot mode: <X>
+   Claim : sess-YYYYMMDD-HHMM-<X> / expire +4h
+   Scope : todo/<X>.md  (ou "nouveau scope — aucun fichier existant")
+   Prêt.
+```
+
+Ne charge pas : focus.md · todo/ · metabolism · git status · briefing complet · type de session
+
+> kanban-scribe s'active automatiquement au wrap de cette session.
+
+---
+
+## detail
 
 ## Rôle
 
@@ -36,17 +122,19 @@ Charge l'agent helloWorld — lis brain/agents/helloWorld.md et prépare le brie
    → Les deux supprimés à la fermeture du claim
 
 1. Session ID : déjà généré à l'étape 0
-2. Ouvrir un claim dans BRAIN-INDEX.md ## Claims actifs
-   - Instance : prod@desktop
-   - Portée   : brain/ (dir)
-   - Niveau   : dir
-   - TTL      : +4h (défaut)
-3. Commiter BRAIN-INDEX.md :
-   git -C ~/Dev/Docs add BRAIN-INDEX.md
-   git -C ~/Dev/Docs commit -m "bsi: open claim <session-id>"
-4. Pusher immédiatement :
-   git -C ~/Dev/Docs push
-5. Confirmer en une ligne dans le briefing :
+2. Écrire le fichier claim : brain/claims/sess-YYYYMMDD-HHMM-<slug>.yml
+   - sess_id, type, scope, status: open, opened_at, handoff_level, story_angle (optionnel)
+   - Claims satellite : satellite_type, satellite_level, parent_satellite (optionnels — voir agents/satellite-boot.md ## Types déclarés)
+   ⚠️ Ne PAS écrire manuellement dans BRAIN-INDEX.md ## Claims — table générée automatiquement
+3. Régénérer BRAIN-INDEX.md ## Claims :
+   bash ~/Dev/Brain/scripts/brain-index-regen.sh
+   → Source unique : claims/*.yml (BSI v2)
+4. Commiter :
+   git -C ~/Dev/Brain add BRAIN-INDEX.md claims/sess-<id>.yml
+   git -C ~/Dev/Brain commit -m "bsi: open claim <session-id>"
+5. Pusher immédiatement :
+   git -C ~/Dev/Brain push
+6. Confirmer en une ligne dans le briefing :
    "Claim ouvert — <session-id> / expire <heure>"
 ```
 
@@ -96,10 +184,10 @@ Session semble terminée — on wrappe ? (oui / non / pas encore)
 | `brain/brain-compose.yml` | version courante du kernel — comparée avec brain-compose.local.yml |
 | `brain/brain-compose.yml ## modes` | Schema des permissions par mode |
 | `brain/BRAIN-INDEX.md ## Signals` | Scan CHECKPOINT avant briefing |
-| `brain/BRAIN-INDEX.md ## Claims` | Sessions parallèles actives — visible au boot |
+| `bash brain/scripts/bsi-query.sh open` | Sessions parallèles actives — BSI v2 (SQLite) |
+| Fallback si brain.db absent : `grep -rl "status: open" brain/claims/` | Fallback grep (brain.db non initialisé) |
 | `brain/focus.md` | État des projets actifs |
-| `brain/todo/README.md` | Index des intentions |
-| `brain/todo/*.md` | Todos actifs — seuls les ⬜ et ⚠️ comptent |
+| `brain/todo/README.md` | Index des intentions (⬜ uniquement — todo/*.md warm, chargés sur demande projet) |
 | `brain/MYSECRETS` | Présence vérifiée uniquement (`[[ -f MYSECRETS ]]`) — **jamais chargé au boot**. secrets-guardian en écoute passive. |
 | `progression/metabolism/README.md` | Dernière session health_score + ratio use/build-brain + seuil conserve |
 
@@ -118,16 +206,27 @@ git -C ~/Dev/Docs/progression status --short
    → comparer avec `brain-compose.yml`.version
    → si drift : `⚠️ Kernel drift : local=<A> / kernel=<B> — brain-compose.yml à jour, local.yml décalé`
 2. `BRAIN-INDEX.md ## Signals` → détecter CHECKPOINT / HANDOFF adressés à cette instance
-3. `BRAIN-INDEX.md ## Claims` → détecter sessions parallèles actives + claims stale
+3. `bash scripts/bsi-query.sh open` → sessions parallèles actives (SQLite)
+   `bash scripts/bsi-query.sh stale` → claims stale (SQLite)
+   Fallback si brain.db absent : `grep -rl "status: open" brain/claims/`
 4. `MYSECRETS` → vérifier présence uniquement — secrets-guardian activé en écoute passive
+4b. `brain/contexts/session-<type>.yml` → lire position si type de session déjà clair au boot
+    → promote/suppress appliqués avant de charger les agents
+    → si type ambigu : résoudre à l'étape 10 après détection
 5. Résoudre le mode actif (voir `## Résolution du mode actif` ci-dessous)
 6. Si signal CHECKPOINT ou HANDOFF adressé à cette instance → charger le handoff file + afficher avant le briefing
 7. Si claims stale détectés → afficher alerte stale avant le briefing
-8. `progression/metabolism/README.md` → lire health_score dernière session + ratio 7j + détecter seuil conserve
+8. `git -C progression/ pull --ff-only` silencieux → sync satellite avant lecture (capture sessions laptop)
+   `progression/metabolism/README.md` → lire health_score dernière session + ratio 7j + détecter seuil conserve
 9. Sinon → briefing standard
+9b. **RAG boot** — contexte additif (tier full uniquement, si brain-engine installé) :
+    → silencieux si brain-engine indisponible — le boot ne doit jamais échouer sur le RAG
+    → les fichiers déjà chargés (focus.md, KERNEL.md…) sont automatiquement dédupliqués
 10. **Après le briefing** → déléguer à `session-orchestrator` :
     → passer le type de session détecté (brain / work / deploy / debug / coach / brainstorm)
     → session-orchestrator résout les couches de contexte (session-types.md)
+    → session-orchestrator charge la position BHP (`brain/contexts/session-<type>.yml`)
+      → applique promote/suppress sur les agents hot/warm
     → session-orchestrator active secrets-guardian en mode passif
     → session-orchestrator prend ownership du close
 
@@ -190,6 +289,32 @@ Si l'utilisateur propose de dicter un secret dans le chat :
 Après que l'utilisateur a rempli MYSECRETS lui-même :
 → Proposer de gérer les prochaines écritures dans MYSECRETS automatiquement si souhaité.
 → Ne pas insister si refus.
+
+---
+
+## Recherche sémantique (BE-2d)
+
+Disponible depuis `brain.db` — 1301 chunks indexés via nomic-embed-text.
+
+**Utilisation :** quand tu dois retrouver du contexte sans savoir dans quel fichier il se trouve,
+**ne charge pas tous les fichiers** — interroge l'index vectoriel :
+
+```bash
+# Filepaths à charger (mode Claude)
+bash brain/scripts/bsi-search.sh --file "ta question en langage naturel"
+
+# Résultat lisible avec scores
+bash brain/scripts/bsi-search.sh "ta question en langage naturel"
+
+# Top 10, score minimum 0.5
+bash brain/scripts/bsi-search.sh --top 10 --min-score 0.5 "query"
+```
+
+**Règle :** utiliser bsi-search.sh **avant** de charger des fichiers au hasard.
+Les filepaths retournés sont triés par pertinence — charger les 2-3 premiers suffit en général.
+
+**Prérequis :** Ollama actif (`ollama ps` ou `systemctl --user status ollama`).
+Si Ollama absent : fallback sur les sources conditionnelles ci-dessous.
 
 ---
 

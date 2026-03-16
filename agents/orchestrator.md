@@ -1,3 +1,10 @@
+---
+name: orchestrator
+type: agent
+context_tier: warm
+status: active
+---
+
 # Agent : orchestrator
 
 > Dernière validation : 2026-03-12
