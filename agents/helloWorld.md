@@ -201,6 +201,61 @@ git -C ~/Dev/Docs/progression status --short
 
 > Si un chemin est absent : "Information manquante — vérifier PATHS.md"
 
+## 🆕 Fresh fork detection — priorité absolue
+
+**Avant tout boot normal, détecter si c'est un fresh fork :**
+
+```
+Signal 1 — brain-compose.local.yml absent
+Signal 2 — PATHS.md contient encore "<BRAIN_ROOT>" (placeholders actifs)
+Signal 3 — BRAIN-INDEX.md vide + 0 claims/*.yml
+
+2 signaux sur 3 → FRESH FORK → basculer en mode setup (ci-dessous)
+```
+
+**Mode setup — protocole first boot :**
+
+```
+1. Annoncer :
+   "🧠 Fresh fork détecté — setup guidé (5 étapes, ~15 min)"
+   "Je vais configurer le brain ensemble. Réponds à chaque question."
+
+2. Étape 1 — Chemins machine
+   Demander : "Quel est le chemin absolu de ce dossier brain ?"
+   → ex: /home/alice/Dev/Brain
+   Appliquer dans PATHS.md : remplacer <BRAIN_ROOT> par la valeur donnée
+
+3. Étape 2 — CLAUDE.md global
+   Vérifier si ~/.claude/CLAUDE.md existe
+   Si absent : "Copier profil/CLAUDE.md.example vers ~/.claude/CLAUDE.md ?"
+   → Si oui : indiquer la commande exacte (pas d'écriture hors repo)
+   → Demander brain_name : "Nom de cette instance ? (prod / dev / laptop…)"
+
+4. Étape 3 — brain-compose.local.yml
+   Copier brain-compose.local.yml.example → brain-compose.local.yml
+   Pré-remplir kernel_path avec le chemin donné en étape 1
+   Demander : "Tier d'accès ? (free / pro / full) — free si pas de clé API"
+
+5. Étape 4 — Git remote
+   Vérifier git remote -v → si origin pointe encore sur brain-template
+   "Tu veux pousser vers ton propre repo ? Donne l'URL (ou 'skip')"
+   → Si URL : git remote set-url origin <url> + git push -u origin main
+
+6. Étape 5 — Validation
+   Lire brain-compose.local.yml → confirmer kernel_path + brain_name + tier
+   bash scripts/kernel-isolation-check.sh → afficher résultat
+   "✅ Brain configuré — brain_name: <X> | tier: <Y>"
+   Ouvrir le claim boot BSI (protocole standard)
+```
+
+**Règles mode setup :**
+- Une étape à la fois — ne pas tout demander d'un coup
+- Si l'utilisateur skip une étape → noter et continuer
+- Jamais écrire hors du repo brain/ (CLAUDE.md = instruction, pas écriture)
+- À la fin du setup → reprendre le boot normal depuis l'étape 1 ci-dessous
+
+---
+
 **Ordre de lecture obligatoire :**
 1. `brain-compose.local.yml` → instance active + feature_set + mode déclaré + kernel_version local
    → comparer avec `brain-compose.yml`.version
@@ -219,8 +274,12 @@ git -C ~/Dev/Docs/progression status --short
 8. `git -C progression/ pull --ff-only` silencieux → sync satellite avant lecture (capture sessions laptop)
    `progression/metabolism/README.md` → lire health_score dernière session + ratio 7j + détecter seuil conserve
 9. Sinon → briefing standard
-9b. **RAG boot** — contexte additif (tier full uniquement, si brain-engine installé) :
-    → silencieux si brain-engine indisponible — le boot ne doit jamais échouer sur le RAG
+9b. **RAG boot** — contexte additif (si Ollama disponible) :
+    ```bash
+    bash scripts/bsi-rag.sh
+    ```
+    → injecter l'output dans le contexte **après** le briefing, avant délégation
+    → silencieux si Ollama indisponible ou aucun résultat — le boot ne doit jamais échouer sur le RAG
     → les fichiers déjà chargés (focus.md, KERNEL.md…) sont automatiquement dédupliqués
 10. **Après le briefing** → déléguer à `session-orchestrator` :
     → passer le type de session détecté (brain / work / deploy / debug / coach / brainstorm)
