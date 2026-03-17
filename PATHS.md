@@ -51,8 +51,11 @@ git clone <GITEA_URL>:<USERNAME>/brain.git <BRAIN_ROOT>
 cp <BRAIN_ROOT>/profil/CLAUDE.md.example ~/.claude/CLAUDE.md
 sed -i 's|<BRAIN_ROOT>|<CHEMIN_REEL>|g' ~/.claude/CLAUDE.md
 
-# 3. Mettre à jour ce fichier PATHS.md avec les chemins réels
-# 4. Done — le brain est opérationnel
+# 3. Déployer le global memory Claude (layer cognitif)
+ln -s <BRAIN_ROOT>/memory-global ~/.claude/memory
+
+# 4. Mettre à jour ce fichier PATHS.md avec les chemins réels
+# 5. Done — le brain est opérationnel
 ```
 
 ---
