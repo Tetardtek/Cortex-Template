@@ -52,9 +52,8 @@ Agents supplémentaires : code-review, security, testing, refacto,
                          coach-scribe, git-analyst, capital-scribe,
                          i18n, doc, mail, config-scribe
 
-→ Ajouter dans brain-compose.local.yml :
-    api_key: <ta-clé>
-    tier: pro
+→ Ajouter dans brain-compose.yml :
+    brain_api_key: bk_live_<ta-clé>
 ```
 
 ### Tier full — avec clé API full
@@ -67,12 +66,43 @@ Tout pro +
   - Toutes les optimisations de contexte (BE-*)
 
 → brain-engine s'installe localement
-→ Valide la clé au démarrage contre l'endpoint d'autorisation
 → Sans clé valide : brain fonctionne en free, distillation inactive
 → Clé liée à ton fork — non redistribuable
 ```
 
 > **Obtenir une clé :** contact@tetardtek.com *(beta privée — partage limité)*
+
+---
+
+## Brain API Key — configuration
+
+### Ajouter une clé
+
+```bash
+# Dans brain-compose.yml — champ déjà présent, remplacer null :
+brain_api_key: bk_live_<ta-clé>
+
+# Ou via brain-setup.sh (nouvelle machine) — étape 3.5 le demande automatiquement
+```
+
+La clé est validée au boot par `key-guardian` (silencieux, timeout 3s) :
+- **Succès** → `feature_set` mis à jour dans `brain-compose.local.yml`
+- **VPS down** → grace period 72h depuis dernière validation — tier conservé
+- **Clé absente/invalide** → tier free, aucun blocage, aucune erreur
+
+### Format des clés
+
+| Format | Usage | Tier |
+|--------|-------|------|
+| `bk_live_<32chars>` | Production | pro ou full selon la clé |
+| `bk_test_<32chars>` | Dev/test local | free forcé (toujours valide) |
+
+### Tester sans clé
+
+```bash
+# Clé test — tier free garanti, pas de réseau requis
+brain_api_key: bk_test_local_dev_key_xxxxxxxxxxxxxxxx
+```
 
 ---
 
@@ -218,7 +248,7 @@ Permet de savoir exactement ce qui a divergé avant de puller.
 - [x] BSI-v3 multi-instances (v3-1b → v3-8)
 - [x] Rendering mode — instances autonomes projet
 - [x] kernel.lock + isolation check
-- [ ] Validation clé API (tier pro/full)
+- [x] Validation clé API (tier pro/full) — key-guardian + grace 72h
 - [ ] kernel-orchestrator (v3-9) — routage autonome entre satellites
 - [ ] brain-engine hosted (distillation managée)
 

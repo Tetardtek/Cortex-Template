@@ -1,0 +1,43 @@
+# session-brain.yml — Contexte BHP pour sessions brain/kernel
+# Trigger : "brain boot mode brain"
+# Cible : ~22% contexte max au boot
+
+session_type: brain
+description: "Session de travail sur le brain lui-même — kernel, agents, protocoles BSI"
+tier_required: free   # brain editing accessible à tous — agents fondamentaux suffisent
+
+# L0 — Invariant (~5%)
+L0:
+  - PATHS.md
+  - brain-compose.local.yml
+  - KERNEL.md
+
+# L1 — Session type (~15%)
+L1:
+  - BRAIN-INDEX.md                  # état global claims, projets, signaux
+  - todo/brain.md                   # todos kernel actifs
+  - agents/scribe.md                # mise à jour brain après session significative
+  - agents/orchestrator.md          # coordination multi-agents si disponible
+  - metabolism/README.md            # état métabolique
+
+# L2 — Project scope (~5%) — brain = project déclaré implicitement
+# Pas de L2 projet externe — brain IS le projet
+L2:
+  template: null
+  extras:
+    - wiki/concepts.md              # vocabulaire + patterns kernel
+    - focus.md                      # focus actuel brain
+  fallback: null
+
+# L3 — On demand
+# Exemples : agents/bsi-schema.md, wiki/multi-instance.md, wiki/context-loading.md,
+#            scripts détaillés, brain-template/README.md
+L3:
+  hint: "Charger à la demande : bsi-schema, multi-instance, context-loading, scripts spécifiques"
+
+# --- Métriques cibles ---
+context_target:
+  L0: "~5%"
+  L1: "~15%"
+  L2: "~5%"
+  total_boot: "~22%"

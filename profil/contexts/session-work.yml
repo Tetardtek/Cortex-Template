@@ -1,0 +1,42 @@
+# session-work.yml — Contexte BHP pour sessions de travail projet
+# Trigger : "brain boot mode work[/<project>]"
+# Cible : ~28% contexte max au boot
+
+session_type: work
+description: "Session de développement sur un projet actif"
+tier_required: free   # tier free = agents fondamentaux; pro = + code-review + security
+
+# L0 — Invariant (~5%) — TOUJOURS chargé, non négociable
+L0:
+  - PATHS.md
+  - brain-compose.local.yml
+  - KERNEL.md
+
+# L1 — Session type (~15%) — déterministe, même signal = même chargement
+L1:
+  - focus.md                        # focus actuel, todos prioritaires
+  - agents/code-review.md           # qualité code, PR, validation  # tier: pro
+  - agents/security.md              # failles, JWT, OAuth, OWASP        # tier: pro
+  - agents/debug.md                 # bug, crash, comportement inattendu
+  - metabolism/README.md            # état métabolique, énergie session
+
+# L2 — Project scope (~10%) — conditionnel sur project déclaré dans le signal
+# Clé : projet déclaré → projets/<project>.md + todo/<project>.md
+L2:
+  template: "projets/{project}.md"
+  extras:
+    - "todo/{project}.md"
+  fallback: null  # absent si pas de projet déclaré
+
+# L3 — On demand (0% au boot) — tout le reste
+# Exemples : agents/testing.md, agents/refacto.md, agents/migration.md,
+#            wiki/, progression/, autres projets, agents spécialisés métier
+L3:
+  hint: "Charger à la demande : testing, refacto, migration, infra, i18n, doc"
+
+# --- Métriques cibles ---
+context_target:
+  L0: "~5%"
+  L1: "~15%"
+  L2: "~8%"
+  total_boot: "~28%"

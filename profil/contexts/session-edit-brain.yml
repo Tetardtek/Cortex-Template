@@ -1,0 +1,58 @@
+# session-edit-brain.yml — Contexte BHP pour sessions d'édition du brain
+# Trigger : "brain boot mode edit-brain" ou "brain boot sudo"
+# Permissions : write-all brain — toutes zones sauf kernel natif machine
+
+session_type: edit-brain
+description: "Session sudo brain — modification structure, agents, ADRs, sessions, présence layer. Writes autorisés partout sauf kernel."
+tier_required: free
+
+# L0 — Invariant (~5%)
+L0:
+  - PATHS.md
+  - brain-compose.local.yml
+  - KERNEL.md
+
+# L1 — Session type (~15%)
+L1:
+  - agents/coach-boot.md           # présence minimale coach
+  - profil/lexique.md              # vocabulaire — évite les ambiguïtés
+  - BRAIN-INDEX.md                 # index complet — édition éclairée
+  - todo/brain-todo-header.md      # priorités actives (dérivé de brain.md)
+
+# L2 — Non applicable par défaut
+# Charger à la demande selon la zone éditée
+
+# L3 — On demand
+L3:
+  hint: "Charger selon la zone éditée : ADRs, agents spécifiques, session-*.yml, wiki/"
+
+# --- Permissions implicites ---
+permissions:
+  write:
+    - "profil/**"
+    - "agents/**"
+    - "modes/**"
+    - "wiki/**"
+    - "workspace/**"
+    - "todo/**"
+    - "scripts/**"
+    - "content/**"
+  write_restricted:
+    # Ces fichiers nécessitent une confirmation explicite même en session-edit-brain
+    - "KERNEL.md"
+    - "PATHS.md"
+    - "brain-compose.local.yml"
+    - "~/.claude/CLAUDE.md"
+
+# --- Note edit-brain ---
+# C'est la session de travail sur le brain lui-même.
+# Ouvrir explicitement — pas par défaut.
+# L'humain doit déclarer "brain boot sudo" ou "brain boot mode edit-brain".
+# Le kernel (KERNEL.md, PATHS.md, CLAUDE.md) reste à confirmation explicite même ici.
+
+# --- Métriques cibles ---
+context_target:
+  L0: "~5%"
+  L1: "~15%"
+  L2: "~0%"
+  total_boot: "~20%"

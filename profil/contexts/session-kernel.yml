@@ -1,0 +1,54 @@
+# session-kernel.yml — Contexte BHP pour sessions de lecture/navigation kernel
+# Trigger : "brain boot mode kernel"
+# Permissions : lecture seule sur les fichiers kernel — writes bloqués
+
+session_type: kernel
+description: "Session lecture kernel — navigation, compréhension, audit de l'identité cognitive du brain. Writes kernel impossibles."
+tier_required: free
+
+# L0 — Invariant (~5%)
+L0:
+  - PATHS.md
+  - brain-compose.local.yml
+  - KERNEL.md
+
+# L1 — Session type (~15%)
+L1:
+  - agents/coach-boot.md           # présence minimale coach
+  - profil/lexique.md              # vocabulaire
+  - modes/brain-kernel.md          # soft lock — refuse writes kernel, redirige session-edit-brain
+
+# L2 — Non applicable
+# L3 — On demand
+L3:
+  hint: "Charger à la demande : ADRs, agents, session-*.yml pour comparaison"
+
+# --- Périmètre kernel protégé ---
+kernel_zone:
+  # Ces fichiers sont en lecture seule dans cette session
+  # Toute tentative de write → refus explicite + message de redirection
+  protected:
+    - "KERNEL.md"
+    - "PATHS.md"
+    - "brain-compose.local.yml"
+    - "brain-compose.yml"
+    - "~/.claude/CLAUDE.md"
+    - "agents/coach.md"
+    - "agents/coach-boot.md"
+    - "agents/secrets-guardian.md"
+    - "agents/helloWorld.md"
+
+  redirect_message: "Ce fichier fait partie du kernel. Pour le modifier : ouvre une session-edit-brain (brain boot sudo)."
+
+# --- Note kernel ---
+# Cette session existe pour auditer, lire, comprendre le kernel sans risque de dérive.
+# Le soft lock modes/brain-kernel.md sera créé en parallèle.
+# Ne pas confondre avec session-navigate : kernel = focus identité cognitive brain.
+# Navigate = vue brain globale / architecture / décisions.
+
+# --- Métriques cibles ---
+context_target:
+  L0: "~5%"
+  L1: "~10%"
+  L2: "~0%"
+  total_boot: "~15%"

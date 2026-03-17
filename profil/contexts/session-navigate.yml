@@ -1,0 +1,40 @@
+# session-navigate.yml — Contexte BHP pour sessions de navigation brain
+# Trigger : "brain boot mode navigate"
+# Cible : ~20% contexte max au boot
+
+session_type: navigate
+description: "Session navigation — architecture, coaching, brainstorm, décisions brain. Pas d'exécution projet."
+tier_required: free
+
+# L0 — Invariant (~5%)
+L0:
+  - PATHS.md
+  - brain-compose.local.yml
+  - KERNEL.md
+
+# L1 — Session type (~15%)
+L1:
+  - agents/coach.md                 # co-pilote actif en mode navigate
+  - modes/brain-navigate.md         # soft lock comportemental
+  - focus.md                        # direction active
+  - agents/time-anchor.md           # recontextualisation temporelle + fallback post-compaction
+  - profil/lexique.md               # vocabulaire — évite les ambiguïtés
+
+# L2 — non applicable
+# La session navigate porte sur le brain entier, pas un projet
+
+# L3 — On demand
+L3:
+  hint: "Charger à la demande : ADRs, agents spécifiques, todo/brain.md, BRAIN-INDEX.md"
+
+# --- Note navigate ---
+# modes/brain-navigate.md est L1 obligatoire — il définit le soft lock.
+# Coach en co-pilote actif (pas arrière-plan) — différent des autres sessions.
+# Pas de L2 projet par design : navigate = vue brain globale.
+
+# --- Métriques cibles ---
+context_target:
+  L0: "~5%"
+  L1: "~12%"
+  L2: "~0%"
+  total_boot: "~18%"
