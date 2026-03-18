@@ -15,8 +15,8 @@ Deux modèles de distribution validés, séquencés dans le temps.
 - Distribuer brain-template
 - Les utilisateurs self-hostent leur brain-engine sur leur propre VPS
 - Chacun embed ses propres fichiers → son propre brain.db → son propre MCP
-- Coût infra pour Tetardtek : zéro supplémentaire
-- Rôle Tetardtek : maintenir le kernel + distribuer le template
+- Coût infra pour l'owner : zéro supplémentaire
+- Rôle de l'owner : maintenir le kernel + distribuer le template
 
 **Modèle B — Hébergé multi-tenant (moyen/long terme)**
 - brain-store avec sharding par utilisateur (brain.db isolé par clé)
