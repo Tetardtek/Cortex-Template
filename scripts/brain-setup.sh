@@ -104,6 +104,18 @@ else
   ok "brain-compose.local.yml existe"
 fi
 
+# ETAPE 3b — collaboration.md
+echo ""
+echo "--- 3b/5 Profil collaboration ---"
+COLLAB="$BRAIN_ROOT/profil/collaboration.md"
+COLLAB_EX="$BRAIN_ROOT/profil/collaboration.md.example"
+if [ ! -f "$COLLAB" ] && [ -f "$COLLAB_EX" ]; then
+  cp "$COLLAB_EX" "$COLLAB"
+  ok "profil/collaboration.md cree depuis .example — a personnaliser"
+else
+  ok "profil/collaboration.md existe"
+fi
+
 # ETAPE 4 — Git remote
 echo ""
 echo "--- 4/5 Git remote ---"

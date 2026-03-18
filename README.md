@@ -176,7 +176,7 @@ bash scripts/brain-status.sh          # voit tout ce qui se passe
 # mutex si fichier partagé → BRAIN-INDEX.md synchronise tout
 ```
 
-Guide complet : `wiki/multi-instance.md`
+Guide complet : `agents/AGENTS.md` — le wiki se construit au fil des sessions.
 
 ---
 
@@ -184,7 +184,9 @@ Guide complet : `wiki/multi-instance.md`
 
 ```
 brain/
-├── agents/               ← 57 agents calibrés (index : agents/AGENTS.md)
+├── agents/               ← 63 agents calibrés (index : agents/AGENTS.md)
+├── contexts/             ← sessions BSI prédéfinies (navigate, work, pilote…)
+├── agent-memory/         ← mémoire persistante agents (README + _template/)
 ├── scripts/              ← BSI-v3 protocol (index : scripts/README.md)
 │   ├── brain-status.sh   ← vue live multi-instances
 │   ├── preflight-check.sh← 6 checks avant écriture
@@ -192,7 +194,6 @@ brain/
 │   ├── human-gate-ack.sh ← gate humain + pause cascade
 │   └── ...
 ├── workflows/            ← chaînes de satellites déclarées
-├── wiki/                 ← guides (multi-instance, patterns, concepts…)
 ├── locks/                ← registre mutex fichiers (BSI-v3-7)
 ├── claims/               ← sessions BSI (vide au démarrage)
 ├── BRAIN-INDEX.md        ← état global — lu par toutes les instances
