@@ -4,10 +4,10 @@
 # Détecte les changements dans BRAIN-INDEX.md → notifie via Telegram
 #
 # Setup VPS (une seule fois) :
-#   1. Copier ce script sur le VPS : scp brain-watch-vps.sh root@VPS:/home/tetardtek/brain-watch/
+#   1. Copier ce script sur le VPS : scp brain-watch-vps.sh root@<VPS_IP>:/home/<user>/brain-watch/
 #   2. Copier brain-notify.sh aussi
-#   3. Cloner le brain : git clone git@git.tetardtek.com:Tetardtek/brain.git /home/tetardtek/brain-watch/brain
-#   4. Copier MYSECRETS sur le VPS : scp MYSECRETS root@VPS:/home/tetardtek/brain-watch/
+#   3. Cloner le brain : git clone git@<GITEA_URL>:<USERNAME>/brain.git /home/<user>/brain-watch/brain
+#   4. Copier MYSECRETS sur le VPS : scp MYSECRETS root@<VPS_IP>:/home/<user>/brain-watch/
 #   5. Installer le service systemd : install-brain-watch-vps.sh
 #   6. systemctl start brain-watch && systemctl enable brain-watch
 

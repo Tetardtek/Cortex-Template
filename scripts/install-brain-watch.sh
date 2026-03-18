@@ -106,7 +106,7 @@ After=network.target
 [Service]
 Type=simple
 User=root
-ExecStart=/home/tetardtek/brain-watch/brain-watch-vps.sh
+ExecStart=/home/<user>/brain-watch/brain-watch-vps.sh
 Restart=always
 RestartSec=10
 StandardOutput=journal

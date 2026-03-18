@@ -27,7 +27,7 @@ ERROR_PATTERNS=(
 )
 
 # Patterns de chemin absolu — exclusions pour les placeholders templates
-ABSOLUTE_PATH_PATTERN="/home/[a-z]"   # /home/tetardtek — chemin réel, pas /home/<user>
+ABSOLUTE_PATH_PATTERN="/home/[a-z]"   # ex: /home/alice — chemin réel, pas /home/<user>
 ABSOLUTE_PATH_EXCLUDE="<"             # Exclure les lignes avec placeholder (<user>, <PATHS...)
 
 # --- Patterns WARN : références documentaires — OK si contexte architecture ---
@@ -59,7 +59,7 @@ for pattern in "${ERROR_PATTERNS[@]}"; do
   fi
 done
 
-# --- Scan ERROR — chemins absolus réels (ex: /home/tetardtek/, pas /home/<user>/) ---
+# --- Scan ERROR — chemins absolus réels (ex: /home/<user>/, pas /home/<user>/) ---
 while IFS= read -r -d '' file; do
   # Cherche /home/[a-z] et exclut les lignes avec placeholder <
   matches=$(grep -n "$ABSOLUTE_PATH_PATTERN" "$file" 2>/dev/null \

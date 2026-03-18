@@ -62,7 +62,7 @@ fi
 # ---------------------------------------------------------------------------
 
 echo ""
-echo "Domaine pour le webhook (ex: bot.tetardtek.com) :"
+echo "Domaine pour le webhook (ex: bot.<OWNER_DOMAIN>) :"
 echo -n "→ "
 read -r BOT_DOMAIN
 
