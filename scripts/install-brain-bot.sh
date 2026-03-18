@@ -25,7 +25,7 @@ set -euo pipefail
 # Configuration — à adapter si besoin
 # ---------------------------------------------------------------------------
 
-WATCH_ROOT="/home/tetardtek/brain-watch"
+WATCH_ROOT="${VPS_WATCH_ROOT:-$HOME/brain-watch}"
 MYSECRETS="$WATCH_ROOT/MYSECRETS"
 BOT_PORT=5001
 BOT_SCRIPT="$WATCH_ROOT/brain-bot.py"
@@ -94,7 +94,7 @@ After=network.target
 
 [Service]
 Type=simple
-User=tetardtek
+User=${VPS_SERVICE_USER:-$(whoami)}
 WorkingDirectory=${WATCH_ROOT}
 Environment=BRAIN_WATCH_ROOT=${WATCH_ROOT}
 Environment=BRAIN_BOT_PORT=${BOT_PORT}

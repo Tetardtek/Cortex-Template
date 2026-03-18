@@ -13,7 +13,8 @@
 
 set -euo pipefail
 
-WATCH_ROOT="/home/tetardtek/brain-watch"
+# Configurable — override via env ou MYSECRETS (VPS_WATCH_ROOT=...)
+WATCH_ROOT="${VPS_WATCH_ROOT:-$HOME/brain-watch}"
 BRAIN_INDEX="$WATCH_ROOT/brain/BRAIN-INDEX.md"
 NOTIFY="$WATCH_ROOT/brain-notify.sh"
 BRAIN_ROOT="$WATCH_ROOT"  # pour brain-notify.sh — lit MYSECRETS ici
@@ -23,7 +24,8 @@ LOG_PREFIX="[brain-watch-vps]"
 export BRAIN_ROOT
 
 if [[ ! -d "$WATCH_ROOT/brain" ]]; then
-  echo "$LOG_PREFIX ERREUR : brain non cloné. Lancer : git clone git@git.tetardtek.com:Tetardtek/brain.git $WATCH_ROOT/brain" >&2
+  BRAIN_GIT_URL="${BRAIN_GIT_URL:-$(grep '^BRAIN_GIT_URL=' "$WATCH_ROOT/MYSECRETS" 2>/dev/null | cut -d= -f2-)}"
+  echo "$LOG_PREFIX ERREUR : brain non cloné. Lancer : git clone $BRAIN_GIT_URL $WATCH_ROOT/brain" >&2
   exit 1
 fi
 

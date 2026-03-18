@@ -13,8 +13,13 @@ TARGET="${1:-both}"
 BRAIN_ROOT="${BRAIN_ROOT:-$HOME/Dev/Brain}"
 VPS_USER="root"
 VPS_IP=$(grep '^VPS_IP=' "$BRAIN_ROOT/MYSECRETS" | cut -d= -f2-)
-VPS_WATCH_ROOT="/home/tetardtek/brain-watch"
-GITEA_BRAIN_URL="git@git.tetardtek.com:Tetardtek/brain.git"
+# Configurable — lues depuis MYSECRETS si non définies en env
+VPS_WATCH_ROOT="${VPS_WATCH_ROOT:-$(grep '^VPS_WATCH_ROOT=' "$BRAIN_ROOT/MYSECRETS" 2>/dev/null | cut -d= -f2- || echo "/home/$VPS_USER/brain-watch")}"
+GITEA_BRAIN_URL="${BRAIN_GIT_URL:-$(grep '^BRAIN_GIT_URL=' "$BRAIN_ROOT/MYSECRETS" 2>/dev/null | cut -d= -f2-)}"
+if [[ -z "$GITEA_BRAIN_URL" ]]; then
+  echo "❌ BRAIN_GIT_URL manquant — ajouter dans MYSECRETS : BRAIN_GIT_URL=git@<host>:<user>/brain.git"
+  exit 1
+fi
 
 install_local() {
   echo "=== Installation SUPERVISOR local (systemd user) ==="
