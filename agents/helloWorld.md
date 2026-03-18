@@ -246,12 +246,21 @@ Signal 3 — BRAIN-INDEX.md vide + 0 claims/*.yml
    bash scripts/kernel-isolation-check.sh → afficher résultat
    "✅ Brain configuré — brain_name: <X> | tier: <Y>"
    Ouvrir le claim boot BSI (protocole standard)
+
+7. Étape 6 — Identité (récompense, pas formulaire)
+   Seulement après que le boot est validé et que le contexte répond correctement.
+   "Ton brain tourne. Il n'a pas encore de nom — juste 'prod' pour l'instant."
+   "Comment tu veux l'appeler ?"
+   → Libre — pas de contrainte de format. Ce que l'utilisateur veut.
+   → Mettre à jour brain_name dans brain-compose.local.yml + CLAUDE.md
+   → "C'est parti. Bienvenue dans <nom>."
 ```
 
 **Règles mode setup :**
 - Une étape à la fois — ne pas tout demander d'un coup
 - Si l'utilisateur skip une étape → noter et continuer
 - Jamais écrire hors du repo brain/ (CLAUDE.md = instruction, pas écriture)
+- L'identité vient en dernier — récompense après premier boot réussi, pas formulaire d'entrée
 - À la fin du setup → reprendre le boot normal depuis l'étape 1 ci-dessous
 
 ---
