@@ -24,7 +24,7 @@ Question centrale : distribuer le kernel seul, ou kernel + capacité de distilla
 
 **Modèle open-core :**
 - **Kernel** = forkable, open, chaque fork = instance propriétaire
-- **Features avancées** = locked derrière `keys.tetardtek.com` (PayByFeature existant)
+- **Features avancées** = locked derrière `keys.<OWNER_DOMAIN>` (PayByFeature existant)
 - **MCP** = pont entre distribution OS (fork/own) et runtime BaaS (instance expose un service)
 
 ---
@@ -46,7 +46,7 @@ Question centrale : distribuer le kernel seul, ou kernel + capacité de distilla
 ```
 git clone brain-template   → kernel propre (pas l'instance perso)
 claude → CLAUDE.md boot    → Claude IS l'onboarding (pas de wizard)
-keys.tetardtek.com          → gate PayByFeature sur features locked
+keys.<OWNER_DOMAIN>          → gate PayByFeature sur features locked
 ```
 
 Chaque fork = instance propriétaire. L'humain possède son brain.
@@ -82,5 +82,5 @@ Horizon distribution : post-Avril 2026 (brain still owner-only jusqu'au 2026-04)
 
 - ADR-006 (BaaS) — compatible, pas exclusif
 - ADR-007 (distribution kernel) — prérequis
-- `brain-key-server` + `keys.tetardtek.com` — gate existant
+- `brain-key-server` + `keys.<OWNER_DOMAIN>` — gate existant
 - `brain-template/` — repo distribution (à compléter)

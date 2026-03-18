@@ -1,4 +1,4 @@
-# Patterns d'orchestration — Tetardtek Brain
+# Patterns d'orchestration — Brain
 
 > **Type :** Contexte — propriétaire : `orchestrator-scribe`
 > Mis à jour en fin de session quand un pattern récurrent est identifié.

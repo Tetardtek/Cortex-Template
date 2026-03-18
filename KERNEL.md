@@ -179,7 +179,7 @@ Déclaration dans le claim pilote :
 
 ```
 INTERDIT dans agents/ distribuables :
-  - Chemin machine absolu hardcodé (/home/tetardtek/..., /root/...)
+  - Chemin machine absolu hardcodé (/home/<owner>/..., /root/...)
   - toolkit/private/ — patterns privés non distribués
   - require:/load:/source: vers MYSECRETS ou tout fichier zone:personal
 

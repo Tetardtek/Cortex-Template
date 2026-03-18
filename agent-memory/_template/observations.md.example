@@ -1,0 +1,28 @@
+---
+agent: <nom-agent>
+projet: <slug-projet>
+---
+
+# Observations L3a — <agent> × <projet>
+
+> Alimenté par `metabolism-scribe` en fin de session.
+> Lecture : agent en session courante (contexte L3a).
+> Graduation : `validated.md` → signal `toolkit-scribe` quand kpi_score >= seuil.
+
+---
+
+<!-- Template d'entrée — une entrée par session significative -->
+
+## YYYY-MM-DD — sess-<id>
+
+**Pattern tenté :** <description courte>
+
+**Contexte :** <pourquoi ce pattern dans ce projet>
+
+**Résultat :**
+- ✅ Validé / ⚠️ Partiel / ❌ Rejeté
+- <observation concrète — 1-2 lignes>
+
+**KPI impact :** +<N> validation(s) sur `<pattern_id>`
+
+---

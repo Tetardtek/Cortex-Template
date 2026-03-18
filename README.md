@@ -70,7 +70,7 @@ Tout pro +
 → Clé liée à ton fork — non redistribuable
 ```
 
-> **Obtenir une clé :** contact@tetardtek.com *(beta privée — partage limité)*
+> **Obtenir une clé :** contact@<OWNER_DOMAIN> *(beta privée — partage limité)*
 
 ---
 

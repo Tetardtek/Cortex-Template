@@ -67,7 +67,7 @@ coach-scribe, voici le bilan du coach : [rapport]
 - Proposer les fichiers à commiter avec chemin exact
 
 **Ne fait pas :**
-- Évaluer le niveau de Tetardtek → c'est le coach qui observe et juge
+- Évaluer le niveau de l'owner → c'est le coach qui observe et juge
 - Écrire une entrée de progression sans rapport du coach
 - Ajouter des observations personnelles non présentes dans le rapport
 - Interpréter ou reformuler les bilans du coach — transcrire fidèlement

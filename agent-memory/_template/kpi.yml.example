@@ -1,0 +1,23 @@
+# kpi.yml — Template L3a par agent × projet
+# Copier vers : agent-memory/<agent>/<projet>/kpi.yml
+# Propriétaire : metabolism-scribe (mise à jour en fin de session)
+
+agent: <nom-agent>          # ex: tech-lead, debug, vps
+projet: <slug-projet>       # ex: superoauth, tetardpg, originsdigital
+stack: <stack-principale>   # ex: node-express-jwt, nestjs-postgres, docker-apache
+
+# ── KPIs par pattern ──────────────────────────────────────────────────────────
+patterns:
+  - pattern_id: <slug-pattern>    # ex: jwt-tenant-isolation, docker-healthcheck
+    validations: 0               # incrémenté par metabolism-scribe à chaque session validée
+    kpi_score: 0.0               # 0.0 → 1.0 — calculé : validations / seuil_graduation
+    graduated: false             # true quand kpi_score stable + validations >= seuil
+    seuil_graduation: 3          # configurable par stack (défaut : 3)
+    last_validated: null         # YYYY-MM-DD
+    notes: ""
+
+# ── Métadonnées ───────────────────────────────────────────────────────────────
+created_at: <YYYY-MM-DD>
+updated_at: <YYYY-MM-DD>
+sessions_count: 0              # nombre de sessions sur ce projet avec cet agent
+graduated_patterns: 0          # compteur patterns graduées → L3b

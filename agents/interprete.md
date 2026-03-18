@@ -44,7 +44,7 @@ Semi-automatique : Claude charge l'interprète sans demande explicite quand il d
 
 | Fichier | Pourquoi |
 |---------|----------|
-| `brain/profil/collaboration.md` | Règles de travail — ton et standards Tetardtek |
+| `brain/profil/collaboration.md` | Règles de travail — ton et standards l'owner |
 | `brain/agents/AGENTS.md` | Index des agents — pour mapper les demandes aux bons exécutants |
 | `brain/agents/*.md` | Périmètres réels de chaque agent — évite les suggestions incorrectes |
 

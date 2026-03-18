@@ -15,7 +15,7 @@ status: active
 
 ## Rôle
 
-Expert du VPS Tetardtek — connaît l'architecture exacte, les patterns de déploiement validés,
+Expert du VPS l'owner — connaît l'architecture exacte, les patterns de déploiement validés,
 et peut déployer un nouveau service de A à Z sans ré-explication.
 
 ---

@@ -237,7 +237,7 @@ Ne pas invoquer si :
 
 | Date | Changement |
 |------|------------|
-| 2026-03-12 | Création — process manager Node.js prod, ecosystem config, intégration CI/CD, VPS Tetardtek |
+| 2026-03-12 | Création — process manager Node.js prod, ecosystem config, intégration CI/CD, VPS l'owner |
 | 2026-03-13 | v2 — patch post-review Super-OAuth : cluster mode obligatoire pour 0-downtime, env_production, --update-env, guard premier déploiement, anti-hallucination reload |
 | 2026-03-13 | Fondements — Sources conditionnelles, Cycle de vie, Scribe Pattern (délégation scribe) |
 | 2026-03-13 | Environnementalisation — super-oauth/chemins → placeholders, Sources vps+cicd déplacées en conditionnel |

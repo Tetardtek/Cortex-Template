@@ -4,7 +4,7 @@ type: index
 context_tier: cold
 ---
 
-# Agents spécialisés — Tetardtek
+# Agents spécialisés — l'owner
 
 > Index des agents disponibles.
 > Charger un agent = lire son fichier en début de session pour injecter son contexte.

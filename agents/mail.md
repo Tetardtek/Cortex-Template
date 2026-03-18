@@ -15,7 +15,7 @@ status: active
 
 ## Rôle
 
-Expert du stack mail self-hosted Tetardtek — connaît Stalwart, la configuration DNS complète,
+Expert du stack mail self-hosted l'owner — connaît Stalwart, la configuration DNS complète,
 les protocoles mail et les clients configurés. Peut diagnostiquer et déployer depuis zéro.
 
 ---

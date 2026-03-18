@@ -48,7 +48,7 @@ Le brain n'est pas un monorepo. Chaque couche a son repo :
 
 | Repo | Chemin local | Couche | Push vers |
 |------|-------------|--------|-----------|
-| `brain` | `/home/tetardtek/Dev/Docs/` | Kernel + instance | Gitea privé |
+| `brain` | `<BRAIN_ROOT>/docs/` | Kernel + instance | Gitea privé |
 | `brain-profil` | `Docs/profil/` | Kernel (profil perso) | Gitea privé |
 | `brain-todo` | `Docs/todo/` | Instance | Gitea privé |
 | `brain-toolkit` | `Docs/toolkit/` | Instance (patterns) | Gitea privé |

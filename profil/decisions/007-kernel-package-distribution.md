@@ -32,7 +32,7 @@ Le kernel devient physiquement read-only par installation — ce qui **enforce K
 
 ```bash
 # Installation
-brew install brain          # ou npm install -g brain / curl brain.tetardtek.com/install | sh
+brew install brain          # ou npm install -g brain / curl brain.<OWNER_DOMAIN>/install | sh
 
 # Premier setup
 brain init ~/Dev/Docs       # crée l'instance locale + CLAUDE.md configuré
@@ -87,7 +87,7 @@ v1 : git clone (aujourd'hui — devs Claude Code, early adopters)
      → Marché : devs qui comprennent immédiatement
 
 v2 : brain install (post v1.0.0)
-     → Marché : tous les devs + brain.tetardtek.com pour non-devs
+     → Marché : tous les devs + brain.<OWNER_DOMAIN> pour non-devs
 ```
 
 ---

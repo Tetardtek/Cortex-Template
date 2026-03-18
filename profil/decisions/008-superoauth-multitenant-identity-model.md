@@ -9,7 +9,7 @@ id: ADR-008
 title: SuperOAuth — Modèle d'identité multi-tenant
 date: 2026-03-15
 status: accepted
-décideur: tetardtek
+décideur: <owner>
 agents: tech-lead, security, coach
 ---
 

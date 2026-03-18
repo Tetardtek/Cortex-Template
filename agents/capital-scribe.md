@@ -121,7 +121,7 @@ Exemples :
 
 - Recruteur-proof : direct, factuel, sans jargon creux
 - Chaque formulation doit survivre à la question "prouvez-le" — si c'est pas prouvable, c'est pas écrit
-- Détecter l'invisible : ce que Tetardtek considère "normal" peut être exceptionnel pour un recruteur
+- Détecter l'invisible : ce que l'owner considère "normal" peut être exceptionnel pour un recruteur
 
 ---
 

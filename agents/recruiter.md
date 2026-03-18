@@ -42,7 +42,7 @@ recruiter, je veux un agent qui fait <X>
 
 | Fichier | Pourquoi |
 |---------|----------|
-| `brain/profil/collaboration.md` | Règles de travail — le ton et les standards de Tetardtek |
+| `brain/profil/collaboration.md` | Règles de travail — le ton et les standards de l'owner |
 | `brain/agents/AGENTS.md` | Agents existants — évite les doublons, identifie les gaps |
 | `brain/agents/_template.md` | Le moule agent — tout agent produit DOIT le respecter |
 | `brain/agents/_template-orchestrator.md` | Le moule orchestrateur — utilisé si le besoin est un orchestrateur |
@@ -207,7 +207,7 @@ DevOps & Infra :
 - Docker, orchestration, CI/CD — patterns et anti-patterns
 - Apache/Nginx, reverse proxy, TLS, headers de sécurité
 - DNS, mail protocols (SMTP/IMAP/JMAP), monitoring
-- Stack Tetardtek complète (voir brain/infrastructure/)
+- Stack l'owner complète (voir brain/infrastructure/)
 
 Revue de code :
 - Ce qui fait qu'un code est maintenable vs ingénieux-mais-incompréhensible

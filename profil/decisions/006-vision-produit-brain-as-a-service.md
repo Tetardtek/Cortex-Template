@@ -19,7 +19,7 @@ Trois insights émergés en session :
 
 ## Décision
 
-Construire `brain.tetardtek.com` — service web self-hosted — comme premier point d'entrée public. L'utilisateur apporte sa clé API (BYOK). Le brain fournit la matrice. La subscription contrôle les zones accessibles.
+Construire `brain.<OWNER_DOMAIN>` — service web self-hosted — comme premier point d'entrée public. L'utilisateur apporte sa clé API (BYOK). Le brain fournit la matrice. La subscription contrôle les zones accessibles.
 
 **Ne pas open-sourcer avant d'être sur les radars.** Apparaître d'abord, décider ensuite.
 
@@ -28,10 +28,10 @@ Construire `brain.tetardtek.com` — service web self-hosted — comme premier p
 ## Architecture produit
 
 ```
-brain.tetardtek.com
+brain.<OWNER_DOMAIN>
   ├── Interface web (session browser)
   ├── BYOK — utilisateur fournit sa clé API LLM
-  ├── Matrice servie depuis infra tetardtek (zones contrôlées)
+  ├── Matrice servie depuis infra de l'owner (zones contrôlées)
   ├── BSI géré côté serveur (multi-tenant)
   └── Subscription → feature_set → zones débloquées
 ```
@@ -50,7 +50,7 @@ brain.tetardtek.com
 
 ```
 Utilisateur  →  apporte sa clé API LLM (BYOK)
-tetardtek    →  fournit la matrice + les zones + les updates kernel
+l'owner →  fournit la matrice + les zones + les updates kernel
               →  facture la valeur ajoutée, pas le compute
 ```
 
@@ -85,7 +85,7 @@ tetardtek    →  fournit la matrice + les zones + les updates kernel
 ## Le moat défendable
 
 La matrice se copie. La longueur d'avance vient de :
-1. **Distribution** — premier sur brain.tetardtek.com
+1. **Distribution** — premier sur brain.<OWNER_DOMAIN>
 2. **Mémoire des décisions** — 6 ADRs, les "pourquoi" ne se copient pas
 3. **Écosystème** — toolkit/ patterns validés en prod, toolkit-scribe, progression/
 4. **Instanciable** — pas de dépendance à un seul LLM provider
