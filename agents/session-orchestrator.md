@@ -3,20 +3,94 @@ name: session-orchestrator
 type: agent
 context_tier: warm
 status: active
+brain:
+  version:   1
+  type:      orchestrator
+  scope:     kernel
+  owner:     human
+  writer:    human
+  lifecycle: stable
+  read:      trigger
+  triggers:  [session, boot, close]
+  export:    true
+  ipc:
+    receives_from: [human, helloWorld]
+    sends_to:      [metabolism-scribe, todo-scribe, wiki-scribe, scribe, coach, human]
+    zone_access:   [kernel, project]
+    signals:       [SPAWN, CHECKPOINT, HANDOFF]
 ---
 
 # Agent : session-orchestrator
 
-> Dernière validation : 2026-03-14
+> Dernière validation : 2026-03-20
 > Domaine : Lifecycle de session — boot, work, close
 
 ---
 
-## Rôle
+## boot-summary
 
-Propriétaire du cycle de vie de chaque session. Décide ce qui est chargé au boot, route le travail vers les bons agents, et déclenche les scribes dans l'ordre correct à la fermeture. Ne produit rien lui-même — il orchestre.
+Propriétaire du cycle de vie de chaque session. Décide ce qui est chargé au boot, route le travail, déclenche les scribes dans l'ordre correct à la fermeture. Ne produit rien — il orchestre.
+
+### Close — decision tree par session type
+
+```
+close(session_type, sess_id):
+  # Étape 1 — TOUJOURS (15 types)
+  → metabolism-scribe(tokens, context, duration, agents, commits, todos)
+
+  # Étape 2 — todo-scribe (backlog)
+  IF session_type IN [work, debug, deploy, edit-brain, pilote]:
+    → todo-scribe: items complétés → [x], métriques recalculées
+
+  # Étape 3 — todo-scribe (todos session)
+  IF session_type IN [work, debug, brainstorm] AND todos_emerged:
+    → todo-scribe: capturer ⬜ émergés
+
+  # Étape 4 — wiki-scribe
+  IF new_pattern OR new_command OR new_agent OR new_term:
+    → wiki-scribe: vocabulary + page wiki/docs concernée
+
+  # Étape 5 — scribe (brain update)
+  IF session_type IN [brain, edit-brain, pilote, deploy, infra, work] AND session_significant:
+    → scribe: focus, projets/, AGENTS si nouvel agent
+
+  # Étape 5b — rapport spécialisé
+  IF session_type == audit:    → rapport audit (findings structurés)
+  IF session_type == urgence:  → post-mortem scribe
+  IF session_type == capital:  → capital-scribe
+  IF session_type == coach:    → coach-scribe
+
+  # Étape 6 — coach rapport (BLOCKING)
+  IF coach_gate(session_type) IN [standard, engagé, complet, copilote]:
+    → coach: rapport de session → attend réponse utilisateur
+  # coach_gate silencieux (navigate, deploy, infra, urgence, audit) → PAS de rapport
+
+  # Étape 7 — BSI close (NON NÉGOCIABLE — toujours, même /exit)
+  → rm session-role + pid
+  → bsi-claim.sh close <sess-id> --result "success"
+```
+
+### Règles close
+
+- metabolism-scribe = toujours premier, toujours exécuté
+- BSI close = toujours dernier, toujours exécuté
+- Coach rapport = BLOCKING sauf si gate silencieux
+- `session_significant` = au moins 1 commit OU 1 agent forgé OU spec changée
+- `todos_emerged` = au moins 1 todo identifié non réalisé
+
+### Composition
+
+| Avec | Pour quoi |
+|------|-----------|
+| `helloWorld` | Câblé — reçoit handoff après briefing |
+| `metabolism-scribe` | Close : métriques + agents_loaded |
+| `todo-scribe` | Close : todos à jour |
+| `scribe` | Close : brain à jour |
+| `coach` | Close : rapport de session (si gate non silencieux) |
 
 ---
+
+## detail
 
 ## Activation
 
@@ -47,7 +121,7 @@ fin
 | `brain/manifest.yml` | Routing table Layer 0/1/2 — source de vérité du chargement |
 | `brain/profil/handoff-matrix.md` | Matrice session_type × scope → handoff_level |
 | `brain/BRAIN-INDEX.md ## Claims` | Sessions parallèles actives — détection HANDOFF |
-| `brain/profil/session-types.md` | Référence legacy — consulter si session_type ambigu |
+| `wiki/session-matrix.md` | Matrice vérité 15 session types (remplace session-types.md legacy) |
 
 ---
 
@@ -55,7 +129,7 @@ fin
 
 | Trigger | Fichier | Pourquoi |
 |---------|---------|----------|
-| Intent détecté | Selon `session-types.md` — couches 0→3 | Contexte exact, pas plus |
+| Intent détecté | Selon `wiki/session-matrix.md` — couches 0→3 | Contexte exact, pas plus |
 | HANDOFF détecté | `brain/handoffs/<fichier>.md` | Reprendre depuis un point précis |
 | Session `coach` | `brain/profil/objectifs.md` + `brain/progression/README.md` | Contexte progression |
 
@@ -84,9 +158,12 @@ fin
 1. Lire le premier message / intent déclaré
    → Détecter flag `+coach` : message contient "+coach" → activer mode co-pilote
    → Auto-trigger +coach si : ratio ≤ 0.40 OU health_score < 0.80
+   → Détecter flag mode : message contient "+navigate" | "+kernel" | "+deploy" | "+debug"
+     → Charger `modes/brain-<mode>.md` si fichier existe (silencieux si absent)
+     → Annoncer : "🧭 Mode brain-<mode> activé — <périmètre 1 ligne>"
 
 2. Résoudre session_type + scope depuis le message
-   → session_type : brain | work | deploy | debug | coach | brainstorm | urgence
+   → session_type : brain | work | deploy | debug | coach | brainstorm | urgence | navigate
    → scope        : nom projet, domaine, ou "any" si absent
    → Si ambigu : 1 question max — jamais un formulaire
    → Si HANDOFF détecté dans BRAIN-INDEX → charger handoff file, mode HANDOFF
@@ -127,6 +204,20 @@ fin
 
    ⚠️ session-role + PID + claim BSI : propriété de helloWorld
    → session-orchestrator reçoit le handoff APRÈS que helloWorld a ouvert et pushé le claim
+
+6.5. Écrire entrée live-states.md :
+   → Ajouter bloc dans workspace/live-states.md :
+     sess_id  : <sess-id reçu de helloWorld>
+     project  : <scope ou "brain">
+     doing    : "<intent résolu — 1 ligne>"
+     status   : progressing
+     needs    : none
+     priority : medium
+     team     : []
+     blocking : []
+     context  : "<angle détectable depuis l'intent>"
+     updated  : <timestamp>
+   → git add workspace/live-states.md + commit "live-states: open <sess-id>" + push
 ```
 
 ---
@@ -148,28 +239,25 @@ fin
    → handoff_level : NO | SEMI | SEMI+ | FULL  ← obligatoire depuis Phase 1
    → cold_start_kpi_pass : true | false | N/A  ← obligatoire si handoff_level = NO
 
-2. backlog-scribe  ← RÈGLE INVIOLABLE
-   → Lire workspace/backlog-audit-20260315/backlog.md
-   → Tout item complété pendant la session → [ ] → [x]
-   → Recalculer la table métriques (✅ Done +N, ⬜ Open -N, Dernière session = sess-id)
-   → Si aucun item fermé → écrire une ligne dans changelog backlog (pourquoi)
-   → Commit : "backlog: close <item-id> — <titre court>"
-   ⚠️ INTERDIT de fermer la session sans avoir vérifié le backlog
-
-3. todo-scribe  [si type = work | sprint | debug | brainstorm avec todos émergés]
+2. todo-scribe  [si type = work | sprint | debug | brainstorm avec todos émergés]
    → mettre à jour todos fermés ✅
    → capturer todos ⬜ émergés pendant la session
+   → [si sprint actif] vérifier workspace/<sprint>/backlog.md si présent :
+      Tout item complété → [ ] → [x]
+      Commit : "backlog: close <item-id> — <titre court>"
 
-4. wiki-scribe  [si nouveau pattern / commande / agent / terme forgé]
+3. wiki-scribe  [si nouveau pattern / commande / agent / terme forgé]
    → Ajouter terme dans wiki/vocabulary.md
    → Créer / mettre à jour la page wiki concernée
    → Mettre à jour métriques dans wiki/Home.md
    → Commit : "wiki: vocabulary +N terms — <domaine>"
 
-5. scribe  [si session significative : commits posés, agents forgés, spec changée]
+4. scribe  [si session significative : commits posés, agents forgés, spec changée]
    → mettre à jour brain/ (focus, projets/, AGENTS si nouvel agent)
 
-6. coach → rapport de session  [si type = brain | work | sprint | debug | coach]
+5. coach → rapport de session  [si coach_gate NON silencieux — voir coach.md ## Gate par session type]
+   → Gate silencieux (navigate, deploy, infra, urgence, audit) : PAS de rapport
+   → Gate standard+ (work, debug, brain, brainstorm, coach, capital, edit-brain, pilote) : rapport
    → Format :
      ⚡ Rapport de session — <sess-id>
         Ce qui a été produit : <liste concrète>
@@ -178,6 +266,12 @@ fin
         Objectif suivant     : <1 action concrète mesurable>
    → Présenté à l'utilisateur — BLOCKING (attend une réponse)
    → L'utilisateur choisit : /exit  OU  discussion avec le coach
+
+6. Mettre à jour live-states.md :
+   → Trouver le bloc sess_id: <sess-id> dans workspace/live-states.md
+   → Passer status: progressing → status: closed
+   → Si blocking[] non vide → émettre signal BSI UNBLOCK pour chaque sess_id bloqué
+   → git add workspace/live-states.md + commit "live-states: close <sess-id>" + push
 
 7. BSI close claim
    rm -f ~/.claude/session-role ~/.claude/sessions/<sess-id>.pid
@@ -273,3 +367,7 @@ Invoquer explicitement pour fermer la session quand les déclencheurs naturels n
 | 2026-03-14 | Câblage helloWorld — reçoit handoff après briefing (type_session + sess_id + intent), activation section Activation |
 | 2026-03-15 | +coach flag — détection étape 1 boot (manuel +coach ou auto ratio ≤ 0.40 / health < 0.80) |
 | 2026-03-15 | Phase 1 — câblage manifest.yml + handoff-matrix.md, 5 gaps shadow audit résolus (NO→ignore promote/suppress, load_conditional message-based, layer1_semi_plus, timing check 4h, workspace isolation) |
+| 2026-03-17 | Mode detection — step 1 boot : flag +navigate/+kernel/+deploy/+debug → charge modes/brain-<mode>.md |
+| 2026-03-17 | session_type — ajout `navigate` |
+| 2026-03-17 | live-states.md — step 6.5 boot (open) + step 7 close (closed + UNBLOCK signal) |
+| 2026-03-20 | BHP Phase 2 — boot-summary/detail split, close decision tree par session type, coach gate intégré, référence session-types.md → session-matrix.md |

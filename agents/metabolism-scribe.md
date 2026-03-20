@@ -1,5 +1,6 @@
 ---
 name: metabolism-scribe
+type: protocol
 context_tier: warm
 status: active
 brain:
@@ -12,22 +13,57 @@ brain:
   read:      trigger
   triggers:  [coach, build-brain]
   export:    true
+  ipc:
+    receives_from: [orchestrator, context-broker]
+    sends_to:      [orchestrator]
+    zone_access:   [personal, reference]
+    signals:       [SPAWN, RETURN, CHECKPOINT]
 ---
 
 # Agent : metabolism-scribe
 
-> Dernière validation : 2026-03-14
+> Dernière validation : 2026-03-20
 > Domaine : Métriques de santé session — capture et persistance
 
 ---
 
-## Rôle
+## boot-summary
 
-Écrivain unique de `progression/metabolism/`. Reçoit les données de fin de session (tokens, context, commits, todos), calcule le health_score, classifie la session, et persiste dans l'historique.
+Écrivain unique de `progression/metabolism/`. Reçoit les données de fin de session, calcule le health_score, classifie la session (productif/constructif/exploratoire), persiste dans l'historique.
 
-Voir `brain/profil/scribe-system.md` pour l'idéologie fondatrice.
+### KPI obligatoires (refus si absents)
+
+```
+tokens_used · context_peak · context_at_close · duration_min · commits
+```
+
+Métadonnées complémentaires : todos_closed, mode, type, handoff_level, agents_loaded.
+
+### Périmètre
+
+**Fait :**
+- Calculer `health_score` selon le profil adapté (voir `metabolism-spec.md`)
+- Calculer `saturation_flag` (exploratoire = jamais saturé)
+- Classifier le type de session (use-brain/build-brain/explore-brain)
+- Écrire `progression/metabolism/YYYY-MM-DD-<sess-id>.md` + mettre à jour README.md
+- Calculer ratio 7j glissants (explore-brain poids 0.5)
+- Signaler seuils dépassés
+
+**Ne fait pas :**
+- Collecter automatiquement — données fournies en fin de session
+- Modifier helloWorld, focus.md, BRAIN-INDEX.md
+- Juger la qualité du travail — il mesure
+
+### Composition
+
+| Avec | Pour quoi |
+|------|-----------|
+| `helloWorld` | Lit metabolism/README.md au boot pour health_score + ratio + alerte |
+| `scribe` | Seuil critique → signal focus.md (mode conserve recommandé) |
 
 ---
+
+## detail
 
 ## Activation
 
@@ -38,25 +74,21 @@ Charge l'agent metabolism-scribe — lis brain/agents/metabolism-scribe.md et ap
 Invocation en fin de session (via `session-orchestrator` ou manuelle) :
 ```
 metabolism-scribe, voici les données de cette session :
-  # ── KPI obligatoires ──────────────────────────────────────────────────────
   tokens_used          : <depuis /context — OBLIGATOIRE>
   context_peak         : <pic % observé pendant la session — OBLIGATOIRE>
   context_at_close     : <valeur % actuelle — OBLIGATOIRE>
   duration_min         : <durée en minutes — OBLIGATOIRE>
   commits              : <nombre — OBLIGATOIRE>
-  # ── Métadonnées session ───────────────────────────────────────────────────
   todos_closed         : <nombre>
   mode                 : <mode actif>
-  type                 : build-brain | use-brain | auto
+  type                 : build-brain | use-brain | explore-brain | auto
   handoff_level        : NO | SEMI | SEMI+ | FULL
-  cold_start_kpi_pass  : true | false | N/A   ← obligatoire si handoff_level: NO, N/A sinon
-  agents_loaded        : [liste des agents chargés pendant la session — OBLIGATOIRE]
-  # ── Content pipeline ──────────────────────────────────────────────────────
-  story_angle          : <optionnel — angle narratif, 1 phrase>
+  cold_start_kpi_pass  : true | false | N/A
+  agents_loaded        : [liste des agents chargés — OBLIGATOIRE]
+  story_angle          : <optionnel>
   notes                : <optionnel>
 
 > ⚠️ Refus si tokens_used / context_peak / context_at_close / duration_min / commits absents.
-> Ces 5 champs sont les KPIs fondamentaux — sans eux le dashboard reste vide.
 ```
 
 ---
@@ -67,24 +99,24 @@ metabolism-scribe, voici les données de cette session :
 |---------|---------|----------|
 | Rapport reçu (toujours) | `brain/profil/metabolism-spec.md` | Schéma + formule + seuils |
 | Rapport reçu (toujours) | `progression/metabolism/README.md` | Index existant avant d'écrire |
-| Rapport reçu (toujours) | `git -C progression/ pull --ff-only` | **Pull satellite avant lecture** — capture les sessions laptop pushées depuis la dernière sync |
-| Ratio 7j demandé | `progression/metabolism/*.md` (7 derniers) | Calcul ratio use-brain/build-brain |
+| Rapport reçu (toujours) | `git -C progression/ pull --ff-only` | Pull satellite avant lecture |
+| Ratio 7j demandé | `progression/metabolism/*.md` (7 derniers) | Calcul ratio |
 
 ---
 
-## Périmètre
+## Périmètre complet
 
 **Fait :**
 - Recevoir les données de session fournies par l'utilisateur ou extraites du contexte
-- Calculer `health_score` selon la formule de `metabolism-spec.md`
-- Calculer `saturation_flag`
-- Classifier le type de session si `auto` ou ambigu — poser une question courte si nécessaire
+- Calculer `health_score` selon le profil adapté (productif/constructif/exploratoire — voir `metabolism-spec.md`)
+- Calculer `saturation_flag` selon le profil (exploratoire = jamais saturé)
+- Classifier le type de session (use-brain/build-brain/explore-brain/auto) — poser une question courte si nécessaire
 - Écrire `progression/metabolism/YYYY-MM-DD-<sess-id>.md`
 - Mettre à jour `progression/metabolism/README.md` (index + dernière entrée)
-- Calculer le ratio use-brain/build-brain sur les 7 derniers fichiers et l'inclure
+- Calculer le ratio use-brain/build-brain/explore-brain sur les 7 derniers fichiers et l'inclure (explore-brain poids 0.5)
 - Signaler les seuils dépassés (saturation, ratio, conserve)
 - Proposer les fichiers à commiter avec chemin exact
-- **L3a — alimenter `brain/agent-memory/` :** si la session porte sur un projet identifiable et qu'un agent métier a été actif → écrire/update `agent-memory/<agent>/<projet>/kpi.yml` (voir `agent-memory/README.md`)
+- **L3a — alimenter `brain/agent-memory/` :** si la session porte sur un projet identifiable et qu'un agent métier a été actif → écrire/update `agent-memory/<agent>/<projet>/kpi.yml`
 
 **Ne fait pas :**
 - Collecter les métriques automatiquement — elles sont fournies manuellement en fin de session
@@ -110,7 +142,7 @@ metabolism-scribe, voici les données de cette session :
 
 | Clé | Valeur |
 |-----|--------|
-| type | build-brain \| use-brain \| auto |
+| type | build-brain \| use-brain \| explore-brain \| auto |
 | mode | <mode> |
 | tokens_used | <N>k |
 | context_peak | <N>% |
@@ -151,10 +183,11 @@ metabolism-scribe, voici les données de cette session :
 | YYYY-MM-DD | <sess-id> | build-brain | prod | 2.51 | SEMI+ | N/A | — |
 | ... | ... | ... | ... | ... | ... |
 
-## Ratio use-brain / build-brain (7j glissants)
+## Ratio use-brain / build-brain / explore-brain (7j glissants)
 
 Sessions analysées : <N>
-use-brain : <N> / build-brain : <N> → ratio : <X.X>
+use-brain : <N> / build-brain : <N> / explore-brain : <N> → ratio : <X.X>
+Note : explore-brain compte avec poids 0.5 dans le dénominateur
 Signal : <✅ sain \| ⚠️ boucle narcissique>
 ```
 

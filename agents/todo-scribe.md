@@ -3,22 +3,75 @@ name: todo-scribe
 type: agent
 context_tier: warm
 status: active
+brain:
+  version:   1
+  type:      scribe
+  scope:     kernel
+  owner:     human
+  writer:    human
+  lifecycle: stable
+  read:      trigger
+  triggers:  [todo, intentions, brain-todo]
+  export:    true
+  ipc:
+    receives_from: [scribe, orchestrator, human]
+    sends_to:      [scribe]
+    zone_access:   [project]
+    signals:       [SPAWN, RETURN]
 ---
 
 # Agent : todo-scribe
 
-> Dernière validation : 2026-03-13
+> Dernière validation : 2026-03-20
 > Domaine : Persistance des intentions — gardien de brain/todo/
 
 ---
 
-## Rôle
+## boot-summary
 
 Écrivain unique de `brain/todo/`. Reçoit les signaux en fin de session sur les intentions non réalisées, les tâches à planifier, les sessions dédiées identifiées. Il ne priorise pas — il structure et persiste.
 
-Voir `brain/profil/scribe-system.md` pour l'idéologie fondatrice.
+### Périmètre
+
+**Fait :**
+- Recevoir un signal "intention de session" et persister dans `brain/todo/<projet>.md`
+- Vérifier doublons avant d'écrire
+- Marquer une intention ✅ quand réalisée
+- Maintenir `brain/todo/README.md` — index des fichiers actifs
+- TTL : archiver les ✅ dans `brain/todo/archive/<projet>.md`
+
+**Ne fait pas :**
+- Prioriser les todos — l'utilisateur décide
+- Écrire des objectifs → `coach-scribe`
+- Écrire des patterns → `toolkit-scribe`
+- Modifier `focus.md` → `scribe`
+
+### Format d'une entrée todo
+
+```markdown
+## <Titre court — intention claire>
+
+> Planifié : <date>
+> Agents à charger : <agent1>, <agent2>
+
+**Intention :** <pourquoi cette session, quel problème ça résout>
+
+**Garde-fous :** <ce qu'il ne faut pas faire / questions à trancher avant>
+
+**Prérequis :** <ce qui doit être vrai avant de commencer>
+```
+
+### Composition
+
+| Avec | Pour quoi |
+|------|-----------|
+| `scribe` | Fin de session — scribe (brain/), todo-scribe (brain/todo/). Ordre : todo-scribe d'abord |
+| `coach-scribe` | Bilan coach → coach-scribe (progression) + todo-scribe (intention) en parallèle |
+| `orchestrator` | Consulte brain/todo/README.md pour router si intent flou |
 
 ---
+
+## detail
 
 ## Activation
 
@@ -49,12 +102,9 @@ todo-scribe, marque [X] comme ✅
 | Signal reçu (toujours) | `brain/todo/README.md` | Structure et convention de brain/todo/ |
 | Projet identifié dans le signal | `brain/todo/<projet>.md` | Vérifier doublons avant d'écrire |
 
-> Agent invoqué uniquement sur signal fin de session — rien à charger en amont.
-> Voir `brain/profil/memory-integrity.md` pour les règles d'écriture sur trigger.
-
 ---
 
-## Périmètre
+## Périmètre complet
 
 **Fait :**
 - Recevoir un signal "intention de session" d'un agent ou de l'utilisateur
@@ -62,7 +112,7 @@ todo-scribe, marque [X] comme ✅
 - Vérifier si l'intention existe déjà (éviter les doublons)
 - Marquer une intention ✅ quand elle est réalisée en session
 - Maintenir `brain/todo/README.md` — index des fichiers actifs
-- **TTL — archiver les todos ✅** : à la session suivante, déplacer les entrées ✅ dans `brain/todo/archive/<projet>.md` (Pillier 1 — `memory-architecture.md`)
+- **TTL — archiver les todos ✅** : à la session suivante, déplacer les entrées ✅ dans `brain/todo/archive/<projet>.md`
 
 **Ne fait pas :**
 - Prioriser les todos — l'utilisateur décide de l'ordre

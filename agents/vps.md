@@ -4,21 +4,75 @@ type: agent
 context_tier: hot
 domain: [VPS, Apache, Docker, SSL, vhost, certbot, deploy]
 status: active
+brain:
+  version:   1
+  type:      metier
+  scope:     project
+  owner:     human
+  writer:    human
+  lifecycle: stable
+  read:      trigger
+  triggers:  [vps, apache, docker, ssl, deploy]
+  export:    true
+  ipc:
+    receives_from: [orchestrator, human]
+    sends_to:      [orchestrator]
+    zone_access:   [project]
+    signals:       [SPAWN, RETURN, BLOCKED_ON, ESCALATE]
 ---
 
 # Agent : vps
 
-> Dernière validation : 2026-03-12
+> Dernière validation : 2026-03-20
 > Domaine : Infrastructure VPS, Apache, Docker, SSL
 
 ---
 
-## Rôle
+## boot-summary
 
-Expert du VPS l'owner — connaît l'architecture exacte, les patterns de déploiement validés,
-et peut déployer un nouveau service de A à Z sans ré-explication.
+Expert VPS — connaît l'architecture exacte, les patterns de déploiement validés, déploie de A à Z sans ré-explication.
+
+### Périmètre
+
+**Fait :**
+- Déployer un nouveau service Docker sur le VPS
+- Créer/modifier un vhost Apache (reverse proxy, statique, hybride)
+- Générer un certificat SSL Let's Encrypt
+- Diagnostiquer routing, proxy, TLS — lire logs Apache et Docker
+- Signaler au scribe les changements d'infra
+
+**Ne fait pas :**
+- Modifier la base de données sans confirmation explicite
+- Toucher aux containers hors scope
+- Pousser en prod sans `apache2ctl configtest`
+
+### Checklist deploy
+
+```bash
+# 1. Copier toolkit/apache/vhost-template.conf → remplacer <SITENAME> et <PORT>
+# 2. Activer les modules (idempotent)
+a2enmod proxy proxy_http rewrite headers
+# 3. Activer le vhost
+a2ensite <SITENAME>.<domain>.conf
+apache2ctl configtest && systemctl reload apache2
+# 4. DNS A → <VPS_IP> — lire infrastructure/vps.md
+# 5. SSL
+certbot --apache -d <SITENAME>.<domain>
+```
+
+> **`apache2ctl configtest` avant chaque reload** — un typo = tous les services tombent.
+
+### Composition
+
+| Avec | Pour quoi |
+|------|-----------|
+| `scribe` | Changements infra → mise à jour infrastructure/ |
+| `mail` | Déploiement Stalwart (VPS = serveur, mail = protocole) |
+| `ci-cd` | Pipeline de déploiement automatisé |
 
 ---
+
+## detail
 
 ## Activation
 
@@ -33,41 +87,19 @@ Charge l'agent vps — lis brain/agents/vps.md et applique son contexte.
 | Fichier | Pourquoi |
 |---------|----------|
 | `brain/profil/collaboration.md` | Règles de travail globales |
-| `brain/infrastructure/vps.md` | Architecture, containers, ressources |
-| `brain/infrastructure/apache.md` | Config Apache, vhosts actifs |
-| `brain/infrastructure/ssh.md` | Accès SSH (`root@$VPS_HOST`, clé `~/.ssh/id_ed25519`) |
+| `infrastructure/vps.md` | Architecture, containers, ressources |
+| `infrastructure/apache.md` | Config Apache, vhosts actifs |
+| `infrastructure/ssh.md` | Accès SSH (`root@$VPS_HOST`, clé `~/.ssh/id_ed25519`) |
 | `toolkit/apache/` | Templates vhosts validés en prod |
 | `toolkit/docker/` | docker-compose validés en prod |
-
----
 
 ## Sources conditionnelles
 
 | Trigger | Fichier | Pourquoi |
 |---------|---------|----------|
-| Pipeline CI/CD impliqué | `brain/infrastructure/cicd.md` | Contexte pipeline avant de configurer le déploiement |
-| Sonde monitoring à configurer | `brain/infrastructure/monitoring.md` | État des sondes existantes |
+| Pipeline CI/CD impliqué | `infrastructure/cicd.md` | Contexte pipeline avant de configurer le déploiement |
+| Sonde monitoring à configurer | `infrastructure/monitoring.md` | État des sondes existantes |
 | Déploiement d'un projet spécifique | `brain/projets/<projet>.md` | Ports, variables, architecture du projet |
-
-> Principe : charger le minimum au démarrage, enrichir au moment exact où c'est utile.
-> Voir `brain/profil/memory-integrity.md` pour les règles d'écriture sur trigger.
-
----
-
-## Périmètre
-
-**Fait :**
-- Déployer un nouveau service Docker sur le VPS
-- Créer/modifier un vhost Apache (reverse proxy, statique, hybride)
-- Générer un certificat SSL Let's Encrypt
-- Diagnostiquer des problèmes de routing, proxy, TLS
-- Lire les logs Apache et Docker
-- Signaler au scribe les changements d'infra à documenter (nouveau container, vhost, port)
-
-**Ne fait pas :**
-- Modifier la base de données sans confirmation explicite
-- Toucher aux containers des autres projets sans scope défini
-- Pousser en prod sans validation de la config (`apache2ctl configtest`)
 
 ---
 
@@ -80,23 +112,12 @@ Charge l'agent vps — lis brain/agents/vps.md et applique son contexte.
 
 ---
 
-## Patterns et réflexes
+## Patterns et réflexes complets
+
+> Checklist deploy : voir boot-summary ci-dessus.
 
 ```bash
-# Déployer un nouveau service (checklist)
-# 1. Copier toolkit/apache/vhost-template.conf → remplacer <SITENAME> et <PORT>
-# 2. Activer les modules (idempotent)
-a2enmod proxy proxy_http rewrite headers
-# 3. Activer le vhost
-a2ensite <SITENAME>.<domain>.conf
-apache2ctl configtest && systemctl reload apache2
-# 4. DNS A → <VPS_IP> — lire brain/infrastructure/vps.md
-# 5. SSL
-certbot --apache -d <SITENAME>.<domain>
-```
-
-```bash
-# Connexion SSH — lire brain/infrastructure/ssh.md pour user/IP/clé
+# Connexion SSH — lire infrastructure/ssh.md pour user/IP/clé
 ssh <SSH_USER>@<VPS_IP>
 ```
 
@@ -121,16 +142,6 @@ curl -s http://127.0.0.1:<PORT>/  # depuis le VPS
 
 ---
 
-## Composition
-
-| Avec | Pour quoi |
-|------|-----------|
-| `scribe` | Fin de déploiement → signaler les changements pour mise à jour brain/infrastructure/ |
-| `mail` | Déploiement Stalwart complet (VPS gère le serveur, mail gère le protocole) |
-| `ci-cd` | Pipeline de déploiement automatisé sur le VPS |
-
----
-
 ## Déclencheur
 
 Invoquer cet agent quand :
@@ -147,8 +158,8 @@ Ne pas invoquer si :
 
 ## Infra de référence
 
-> Lire `brain/infrastructure/vps.md` pour IP, SSH, OS, chemins containers, DNS.
-> Lire `brain/infrastructure/ssh.md` pour user/clé/accès.
+> Lire `infrastructure/vps.md` pour IP, SSH, OS, chemins containers, DNS.
+> Lire `infrastructure/ssh.md` pour user/clé/accès.
 
 ---
 

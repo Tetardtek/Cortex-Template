@@ -1,1 +1,28 @@
+# Config locale (secrets, tokens, chemins machine)
 brain-compose.local.yml
+
+# Brain state (reconstruit par brain-engine)
+brain.db
+brain.db-wal
+brain.db-shm
+
+# Brain-engine runtime
+brain-engine/.venv/
+brain-engine/__pycache__/
+brain-engine/*.log
+brain-engine/viz_cache.json
+
+# Brain-ui build + deps
+brain-ui/node_modules/
+brain-ui/dist/
+
+# Satellites (repos independants clones localement)
+toolkit/
+progression/
+reviews/
+profil/
+todo/
+
+# OS
+.DS_Store
+Thumbs.db

@@ -1,182 +1,96 @@
-# brain-template
+# brain
 
-> Système de coordination multi-instances pour Claude — protocole BSI-v3.
-> Forke ce repo pour démarrer ton propre brain.
+> Un systeme de contexte persistant pour Claude. Fork, boot, code.
+
+Le brain est un **cerveau externalise** : 75 agents specialises, un protocole de sessions, et une memoire qui persiste entre les conversations. Chaque session repart d'un etat connu. Chaque agent sait ce qu'il fait et ce qu'il ne fait pas.
+
+```
+git clone <ce-repo> ~/Dev/Brain
+bash brain-ui/build.sh
+bash brain-engine/start.sh
+```
+
+Ouvre Claude Code dans le dossier et tape `brain boot`. C'est tout.
 
 ---
 
-## Ce que c'est
+## Ce que tu as
 
-Un brain est un **système de contexte persistant et coordonné** pour Claude.
-Chaque session repart d'un état connu. Plusieurs instances peuvent travailler en parallèle sans conflit.
+### Sans cle API — tier free
 
-```
-Git (MVCC) + Agents calibrés + Protocole BSI-v3
-= Claude qui ne répète pas les mêmes erreurs
-  qui coordonne plusieurs instances simultanées
-  qui respecte ton périmètre de travail
-```
+- **16 agents** : debug, brainstorm, scribe, recruiter, mentor, orchestrator...
+- **6 types de sessions** : navigate, work, debug, brainstorm, brain, handoff
+- **Coach** en observation — intervient sur risque critique
+- **Protection secrets** permanente — le brain ne fuit jamais
+- **Protocole BSI** — sessions tracees, multi-instances sans conflit
+- **Dashboard web** avec documentation interactive
 
----
+### Avec cle API — tiers featured, pro, full
 
-## Tiers
+Le brain a 4 niveaux. Chaque niveau debloque des agents et des capacites :
 
-| Tier | Accès | Activation |
-|------|-------|-----------|
-| **free** | Kernel complet + BSI-v3 + agents fondamentaux | Fork public — aucune clé |
-| **pro** | + Agents métier (code-review, security, vps, ci-cd…) | Clé API `tier: pro` |
-| **full** | + Distillation locale (brain-engine) + instances rendering | Clé API `tier: full` |
+**featured** — Le brain te connait. Coach complet avec bilans de session, objectifs, progression tracee. Distillation RAG — le brain se souvient entre sessions.
 
-### Tier free — ce que tu as sans rien demander
+**pro** — L'atelier complet. Code review (7 priorites), audit securite (8 audits OWASP), tests automatises, 3 optimiseurs perf, deploy VPS + CI/CD + SSL, sessions urgence et infra. 40 agents.
 
-```
-Agents : coach, scribe, debug, mentor, helloWorld, brainstorm, orchestrator,
-         todo-scribe, interprete, aside, recruiter, agent-review
+**full** — Ton brain, tes regles. Modification du kernel, copilotage long, supervision multi-phase. 75 agents, 15 sessions, tout.
 
-Protocole BSI-v3 complet :
-  - Multi-instances sans conflit (file-lock.sh + preflight-check.sh)
-  - Human gate + pause cascade (human-gate-ack.sh)
-  - Vue live multi-instances (brain-status.sh)
-  - Theme branches + workflows déclarés
-  - Tiered-close + exit triggers
-
-Modes brain-compose : prod, dev, brainstorm, coach, debug, HANDOFF…
-```
-
-### Tier pro — avec clé API
-
-```
-Agents supplémentaires : code-review, security, testing, refacto,
-                         vps, ci-cd, monitoring, pm2, migration,
-                         frontend-stack, optimizer-*, toolkit-scribe,
-                         coach-scribe, git-analyst, capital-scribe,
-                         i18n, doc, mail, config-scribe
-
-→ Ajouter dans brain-compose.yml :
-    brain_api_key: bk_live_<ta-clé>
-```
-
-### Tier full — avec clé API full
-
-```
-Tout pro +
-  - brain-engine en local (distillation 2-pass, résumés compressés)
-  - Mode rendering : instances autonomes sur tes projets
-  - RAG sur l'historique brain
-  - Toutes les optimisations de contexte (BE-*)
-
-→ brain-engine s'installe localement
-→ Sans clé valide : brain fonctionne en free, distillation inactive
-→ Clé liée à ton fork — non redistribuable
-```
-
-> **Obtenir une clé :** contact@<OWNER_DOMAIN> *(beta privée — partage limité)*
+> Detail complet : ouvre le dashboard (`http://localhost:7700/ui/`) → onglet Docs
 
 ---
 
-## Brain API Key — configuration
+## Installation
 
-### Ajouter une clé
-
-```bash
-# Dans brain-compose.yml — champ déjà présent, remplacer null :
-brain_api_key: bk_live_<ta-clé>
-
-# Ou via brain-setup.sh (nouvelle machine) — étape 3.5 le demande automatiquement
-```
-
-La clé est validée au boot par `key-guardian` (silencieux, timeout 3s) :
-- **Succès** → `feature_set` mis à jour dans `brain-compose.local.yml`
-- **VPS down** → grace period 72h depuis dernière validation — tier conservé
-- **Clé absente/invalide** → tier free, aucun blocage, aucune erreur
-
-### Format des clés
-
-| Format | Usage | Tier |
-|--------|-------|------|
-| `bk_live_<32chars>` | Production | pro ou full selon la clé |
-| `bk_test_<32chars>` | Dev/test local | free forcé (toujours valide) |
-
-### Tester sans clé
-
-```bash
-# Clé test — tier free garanti, pas de réseau requis
-brain_api_key: bk_test_local_dev_key_xxxxxxxxxxxxxxxx
-```
-
----
-
-## Installation — 15 minutes
-
-### Prérequis
+### Prerequis
 
 - Git
+- Python 3.10+
+- Node.js 18+ et npm
 - Claude Code CLI
-- Un repo Git (Gitea, GitHub…)
+- Ollama (optionnel — pour la recherche semantique)
 
-### 1. Forker le template
+### 1. Cloner
 
 ```bash
-git clone git@<TON_GITEA>:<USERNAME>/brain-template.git ~/Dev/Brain
+git clone <ce-repo> ~/Dev/Brain
 cd ~/Dev/Brain
-git remote rename origin upstream   # garder le lien vers les updates kernel
-git remote add origin git@<TON_GITEA>:<USERNAME>/mon-brain.git
-git push -u origin main
 ```
 
-### 2. Configurer CLAUDE.md
+### 2. Configurer
 
 ```bash
-# Copier vers le profil global Claude
-cp profil/CLAUDE.md.example ~/.claude/CLAUDE.md
-
-# Éditer ~/.claude/CLAUDE.md :
-#   brain_root: /home/<user>/Dev/Brain
-#   brain_name: prod
-```
-
-### 3. Configurer les chemins machine
-
-```bash
-# Éditer PATHS.md — remplacer les placeholders :
-#   <BRAIN_ROOT>     → /home/<user>/Dev/Brain
-#   <GITEA_URL>      → git@git.example.com
-#   <USERNAME>       → ton username
-#   <PROJECTS_ROOT>  → /home/<user>/Dev/Projects
-```
-
-### 4. Personnaliser brain-compose.local.yml
-
-```bash
+# Config machine
 cp brain-compose.local.yml.example brain-compose.local.yml
-# Éditer : kernel_path, instances, [api_key si tier pro/full]
+# Editer : kernel_path, brain_name
+
+# Config Claude Code
+cp profil/CLAUDE.md.example ~/.claude/CLAUDE.md
+# Editer : brain_root → ton chemin
 ```
 
-### 5. Cold boot
-
-Ouvrir Claude Code dans le dossier brain et taper :
-```
-Bonjour — démarre le brain (helloWorld)
-```
-
-Signal de succès : contexte posé en < 3 échanges, sans redemander qui tu es.
-
----
-
-## Multi-instances — le protocole
-
-Plusieurs fenêtres Claude Code sur le même brain, sans conflit :
+### 3. Build le dashboard
 
 ```bash
-# Fenêtre 1 — coach/discussion
-bash scripts/brain-status.sh          # voit tout ce qui se passe
-
-# Fenêtre 2 — travail terrain (ex: projet superoauth/)
-# Elle ouvre un claim, pre-flight check avant chaque écriture,
-# mutex si fichier partagé → BRAIN-INDEX.md synchronise tout
+bash brain-ui/build.sh
 ```
 
-Guide complet : `agents/AGENTS.md` — le wiki se construit au fil des sessions.
+### 4. Lancer brain-engine
+
+```bash
+bash brain-engine/start.sh
+# → http://localhost:7700/ui/  (dashboard + docs)
+# → http://localhost:7700/health  (API)
+```
+
+### 5. Premier boot
+
+Ouvre Claude Code dans le dossier brain :
+
+```
+brain boot
+```
+
+Le brain charge le contexte, fait le briefing, et te demande ce que tu veux faire.
 
 ---
 
@@ -184,77 +98,58 @@ Guide complet : `agents/AGENTS.md` — le wiki se construit au fil des sessions.
 
 ```
 brain/
-├── agents/               ← 63 agents calibrés (index : agents/AGENTS.md)
-├── contexts/             ← sessions BSI prédéfinies (navigate, work, pilote…)
-├── agent-memory/         ← mémoire persistante agents (README + _template/)
-├── scripts/              ← BSI-v3 protocol (index : scripts/README.md)
-│   ├── brain-status.sh   ← vue live multi-instances
-│   ├── preflight-check.sh← 6 checks avant écriture
-│   ├── file-lock.sh      ← mutex fichier
-│   ├── human-gate-ack.sh ← gate humain + pause cascade
-│   └── ...
-├── workflows/            ← chaînes de satellites déclarées
-├── locks/                ← registre mutex fichiers (BSI-v3-7)
-├── claims/               ← sessions BSI (vide au démarrage)
-├── BRAIN-INDEX.md        ← état global — lu par toutes les instances
-├── KERNEL.md             ← loi des zones (ne pas modifier seul)
-├── brain-compose.yml     ← modes, feature flags, agents autorisés
-├── brain-compose.local.yml← config machine (non versionné)
-└── PATHS.md              ← chemins machine (à personnaliser)
+  agents/          75 agents specialises (boot-summary + detail)
+  contexts/        10 sessions predefinies
+  docs/            14 guides humains (getting-started, architecture, workflows...)
+  brain-engine/    moteur local (API, search, RAG, MCP, embeddings)
+  brain-ui/        dashboard React (docs, workflows, cosmos 3D)
+  scripts/         protocole BSI (claims, locks, gates, feature-gate)
+  profil/          identite, collaboration, decisions architecturales
+  brain-compose.yml   config, modes, tiers, agents autorises
+  KERNEL.md        loi des zones — ce qui est protege
 ```
 
 ---
 
-## BSI-v3 — protocole de coordination
+## Comment ca marche
 
-Le protocole qui permet plusieurs instances sans collision :
+**Les agents se chargent tout seuls.** Tu parles de "bug" → `debug` arrive. Tu dis "deploy" → `vps` + `ci-cd` se chargent.
 
-| Composant | Rôle |
-|-----------|------|
-| `claims/*.yml` | Chaque session déclare son scope — visible par toutes |
-| `BRAIN-INDEX.md` | Registre global — état en temps réel |
-| `file-lock.sh` | Mutex fichier — empêche les écritures simultanées |
-| `preflight-check.sh` | 6 checks avant d'écrire (scope, zone, lock, circuit breaker…) |
-| `human-gate-ack.sh` | Pause planifiée ou urgence — cascade sur les instances enfants |
-| `brain-status.sh` | Vue live : qui travaille où, quels fichiers lockés, quels signaux |
+**Chaque session est isolee.** Un claim BSI trace ce que tu fais. Plusieurs fenetres Claude Code peuvent travailler en parallele sans conflit.
+
+**Le brain se documente.** Les scribes capturent les metriques, mettent a jour les todos, et maintiennent la documentation a chaque session.
+
+**Le kernel est protege.** Les fichiers critiques (KERNEL.md, agents/, profil/) ne se modifient qu'avec confirmation humaine.
 
 ---
 
-## Zones — ce que tu peux modifier
+## Documentation
 
-| Zone | Contenu | Règle |
-|------|---------|-------|
-| **kernel** | `agents/` `scripts/` `KERNEL.md` `brain-compose.yml` | Décision humaine — `preflight` bloque les agents |
-| **project** | `todo/` `workspace/` `projets/` | Libre — rendering mode ici |
-| **personal** | `profil/capital` `progression/` | Ton contenu, non distribué |
+Ouvre le dashboard (`http://localhost:7700/ui/`) et va dans l'onglet Docs :
 
----
-
-## Recevoir les updates kernel
-
-```bash
-git fetch upstream
-bash scripts/kernel-update-check.sh --remote  # détecte conflits vs updates
-# Appliquer les non-conflictuels :
-bash scripts/kernel-update-check.sh --remote --apply
-```
-
-`kernel.lock` — checksums SHA-256 des fichiers kernel.
-Permet de savoir exactement ce qui a divergé avant de puller.
+- **Demarrer** — les 5 premieres minutes
+- **Architecture** — comment les pieces s'assemblent
+- **Sessions** — types, permissions, metabolisme
+- **Workflows** — recettes d'agents par situation
+- **Agents** — catalogue par famille + comparatif tiers
+- **Vues par tier** — ce qui est disponible a chaque niveau
 
 ---
 
 ## Roadmap
 
-- [x] BSI-v3 multi-instances (v3-1b → v3-8)
-- [x] Rendering mode — instances autonomes projet
-- [x] kernel.lock + isolation check
-- [x] Validation clé API (tier pro/full) — key-guardian + grace 72h
-- [ ] kernel-orchestrator (v3-9) — routage autonome entre satellites
-- [ ] brain-engine hosted (distillation managée)
+- [x] 75 agents avec boot-summary/detail (chargement optimise)
+- [x] 4 tiers (free → featured → pro → full)
+- [x] Protocole BSI-v3 multi-instances
+- [x] brain-engine standalone (API + search + RAG)
+- [x] Dashboard web avec docs interactives
+- [x] Feature gate par tier
+- [ ] brain-engine hosted (distillation managee)
+- [ ] Docs dynamiques (generation depuis brain-compose.yml)
+- [ ] BaaS multi-tenant
 
 ---
 
 ## Licence
 
-MIT — kernel libre. brain-engine (distillation) non inclus dans ce template.
+MIT — kernel libre, agents libres, protocole libre.
