@@ -45,7 +45,15 @@ const NAV_ITEMS: NavItem[] = [
 function AppInner() {
   const { addToast } = useToast()
 
-  const [activeView, setActiveView] = useState<ActiveView>('workflows')
+  // Detect URL path for direct routing (/ui/docs → docs view)
+  const initialView = (): ActiveView => {
+    const path = window.location.pathname
+    if (path.includes('/docs')) return 'docs'
+    if (path.includes('/cosmos')) return 'cosmos'
+    if (path.includes('/workspace')) return 'workspace'
+    return 'workflows'
+  }
+  const [activeView, setActiveView] = useState<ActiveView>(initialView)
   const [pendingGate, setPendingGate] = useState<PendingGate | null>(null)
   const [gateDrawer, setGateDrawer] = useState<{ open: boolean; workflowId: string | null; stepId: string | null }>({
     open:       false,
@@ -54,6 +62,14 @@ function AppInner() {
   })
   const [logsProject, setLogsProject] = useState<string | null>(null)
   const [paletteOpen, setPaletteOpen] = useState(false)
+
+  // Sync URL with active view
+  const handleViewChange = (view: ActiveView) => {
+    setActiveView(view)
+    const base = import.meta.env.BASE_URL || '/ui/'
+    const slug = view === 'workflows' ? '' : view
+    window.history.replaceState(null, '', `${base}${slug}`)
+  }
 
   const { workflows, wsStatus } = useWorkflows()
   useWebSocket(addToast)
@@ -132,7 +148,7 @@ function AppInner() {
                   <div className="mx-3 my-1" style={{ borderTop: '1px solid #2a2a2a' }} />
                 )}
                 <button
-                  onClick={() => setActiveView(item.id)}
+                  onClick={() => handleViewChange(item.id)}
                   className="flex items-center gap-3 px-3 py-2 rounded text-sm font-medium text-left transition-colors w-full"
                   style={
                     isActive
@@ -285,7 +301,7 @@ function AppInner() {
       {paletteOpen && (
         <CommandPalette
           onClose={() => setPaletteOpen(false)}
-          onNavigate={(view) => { setActiveView(view as ActiveView); setPaletteOpen(false) }}
+          onNavigate={(view) => { handleViewChange(view as ActiveView); setPaletteOpen(false) }}
         />
       )}
     </div>

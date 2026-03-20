@@ -1,6 +1,7 @@
 import { useState, useEffect, ReactNode } from 'react'
 import ReactMarkdown, { Components } from 'react-markdown'
 import { TierComparatif, TierSingle } from './TierDashboard'
+import { AgentCatalog } from './AgentDashboard'
 
 interface DocFile {
   name: string
@@ -209,6 +210,9 @@ export default function DocsView() {
           if (liveMode && activeDoc.startsWith('vue-')) {
             const tierName = activeDoc.replace('vue-', '')
             return <article className="docs-markdown"><TierSingle tierName={tierName} /></article>
+          }
+          if (liveMode && activeDoc === 'agents') {
+            return <article className="docs-markdown"><AgentCatalog /></article>
           }
 
           // Mode standard — markdown
