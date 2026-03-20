@@ -12,6 +12,8 @@ const DOCS: DocFile[] = [
   { name: 'getting-started', label: 'Demarrer', path: import.meta.env.BASE_URL + 'docs/getting-started.md', group: 'Guides' },
   { name: 'architecture', label: 'Architecture', path: import.meta.env.BASE_URL + 'docs/architecture.md', group: 'Guides' },
   { name: 'sessions', label: 'Sessions', path: import.meta.env.BASE_URL + 'docs/sessions.md', group: 'Guides' },
+  { name: 'satellites', label: 'Satellites', path: import.meta.env.BASE_URL + 'docs/satellites.md', group: 'Guides' },
+  { name: 'brain-engine-guide', label: 'Brain-engine', path: import.meta.env.BASE_URL + 'docs/brain-engine-guide.md', group: 'Guides' },
   { name: 'workflows', label: 'Workflows', path: import.meta.env.BASE_URL + 'docs/workflows.md', group: 'Guides' },
   { name: 'agents', label: 'Vue d\'ensemble', path: import.meta.env.BASE_URL + 'docs/agents.md', group: 'Agents' },
   { name: 'agents-code', label: 'Code & Qualite', path: import.meta.env.BASE_URL + 'docs/agents-code.md', group: 'Agents' },

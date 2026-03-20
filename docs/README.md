@@ -12,6 +12,8 @@
 | [getting-started.md](getting-started.md) | **Commence ici** — les 5 premieres minutes apres un fork |
 | [architecture.md](architecture.md) | Comment les pieces s'assemblent — version humaine |
 | [sessions.md](sessions.md) | Types de sessions, permissions, metabolisme, close sequences |
+| [satellites.md](satellites.md) | Les repos satellites — todo, toolkit, progression, reviews |
+| [brain-engine-guide.md](brain-engine-guide.md) | Demarrer, arreter, diagnostiquer brain-engine |
 | [workflows.md](workflows.md) | Recettes d'agents — quels agents combiner pour quoi |
 | **Agents** | |
 | [agents.md](agents.md) | Vue d'ensemble — comparatif tiers, navigation |
