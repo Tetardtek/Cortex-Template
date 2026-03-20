@@ -1,5 +1,6 @@
 import { useState, useEffect, ReactNode } from 'react'
 import ReactMarkdown, { Components } from 'react-markdown'
+import { TierComparatif, TierSingle } from './TierDashboard'
 
 interface DocFile {
   name: string
@@ -200,21 +201,37 @@ export default function DocsView() {
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto" style={{ padding: '2rem 3rem' }}>
-        {loading && (
-          <div style={{ color: '#4b5563' }} className="text-sm font-mono">
-            Chargement...
-          </div>
-        )}
-        {error && (
-          <div style={{ color: '#ef4444' }} className="text-sm font-mono">
-            {error}
-          </div>
-        )}
-        {!loading && !error && (
-          <article className="docs-markdown">
-            <ReactMarkdown components={mdComponents}>{content}</ReactMarkdown>
-          </article>
-        )}
+        {(() => {
+          // Mode live + page tier → composant React dynamique
+          if (liveMode && activeDoc === 'vue-tiers') {
+            return <article className="docs-markdown"><TierComparatif /></article>
+          }
+          if (liveMode && activeDoc.startsWith('vue-')) {
+            const tierName = activeDoc.replace('vue-', '')
+            return <article className="docs-markdown"><TierSingle tierName={tierName} /></article>
+          }
+
+          // Mode standard — markdown
+          return (
+            <>
+              {loading && (
+                <div style={{ color: '#4b5563' }} className="text-sm font-mono">
+                  Chargement...
+                </div>
+              )}
+              {error && (
+                <div style={{ color: '#ef4444' }} className="text-sm font-mono">
+                  {error}
+                </div>
+              )}
+              {!loading && !error && (
+                <article className="docs-markdown">
+                  <ReactMarkdown components={mdComponents}>{content}</ReactMarkdown>
+                </article>
+              )}
+            </>
+          )
+        })()}
       </div>
     </div>
   )
