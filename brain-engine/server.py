@@ -213,6 +213,14 @@ BRAIN_ROOT = Path(__file__).parent.parent
 
 app = FastAPI(title='Brain-as-a-Service', version='BE-4', docs_url='/api-docs')
 
+# ── Montage brain-ui static (si build disponible) ────────────────────────────
+
+_UI_DIST = BRAIN_ROOT / 'brain-ui' / 'dist'
+if _UI_DIST.is_dir():
+    from fastapi.staticfiles import StaticFiles
+    app.mount('/ui', StaticFiles(directory=str(_UI_DIST), html=True), name='brain-ui')
+    log.info('brain-ui monté sur /ui depuis %s', _UI_DIST)
+
 
 # ── Level 2 — localhost frictionless ───────────────────────────────────────────
 
