@@ -121,7 +121,7 @@ FEATURE_TIER: dict[str, str] = {
     'bsi':           'free',
 }
 
-TIER_RANK = {'free': 0, 'pro': 1, 'owner': 2, 'full': 2}  # 'full' = alias owner
+TIER_RANK = {'free': 0, 'featured': 1, 'pro': 2, 'owner': 3, 'full': 3}  # chaîne: free → featured → pro → full
 
 # ── Tier cache ──────────────────────────────────────────────────────────────────
 
@@ -332,14 +332,15 @@ def _load_catalog(agents_dir: Path) -> dict:
 
 
 # Tier access hierarchy: owner sees all, pro sees pro+free, free sees only free
-_CATALOG_TIER_RANK: dict[str, int] = {'free': 0, 'pro': 1, 'owner': 2}
+_CATALOG_TIER_RANK: dict[str, int] = {'free': 0, 'featured': 1, 'pro': 2, 'owner': 3}
 
 # Map token tier → max catalog tier accessible
 _TOKEN_TIER_TO_CATALOG: dict[str, str] = {
-    'free':   'free',
-    'mcp':    'pro',
-    'pro':    'pro',
-    'owner':  'owner',
+    'free':     'free',
+    'featured': 'featured',
+    'mcp':      'pro',
+    'pro':      'pro',
+    'owner':    'owner',
 }
 
 
