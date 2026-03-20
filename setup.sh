@@ -46,6 +46,11 @@ Aucun focus defini — c'est un fresh fork. Lance `brain boot` pour commencer.
 FOCUSEOF
     echo "  → focus.md cree"
 fi
+# profil/collaboration.md — si seulement le .example existe
+if [ ! -f "$BRAIN_ROOT/profil/collaboration.md" ] && [ -f "$BRAIN_ROOT/profil/collaboration.md.example" ]; then
+    cp "$BRAIN_ROOT/profil/collaboration.md.example" "$BRAIN_ROOT/profil/collaboration.md"
+    echo "  → profil/collaboration.md cree depuis l'exemple"
+fi
 echo "✅ Satellites prets"
 
 # 3. Build dashboard
