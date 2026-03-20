@@ -1,135 +1,248 @@
-# Demarrer avec le brain
+# Demarrer avec le brain — le vrai tuto
 
-> Tu viens de forker. Voici tes 5 premieres minutes.
+> Du fork au premier `brain boot`. 10 minutes.
 
 ---
 
-## Etape 1 — Installer
+## Etape 1 — Forker et cloner
+
+**Sur Gitea / GitHub :** clique "Fork" sur le repo brain-template.
+
+**Sur ta machine :**
 
 ```bash
-git clone <ton-fork> ~/Dev/Brain
+git clone <URL_DE_TON_FORK> ~/Dev/Brain
 cd ~/Dev/Brain
 ```
 
-Si c'est une nouvelle machine, lance le setup complet :
+> Exemple : `git clone https://git.example.com/mon-user/brain-template.git ~/Dev/Brain`
+
+---
+
+## Etape 2 — Installer les prerequis
+
+Le brain a besoin de :
+
+- **Python 3.10+** — pour brain-engine (API, search, embeddings)
+- **Node.js 18+ et npm** — pour brain-ui (dashboard web)
+- **Claude Code** — pour les sessions
 
 ```bash
-bash scripts/brain-setup.sh prod ~/Dev/Brain
+# Ubuntu / Pop!_OS / Debian
+sudo apt install -y python3 python3-pip python3-venv nodejs npm
+
+# Claude Code
+npm install -g @anthropic-ai/claude-code
 ```
 
-Ca clone les satellites (toolkit, progression, todo, reviews, profil), installe les hooks, et prepare CLAUDE.md.
+**Optionnel mais recommande :**
+
+```bash
+# Ollama — active la recherche semantique dans le brain
+curl -fsSL https://ollama.com/install.sh | sh
+ollama pull nomic-embed-text
+```
 
 ---
 
-## Etape 2 — Premier boot
+## Etape 3 — Lancer le setup
 
-Ouvre Claude Code dans le dossier du brain et tape :
+```bash
+cd ~/Dev/Brain
+bash setup.sh
+```
+
+Le script fait tout automatiquement :
+
+1. **Cree `brain-compose.local.yml`** — ta config machine (chemins auto-detectes)
+2. **Cree les dossiers satellites** — todo/, progression/, toolkit/, reviews/, workspace/
+3. **Copie `profil/collaboration.md`** — regles de travail
+4. **Build le dashboard** — `brain-ui/` (npm install + vite build)
+5. **Init brain-engine** — cree l'environnement Python + brain.db
+
+Tu n'as rien a repondre — tout est automatique.
+
+A la fin tu vois :
+
+```
+===========================================
+  ✅ Brain installe !
+===========================================
+```
+
+---
+
+## Etape 4 — Configurer Claude Code
+
+Claude Code a besoin de savoir ou est ton brain :
+
+```bash
+cp profil/CLAUDE.md.example ~/.claude/CLAUDE.md
+```
+
+**Edite `~/.claude/CLAUDE.md`** — remplace les 2 placeholders :
+
+```
+brain_root: /home/<ton-user>/Dev/Brain
+brain_name: prod
+```
+
+> C'est le seul fichier a editer a la main. Tout le reste est automatique.
+
+---
+
+## Etape 5 — Lancer brain-engine
+
+Brain-engine c'est le serveur local qui fait tourner l'API, le dashboard, et la recherche semantique.
+
+### Demarrer
+
+```bash
+cd ~/Dev/Brain
+bash brain-engine/start.sh
+```
+
+Tu vois :
+
+```
+=== Lancement brain-engine sur port 7700 ===
+  Health : http://localhost:7700/health
+  Dashboard : http://localhost:7700/ui/
+```
+
+> **Le terminal reste occupe** — brain-engine tourne au premier plan. Ouvre un autre terminal pour la suite.
+
+### Verifier
+
+Ouvre ton navigateur : `http://localhost:7700/ui/`
+Tu vois le dashboard avec l'onglet Docs — c'est cette documentation.
+
+### Arreter
+
+Reviens dans le terminal ou brain-engine tourne et fais `Ctrl+C`. C'est tout.
+
+> Brain-engine n'est pas obligatoire pour utiliser le brain avec Claude Code.
+> C'est un bonus (dashboard, search, API). Tu peux faire `brain boot` sans.
+
+### Lancer en arriere-plan (optionnel)
+
+Si tu ne veux pas bloquer un terminal :
+
+```bash
+cd ~/Dev/Brain
+nohup bash brain-engine/start.sh > /tmp/brain-engine.log 2>&1 &
+echo $! > /tmp/brain-engine.pid
+```
+
+Pour l'arreter :
+
+```bash
+kill $(cat /tmp/brain-engine.pid)
+```
+
+---
+
+## Etape 6 — Premier brain boot
+
+Ouvre un **nouveau terminal** (brain-engine tourne dans l'autre) :
+
+```bash
+cd ~/Dev/Brain
+claude
+```
+
+Claude Code s'ouvre. Tape :
 
 ```
 brain boot
 ```
 
-C'est tout. Le brain :
-1. Lit ta config machine
-2. Charge le minimum necessaire (~20% du contexte)
-3. Te presente un briefing : etat du systeme, projets actifs, todos
-4. Ouvre un claim BSI (trace de session)
-5. Te demande ce que tu veux faire
+### Ce que tu dois voir
+
+```
+Bonjour. Voici l'etat du systeme — <date>.
+Instance : prod@<ta-machine>  [free]  kernel v0.9.0
+Mode actif : prod
+
+Projets actifs
+  Aucun focus defini — fresh fork.
+
+Prochain todo prioritaire
+  (aucun todo enregistre)
+
+Quelle session aujourd'hui ?
+```
+
+**C'est normal que ce soit vide** — c'est un brain neuf. Il n'a pas encore de projets, de todos, ni de focus.
+
+### Ce que tu peux repondre
+
+- `brain boot mode work/<ton-projet>` — si tu veux coder sur un projet
+- `brain boot mode brainstorm/<sujet>` — si tu veux explorer une idee
+- `brain boot mode brain` — si tu veux travailler sur le brain lui-meme
+- Ou simplement decrire ce que tu veux faire — le brain detecte le type de session
 
 ---
 
-## Etape 3 — Travailler
+## Etape 7 — Fermer une session
 
-**Tu veux coder sur un projet :**
-
-```
-brain boot mode work/mon-projet
-```
-
-Le brain charge les agents pertinents (debug, scribe, todo-scribe) et le fichier projet si il existe.
-
-**Tu veux explorer ou reflechir :**
-
-```
-brain boot mode brainstorm/sujet
-```
-
-Mode libre, pas de livrable attendu. L'agent `brainstorm` challenge tes idees.
-
-**Tu ne sais pas quoi faire :**
-
-```
-brain boot
-```
-
-Le briefing te montre tes todos, tes projets actifs, et te pose la question. Reponds naturellement — le brain detecte le type de session.
-
----
-
-## Etape 4 — Fermer proprement
-
-Quand tu as fini :
+Quand tu as fini, tape :
 
 ```
 on wrappe
 ```
 
-Le brain lance la sequence de fermeture :
-- Capture les metriques de ta session
-- Met a jour tes todos
-- Ferme le claim BSI
+Le brain ferme proprement : metriques capturees, todos mis a jour, claim BSI ferme.
 
-Ne ferme pas le terminal avant que le claim soit ferme.
+> Ne ferme pas Claude Code avec Ctrl+C avant que le wrap soit termine.
 
 ---
 
-## Les commandes essentielles
-
-**Boot**
-- `brain boot` — demarrage standard
-- `brain boot mode <type>` — choisir son mode (work, debug, brainstorm, brain...)
-- `brain boot navigate` — mode lecture seule, le plus leger
-
-**En session**
-- `Charge l'agent <nom>` — invoquer un agent specifique
-- `/btw <question>` — parenthese rapide sans casser le fil
-- `checkpoint` — sauvegarder l'etat avant une pause
-
-**Fermeture**
-- `on wrappe` ou `fin` — fermeture propre avec metriques
-
----
-
-## Les 3 choses a savoir
-
-**1. Le brain charge le minimum.** Il ne lit pas tout au demarrage. Il charge ~20-30% du contexte selon ta session et ajoute le reste a la demande. C'est pour ca qu'il demarre vite.
-
-**2. Les agents se chargent tout seuls.** Tu parles de "bug" → l'agent `debug` arrive. Tu dis "deploy" → `vps` + `ci-cd` se chargent. Tu n'as pas besoin de tout connaitre — le brain route.
-
-**3. Les secrets ne passent jamais dans le chat.** Le `secrets-guardian` surveille en permanence. Si un secret apparait accidentellement, la session se suspend. C'est normal — c'est une protection.
-
----
-
-## Bonus — le dashboard
-
-Le brain a un dashboard web avec tes docs, tes workflows, et une visualisation 3D de ton corpus.
+## Resume — les 4 commandes
 
 ```bash
-# Build le dashboard (une seule fois)
-bash brain-ui/build.sh
+# 1. Setup (une seule fois)
+bash setup.sh
 
-# Lance brain-engine (sert aussi le dashboard)
+# 2. Config Claude Code (une seule fois)
+cp profil/CLAUDE.md.example ~/.claude/CLAUDE.md
+# Editer brain_root et brain_name
+
+# 3. Lancer le dashboard (optionnel, a chaque session)
 bash brain-engine/start.sh
 
-# Ouvre dans ton navigateur
-# http://localhost:7700/ui/
+# 4. Lancer Claude Code (a chaque session)
+cd ~/Dev/Brain && claude
+# Puis : brain boot
 ```
 
 ---
 
-## Et apres ?
+## FAQ
 
-- **Voir ce que tu as** → Vue d'ensemble (Agents & Tiers) dans la sidebar
-- **Comprendre les sessions** → Sessions dans la sidebar
-- **Voir les recettes d'agents** → Workflows dans la sidebar
-- **Comprendre l'architecture** → Architecture dans la sidebar
+### Brain-engine tourne encore en fond, comment l'arreter ?
+
+Si tu l'as lance au premier plan : `Ctrl+C` dans son terminal.
+Si tu l'as lance en arriere-plan : `kill $(cat /tmp/brain-engine.pid)`
+En dernier recours : `pkill -f 'python3.*server.py'`
+
+### Je vois "MYSECRETS absent" — c'est grave ?
+
+Non. MYSECRETS c'est pour les projets qui ont des secrets (tokens API, mots de passe). Si tu n'en as pas besoin, ignore le message. Le brain fonctionne sans.
+
+### Je vois des fichiers "non trackes" au boot — c'est normal ?
+
+Oui. `focus.md`, `workspace/`, `brain-ui/package-lock.json` sont crees localement par setup.sh et le build. Tu peux les commiter ou les ignorer.
+
+### Comment mettre a jour le kernel depuis l'upstream ?
+
+```bash
+git remote add upstream <URL_DU_TEMPLATE_ORIGINAL>
+git fetch upstream
+git merge upstream/main
+```
+
+### Ou est la documentation complete ?
+
+- Dashboard : `http://localhost:7700/ui/` → onglet Docs
+- Ou directement dans `docs/` du repo
