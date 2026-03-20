@@ -125,7 +125,7 @@ TIER_RANK = {'free': 0, 'featured': 1, 'pro': 2, 'owner': 3, 'full': 3}  # chaî
 
 # ── Tier cache ──────────────────────────────────────────────────────────────────
 
-KEYS_API   = os.getenv('BRAIN_KEYS_API', '')  # URL key server — vide = tier free par défaut
+KEYS_API   = os.getenv('BRAIN_KEYS_API', '')
 TIER_TTL   = 3600          # 1h TTL normal
 TIER_GRACE = 7 * 86400     # 7 jours grace offline
 
@@ -213,14 +213,6 @@ BRAIN_ROOT = Path(__file__).parent.parent
 
 app = FastAPI(title='Brain-as-a-Service', version='BE-4', docs_url='/api-docs')
 
-# ── Montage brain-ui static (si build disponible) ────────────────────────────
-
-_UI_DIST = BRAIN_ROOT / 'brain-ui' / 'dist'
-if _UI_DIST.is_dir():
-    from fastapi.staticfiles import StaticFiles
-    app.mount('/ui', StaticFiles(directory=str(_UI_DIST), html=True), name='brain-ui')
-    log.info('brain-ui monté sur /ui depuis %s', _UI_DIST)
-
 
 # ── Level 2 — localhost frictionless ───────────────────────────────────────────
 
@@ -273,6 +265,89 @@ def health():
         return {'status': 'ok', 'indexed': count, 'uptime': uptime}
     except Exception as e:
         return JSONResponse(status_code=503, content={'status': 'error', 'detail': str(e), 'uptime': uptime})
+
+
+# ── Brain-compose live — données tiers depuis brain-compose.yml ─────────────────
+
+@app.get('/brain-compose/tiers')
+def brain_compose_tiers():
+    """Retourne les feature_sets structurés depuis brain-compose.yml — source de vérité."""
+    compose_path = BRAIN_ROOT / 'brain-compose.yml'
+    if not compose_path.exists():
+        raise HTTPException(status_code=404, detail='brain-compose.yml introuvable')
+
+    # Parse custom — brain-compose.yml utilise `extends:` inline qui n'est pas du YAML standard
+    raw = compose_path.read_text(encoding='utf-8')
+    # Retirer les lignes `extends: X` qui cassent le parser YAML
+    cleaned = re.sub(r'^\s+extends:\s+\w+\s*$', '', raw, flags=re.MULTILINE)
+    try:
+        data = yaml.safe_load(cleaned) if _YAML_AVAILABLE else {}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f'Erreur parsing brain-compose.yml: {e}')
+
+    feature_sets = data.get('feature_sets', {})
+    version = data.get('version', 'unknown')
+
+    # Résoudre l'héritage (extends) et compter les agents cumulés
+    resolved = {}
+    tier_chain = ['free', 'featured', 'pro', 'full']
+
+    cumulative_agents: list[str] = []
+    cumulative_sessions: list[str] = []
+
+    for tier_name in tier_chain:
+        tier_data = feature_sets.get(tier_name, {})
+        if not tier_data:
+            continue
+
+        # Agents de ce tier
+        tier_agents = tier_data.get('agents', [])
+        if tier_agents == '*':
+            # full = tous les agents
+            agents_dir = BRAIN_ROOT / 'agents'
+            if agents_dir.is_dir():
+                all_agents = sorted([
+                    f.stem for f in agents_dir.glob('*.md')
+                    if f.stem not in ('AGENTS', 'CATALOG', '_template', '_template-orchestrator')
+                ])
+                cumulative_agents = all_agents
+            tier_agents_list = cumulative_agents[:]
+        else:
+            for a in tier_agents:
+                if a not in cumulative_agents:
+                    cumulative_agents.append(a)
+            tier_agents_list = cumulative_agents[:]
+
+        # Sessions de ce tier
+        tier_sessions = tier_data.get('sessions', [])
+        if tier_sessions == '*':
+            cumulative_sessions = [
+                'navigate', 'work', 'debug', 'brainstorm', 'brain', 'handoff',
+                'coach', 'capital', 'audit', 'deploy', 'infra', 'urgence',
+                'kernel', 'edit-brain', 'pilote'
+            ]
+        elif isinstance(tier_sessions, list):
+            for s in tier_sessions:
+                if s != 'extends' and not isinstance(s, dict) and s not in cumulative_sessions:
+                    cumulative_sessions.append(s)
+
+        resolved[tier_name] = {
+            'description': tier_data.get('description', ''),
+            'coach_level': tier_data.get('coach_level', ''),
+            'distillation': tier_data.get('distillation', False),
+            'agents_new': [a for a in (tier_agents if isinstance(tier_agents, list) else []) if a != '*'],
+            'agents_total': tier_agents_list,
+            'agents_count': len(tier_agents_list),
+            'sessions_new': [s for s in (tier_sessions if isinstance(tier_sessions, list) else []) if s not in ('extends',) and not isinstance(s, dict)],
+            'sessions_total': cumulative_sessions[:],
+            'sessions_count': len(cumulative_sessions),
+        }
+
+    return {
+        'version': version,
+        'tiers': resolved,
+        'tier_chain': tier_chain,
+    }
 
 
 # ── Docs live — sert docs/*.md depuis le filesystem ────────────────────────────
