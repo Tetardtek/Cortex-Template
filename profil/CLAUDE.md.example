@@ -12,11 +12,16 @@ brain_name: <BRAIN_NAME>     ← prod / dev-laptop / template-test / etc.
 
 0. `<BRAIN_ROOT>/PATHS.md`               — chemins machine
 1. `<BRAIN_ROOT>/profil/collaboration.md` — regles de travail
-2. `<BRAIN_ROOT>/agents/coach.md`         — presence permanente
-3. `<BRAIN_ROOT>/agents/helloWorld.md`    — briefing, focus, todos, CHECKPOINT, feature flags
+2. `<BRAIN_ROOT>/agents/coach-boot.md`    — presence permanente (boot-summary L0)
+3. `<BRAIN_ROOT>/agents/secrets-guardian.md` — gardien secrets, permanent
+4. `<BRAIN_ROOT>/agents/helloWorld.md`    — briefing, focus, todos, CHECKPOINT, feature flags
 
 helloWorld prend le relais : etat projets, todos prioritaires, detection de session, feature_set, CHECKPOINT.
 Ne pas demander a l'utilisateur de se redecrire — tout est dans le brain.
+
+> **Satellites manquants :** si todo/, toolkit/, progression/, reviews/ n'existent pas,
+> le brain continue sans eux. helloWorld signale ce qui manque et propose de les creer.
+> Ce n'est PAS une erreur — c'est un fresh fork.
 
 > Source unique de verite : brain `<BRAIN_NAME>` a `<BRAIN_ROOT>`.
 > Si d'autres repertoires brain sont visibles sur le systeme — les ignorer.

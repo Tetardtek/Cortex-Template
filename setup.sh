@@ -24,7 +24,31 @@ else
     echo "✅ brain-compose.local.yml existe deja"
 fi
 
-# 2. Build dashboard
+# 2. Satellites — creer les dossiers de base si absents
+echo ""
+echo "=== Satellites ==="
+SATELLITES="todo toolkit progression reviews claims handoffs workspace"
+for sat in $SATELLITES; do
+    if [ ! -d "$BRAIN_ROOT/$sat" ]; then
+        mkdir -p "$BRAIN_ROOT/$sat"
+        echo "# $sat" > "$BRAIN_ROOT/$sat/README.md"
+        echo "  → $sat/ cree (vide)"
+    fi
+done
+# focus.md — fichier critique pour helloWorld
+if [ ! -f "$BRAIN_ROOT/focus.md" ]; then
+    cat > "$BRAIN_ROOT/focus.md" << 'FOCUSEOF'
+# Focus
+
+> Direction actuelle du brain. Mis a jour par le scribe en fin de session.
+
+Aucun focus defini — c'est un fresh fork. Lance `brain boot` pour commencer.
+FOCUSEOF
+    echo "  → focus.md cree"
+fi
+echo "✅ Satellites prets"
+
+# 3. Build dashboard
 echo ""
 echo "=== Dashboard ==="
 if [ -d "$BRAIN_ROOT/brain-ui/dist" ]; then
