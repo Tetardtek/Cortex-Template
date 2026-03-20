@@ -5,17 +5,20 @@ interface DocFile {
   name: string
   label: string
   path: string
-  group?: string
+  group: string
 }
 
-const DOCS: DocFile[] = [
+const API_BASE = import.meta.env.VITE_BRAIN_API ?? ''
+
+// Fallback statique — utilisé si brain-engine n'est pas dispo
+const STATIC_DOCS: DocFile[] = [
   { name: 'getting-started', label: 'Demarrer', path: import.meta.env.BASE_URL + 'docs/getting-started.md', group: 'Guides' },
   { name: 'architecture', label: 'Architecture', path: import.meta.env.BASE_URL + 'docs/architecture.md', group: 'Guides' },
   { name: 'sessions', label: 'Sessions', path: import.meta.env.BASE_URL + 'docs/sessions.md', group: 'Guides' },
+  { name: 'workflows', label: 'Workflows', path: import.meta.env.BASE_URL + 'docs/workflows.md', group: 'Guides' },
   { name: 'satellites', label: 'Satellites', path: import.meta.env.BASE_URL + 'docs/satellites.md', group: 'Guides' },
   { name: 'brain-engine-guide', label: 'Brain-engine', path: import.meta.env.BASE_URL + 'docs/brain-engine-guide.md', group: 'Guides' },
-  { name: 'workflows', label: 'Workflows', path: import.meta.env.BASE_URL + 'docs/workflows.md', group: 'Guides' },
-  { name: 'agents', label: 'Vue d\'ensemble', path: import.meta.env.BASE_URL + 'docs/agents.md', group: 'Agents' },
+  { name: 'agents', label: "Vue d'ensemble", path: import.meta.env.BASE_URL + 'docs/agents.md', group: 'Agents' },
   { name: 'agents-code', label: 'Code & Qualite', path: import.meta.env.BASE_URL + 'docs/agents-code.md', group: 'Agents' },
   { name: 'agents-infra', label: 'Infra & Deploy', path: import.meta.env.BASE_URL + 'docs/agents-infra.md', group: 'Agents' },
   { name: 'agents-brain', label: 'Brain & Systeme', path: import.meta.env.BASE_URL + 'docs/agents-brain.md', group: 'Agents' },
@@ -25,6 +28,9 @@ const DOCS: DocFile[] = [
   { name: 'vue-pro', label: '🟠 pro', path: import.meta.env.BASE_URL + 'docs/vue-pro.md', group: 'Vues' },
   { name: 'vue-full', label: '🟣 full', path: import.meta.env.BASE_URL + 'docs/vue-full.md', group: 'Vues' },
 ]
+
+// Order for consistent sidebar display
+const GROUP_ORDER = ['Guides', 'Agents', 'Vues']
 
 // Detect tier markers in blockquote content and apply CSS class
 const TIER_MARKERS: Record<string, string> = {
@@ -58,41 +64,90 @@ const mdComponents: Components = {
 }
 
 export default function DocsView() {
+  const [docs, setDocs] = useState<DocFile[]>(STATIC_DOCS)
   const [activeDoc, setActiveDoc] = useState<string>('getting-started')
   const [content, setContent] = useState<string>('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [liveMode, setLiveMode] = useState(false)
 
+  // Fetch docs list from brain-engine API — fallback to static
   useEffect(() => {
-    const doc = DOCS.find((d) => d.name === activeDoc)
-    if (!doc) return
+    fetch(`${API_BASE}/docs`)
+      .then((res) => {
+        if (!res.ok) throw new Error('API indisponible')
+        return res.json()
+      })
+      .then((data) => {
+        if (data.docs && data.docs.length > 0) {
+          setDocs(data.docs)
+          setLiveMode(true)
+        }
+      })
+      .catch(() => {
+        // Silencieux — on reste sur les docs statiques
+      })
+  }, [])
 
+  // Fetch active doc content
+  useEffect(() => {
     setLoading(true)
     setError(null)
 
-    fetch(doc.path)
-      .then((res) => {
-        if (!res.ok) throw new Error(`${res.status}`)
-        return res.text()
-      })
-      .then((text) => {
-        const stripped = text.replace(/^---[\s\S]*?---\n*/, '')
-        setContent(stripped)
-        setLoading(false)
-      })
-      .catch((err) => {
-        setError(`Impossible de charger ${doc.path}: ${err.message}`)
-        setLoading(false)
-      })
-  }, [activeDoc])
+    if (liveMode) {
+      // Mode live — fetch depuis l'API brain-engine
+      fetch(`${API_BASE}/docs/${activeDoc}.md`)
+        .then((res) => {
+          if (!res.ok) throw new Error(`${res.status}`)
+          return res.json()
+        })
+        .then((data) => {
+          setContent(data.content)
+          setLoading(false)
+        })
+        .catch((err) => {
+          setError(`Impossible de charger ${activeDoc}: ${err.message}`)
+          setLoading(false)
+        })
+    } else {
+      // Mode statique — fetch depuis les fichiers dist/
+      const doc = docs.find((d) => d.name === activeDoc)
+      if (!doc) { setLoading(false); return }
 
-  // Group docs by group
-  const groups = DOCS.reduce<Record<string, DocFile[]>>((acc, doc) => {
+      fetch(doc.path)
+        .then((res) => {
+          if (!res.ok) throw new Error(`${res.status}`)
+          return res.text()
+        })
+        .then((text) => {
+          const stripped = text.replace(/^---[\s\S]*?---\n*/, '')
+          setContent(stripped)
+          setLoading(false)
+        })
+        .catch((err) => {
+          setError(`Impossible de charger ${doc.path}: ${err.message}`)
+          setLoading(false)
+        })
+    }
+  }, [activeDoc, liveMode, docs])
+
+  // Group docs
+  const groups = docs.reduce<Record<string, DocFile[]>>((acc, doc) => {
     const g = doc.group || 'Autres'
     if (!acc[g]) acc[g] = []
     acc[g].push(doc)
     return acc
   }, {})
+
+  // Sort groups by defined order
+  const sortedGroups = GROUP_ORDER
+    .filter((g) => groups[g])
+    .map((g) => [g, groups[g]] as [string, DocFile[]])
+
+  // Add any groups not in ORDER
+  Object.entries(groups).forEach(([g, d]) => {
+    if (!GROUP_ORDER.includes(g)) sortedGroups.push([g, d])
+  })
 
   return (
     <div className="flex h-full overflow-hidden">
@@ -101,13 +156,22 @@ export default function DocsView() {
         className="flex flex-col flex-shrink-0 border-r overflow-y-auto"
         style={{ width: 200, borderColor: '#2a2a2a', background: '#141414' }}
       >
-        <div className="px-3 py-3 border-b" style={{ borderColor: '#2a2a2a' }}>
+        <div className="px-3 py-3 border-b flex items-center justify-between" style={{ borderColor: '#2a2a2a' }}>
           <span className="text-xs font-mono" style={{ color: '#6b7280' }}>
             Documentation
           </span>
+          {liveMode && (
+            <span
+              className="text-xs font-mono"
+              style={{ color: '#22c55e' }}
+              title="Docs servies en live depuis brain-engine — pas de rebuild necessaire"
+            >
+              live
+            </span>
+          )}
         </div>
         <nav className="flex flex-col gap-0.5 p-2">
-          {Object.entries(groups).map(([group, docs]) => (
+          {sortedGroups.map(([group, groupDocs]) => (
             <div key={group}>
               <div
                 className="text-xs font-mono px-3 py-1.5 mt-2"
@@ -115,7 +179,7 @@ export default function DocsView() {
               >
                 {group.toUpperCase()}
               </div>
-              {docs.map((doc) => (
+              {groupDocs.map((doc) => (
                 <button
                   key={doc.name}
                   onClick={() => setActiveDoc(doc.name)}

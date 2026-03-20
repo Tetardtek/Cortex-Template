@@ -211,7 +211,7 @@ _ws_clients: list[WebSocket] = []
 # Racine du brain (un niveau au-dessus de brain-engine/)
 BRAIN_ROOT = Path(__file__).parent.parent
 
-app = FastAPI(title='Brain-as-a-Service', version='BE-4', docs_url='/docs')
+app = FastAPI(title='Brain-as-a-Service', version='BE-4', docs_url='/api-docs')
 
 # ── Montage brain-ui static (si build disponible) ────────────────────────────
 
@@ -273,6 +273,80 @@ def health():
         return {'status': 'ok', 'indexed': count, 'uptime': uptime}
     except Exception as e:
         return JSONResponse(status_code=503, content={'status': 'error', 'detail': str(e), 'uptime': uptime})
+
+
+# ── Docs live — sert docs/*.md depuis le filesystem ────────────────────────────
+
+@app.get('/docs')
+def docs_list():
+    """Liste les fichiers docs/*.md avec métadonnées (frontmatter group/label)."""
+    docs_dir = BRAIN_ROOT / 'docs'
+    if not docs_dir.is_dir():
+        return {'docs': []}
+
+    results = []
+    for f in sorted(docs_dir.glob('*.md')):
+        if f.name == 'README.md':
+            continue
+        # Extraire le group depuis le contenu (heuristique basée sur le nom)
+        name = f.stem
+        group = _guess_doc_group(name)
+        label = _guess_doc_label(name)
+        results.append({
+            'name': name,
+            'label': label,
+            'group': group,
+            'path': f'/docs/{f.name}',
+            'size': f.stat().st_size,
+            'modified': datetime.fromtimestamp(f.stat().st_mtime, tz=timezone.utc).isoformat(),
+        })
+    return {'docs': results}
+
+
+@app.get('/docs/{filename}')
+def docs_read(filename: str):
+    """Retourne le contenu brut d'un fichier docs/*.md."""
+    # Sécurité : pas de path traversal
+    if '/' in filename or '..' in filename:
+        raise HTTPException(status_code=400, detail='Nom de fichier invalide')
+    target = BRAIN_ROOT / 'docs' / filename
+    if not target.exists() or not target.suffix == '.md':
+        raise HTTPException(status_code=404, detail=f'{filename} introuvable')
+    content = target.read_text(encoding='utf-8')
+    # Strip frontmatter
+    content = re.sub(r'^---[\s\S]*?---\n*', '', content)
+    return JSONResponse(content={'name': target.stem, 'content': content})
+
+
+def _guess_doc_group(name: str) -> str:
+    """Heuristique pour grouper les docs par famille."""
+    if name.startswith('agents'):
+        return 'Agents'
+    if name.startswith('vue-'):
+        return 'Vues'
+    return 'Guides'
+
+
+def _guess_doc_label(name: str) -> str:
+    """Heuristique pour le label sidebar."""
+    labels = {
+        'getting-started': 'Demarrer',
+        'architecture': 'Architecture',
+        'sessions': 'Sessions',
+        'workflows': 'Workflows',
+        'satellites': 'Satellites',
+        'brain-engine-guide': 'Brain-engine',
+        'agents': "Vue d'ensemble",
+        'agents-code': 'Code & Qualite',
+        'agents-infra': 'Infra & Deploy',
+        'agents-brain': 'Brain & Systeme',
+        'vue-tiers': 'Comparatif',
+        'vue-free': '🟢 free',
+        'vue-featured': '🔵 featured',
+        'vue-pro': '🟠 pro',
+        'vue-full': '🟣 full',
+    }
+    return labels.get(name, name.replace('-', ' ').title())
 
 
 @app.get('/search')
