@@ -3,21 +3,44 @@
 # Copier depuis brain-compose.local.yml.example, remplir, NE PAS commiter.
 
 kernel_path: <BRAIN_ROOT>
-kernel_version: "0.2.0"
+kernel_version: "0.9.0"
 last_kernel_sync: "<YYYY-MM-DD>"
+machine: <MACHINE_NAME>
 
 instances:
   prod:
     path: <BRAIN_ROOT>
     brain_name: prod
-    feature_set: full
-    config_status: hydrated   # hydrated / partial / empty
     active: true
+    config_status: empty        # empty → partial → hydrated (après brain-setup.sh)
+    mode: prod
 
-  # Exemple — instance client ou template-test :
-  # template-test:
-  #   path: <BRAIN_ROOT>-test
-  #   brain_name: template-test
-  #   feature_set: full
-  #   config_status: partial
-  #   active: false
+    # Brain API Key — optionnelle
+    # Sans clé → tier: free (le brain fonctionne sans restriction sur les fondamentaux)
+    # Avec clé → tier validé au boot par key-guardian (free / featured / pro / full)
+    # Obtenir une clé : voir docs/getting-started.md (futur)
+    brain_api_key: null
+
+    # feature_set — écrit automatiquement par key-guardian au boot
+    # NE PAS modifier manuellement — sera écrasé à chaque validation
+    feature_set:
+      tier: free
+      agents: []
+      contexts: []
+      distillation: false
+      last_validated_at: null
+      expires_at: null
+      grace_until: null
+
+    # docs_fetch — comment le brain accède aux docs officielles
+    # always : fetch automatique si pattern inconnu
+    # ask    : demande avant de fetch
+    # never  : jamais de fetch externe
+    docs_fetch: ask
+
+# Peers — autres machines avec un brain (optionnel)
+# Utile pour le multi-instance (desktop ↔ laptop)
+# peers:
+#   laptop:
+#     url: http://<IP>:7700
+#     active: true

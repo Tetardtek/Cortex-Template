@@ -34,8 +34,11 @@ Attendu : **0 résultats**.
 ```
 brain-template/
   agents/           ← tous les agents dépersonnalisés
-  contexts/         ← sessions génériques (9 fichiers)
+  contexts/         ← sessions génériques (10 fichiers)
   agent-memory/     ← README + _template/
+  brain-engine/     ← moteur local (server, embed, search, RAG, MCP)
+  brain-ui/         ← dashboard React (docs, workflows, cosmos)
+  docs/             ← guides humains (14 pages)
   profil/
     decisions/      ← ADRs (placeholders domaine)
     collaboration.md.example
@@ -67,28 +70,59 @@ brain-template/
 **Exclus** (trop owner-specific) : `session-infra.yml`, `session-deploy.yml`,
 `session-urgence.yml`, `session-capital.yml`, `session-handoff.yml`
 
+> v1.0 → v1.1 : `session-brain.yml` ajouté (10e contexte) — sessions de travail sur le brain lui-même, 100% générique.
+
 ---
+
+## Docs (guides humains)
+
+**v1.1 : docs/ inclus — 14 pages.**
+Guides humains lisibles sans contexte brain : getting-started, architecture, sessions, workflows, agents par famille, vues par tier.
+
+```
+docs/
+  README.md              ← index
+  getting-started.md     ← premiere page — "j'ai forke, quoi maintenant ?"
+  architecture.md        ← comment les pieces s'assemblent
+  sessions.md            ← types, permissions, metabolisme, close
+  workflows.md           ← recettes d'agents par situation
+  agents.md              ← vue d'ensemble + comparatif tiers
+  agents-code.md         ← review, securite, tests, refacto, perf
+  agents-infra.md        ← VPS, CI/CD, monitoring, mail
+  agents-brain.md        ← coach, scribes, orchestration, kernel
+  vue-tiers.md           ← comparatif tous tiers
+  vue-free.md            ← detail tier free
+  vue-featured.md        ← detail tier featured
+  vue-pro.md             ← detail tier pro
+  vue-full.md            ← detail tier full
+```
+
+**Audit avant release :** `grep -ri "tetardtek" docs/` → 0 resultats.
 
 ## Wiki
 
-**v1.0 : wiki absent (Option A).**
-Le nouvel utilisateur construit son wiki au fil des sessions.
-Le wiki se construit naturellement via `wiki-scribe` en session.
-
-Si un wiki starter est ajouté en v2.0 : auditer chaque fichier avant inclusion.
+**v1.0 : wiki absent.**
+Le nouvel utilisateur construit son wiki au fil des sessions via `wiki-scribe`.
+Le wiki est technique (audience agents) — le docs/ couvre l'onboarding humain.
 
 ---
 
 ## Checklist avant release
 
 - [ ] `grep tetardtek` → 0 résultats
-- [ ] `ls contexts/` → 9 fichiers présents
+- [ ] `ls contexts/` → 10 fichiers présents
 - [ ] `ls agent-memory/` → README.md + _template/
 - [ ] README.md lisible par un inconnu (pas de référence owner)
+- [ ] `ls docs/` → 14 fichiers présents
+- [ ] `grep -ri "tetardtek" docs/` → 0 résultats
+- [ ] `ls brain-engine/` → server.py, embed.py, search.py, start.sh présents
+- [ ] `grep -ri "tetardtek" brain-engine/` → 0 résultats
+- [ ] `ls brain-ui/src/` → composants présents
+- [ ] `grep -ri "tetardtek" brain-ui/src/` → 0 résultats
 - [ ] PATHS.md vide / exemple — aucun chemin machine réel
 - [ ] `brain-compose.local.yml.example` → aucun token/credential réel
 - [ ] Tag git `vX.Y.Z` créé après vérification
 
 ---
 
-*Dernière mise à jour : 2026-03-18 — v1.0 distribution-ready*
+*Dernière mise à jour : 2026-03-20 — v1.2 docs + brain-engine + brain-ui standalone*

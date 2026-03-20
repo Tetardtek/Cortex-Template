@@ -2,7 +2,7 @@
 # Versionné dans le kernel. Schema + feature flags + registre agents.
 # Géré par l'agent brain-compose — ne pas éditer manuellement.
 
-version: "0.7.0"
+version: "0.9.0"
 
 # ---
 # Ownership — kerneluser
@@ -11,6 +11,34 @@ version: "0.7.0"
 # Défaut : true sur tout brain forké (l'owner est toujours kerneluser)
 # ---
 kerneluser: true
+identityShow: on    # conséquence de kerneluser: true — présence visuelle complète des agents
+                    # kerneluser: false → identityShow: off (mode clean/pro — BaaS client)
+
+# ---
+# Brain API Key — accès kernel + tiers (optionnel)
+# ⚠️  La VRAIE clé va dans brain-compose.local.yml (gitignored) sous instances.<name>.brain_api_key
+#     Ce champ reste null ici — jamais commiter une vraie clé dans brain-compose.yml
+# Absent ou null → tier: free (jamais d'erreur, jamais de blocage)
+# Format prod : bk_live_<32chars>
+# Format dev  : bk_test_<32chars> (tier: free forcé côté serveur, toujours valide)
+# Validation  : key-guardian au boot → lit local.yml → valide → écrit feature_set dans local.yml
+# ---
+brain_api_key: null    # toujours null ici — clé réelle dans brain-compose.local.yml
+
+# ---
+# feature_set schema — objet écrit par key-guardian après validation
+# Stocké dans brain-compose.local.yml (non versionné) pour éviter les commits de clé
+# Structure contractuelle : ne pas modifier manuellement
+# ---
+feature_set_schema:
+  tier: free            # free | featured | pro | full
+  agents: []            # liste des agents autorisés ([] = feature_set.free)
+  contexts: []          # manifests BHP autorisés ([] = accès libre sur free)
+  distillation: false   # true = brain-engine distillation locale autorisée (featured+)
+  catalog_version: "1.0.0"  # version du CATALOG.yml agents — sync brain-store
+  last_validated_at: null   # ISO 8601 — dernière validation réussie
+  expires_at: null          # ISO 8601 — expiration clé (null = pas d'expiration fixe)
+  grace_until: null         # ISO 8601 — VPS unreachable → grace 72h avant downgrade
 
 # ---
 # Modes — comportement de session (permissions BSI + agents autorisés)
@@ -166,12 +194,12 @@ modes:
       contexte: false
       reference: read
       personnel: false
-      brain_write: false      # pas d'écriture brain/ — uniquement le repo projet
+      brain_write: false
       forge: false
-    scope_lock: true          # BLOQUÉ hors du scope déclaré dans le claim
-    zone_lock: project        # zone:kernel → BLOCKED_ON immédiat, pas de négociation
+    scope_lock: true
+    zone_lock: project
     circuit_breaker:
-      max_consecutive_fails: 3   # 3 échecs → arrêt + signal BLOCKED_ON vers pilote
+      max_consecutive_fails: 3
       on_trigger: "signal → BLOCKED_ON pilote"
     agents: [code-review, security, testing, debug, vps, ci-cd, pm2, migration]
     behavior: |
@@ -217,19 +245,29 @@ detectmode:
       mode: coach
     - bsi_claim: HANDOFF
       mode: HANDOFF
-  default: prod
+  default: prod    # mode permissions par défaut — session type par défaut = navigate (ADR-044)
 
 # ---
 # Feature sets — contrôlent les agents invocables par instance
 # Les agents "bloqués" existent dans le kernel, brain-compose contrôle l'accès.
+# Chaîne : free → featured → pro → full
 # ---
 
 feature_sets:
 
   free:
     description: "Agents fondamentaux — exploration et maintenance brain"
+    coach_level: boot           # coach-boot.md — présence légère
+    sessions:
+      - navigate
+      - work
+      - debug
+      - brainstorm
+      - brain
+      - handoff
     agents:
-      - coach
+      - coach-boot
+      - brain-guardian
       - scribe
       - todo-scribe
       - debug
@@ -242,11 +280,40 @@ feature_sets:
       - orchestrator-scribe
       - recruiter
       - agent-review
+      - time-anchor
+      - pattern-scribe
+
+  featured:
+    description: "Progression personnelle — RAG + distillation pour apprendre avec un brain qui connaît l'utilisateur"
+    extends: free
+    coach_level: full           # coach.md complet — proposition de valeur centrale
+    distillation: true          # RAG actif — le brain apprend et se souvient
+    sessions:
+      extends: free
+      - coach
+      - capital
+    agents:
+      - coach                   # coach.md full — remplace coach-boot en featured+
+      - coach-scribe
+      - capital-scribe
+      - progression-scribe
+    # Pas d'agents dev (code-review, security, vps, etc.)
+    # Use case : apprendre avec un brain qui te connaît — non-dev bienvenu
 
   pro:
-    description: "Agents métier — développement complet"
-    extends: free
+    description: "Agents métier — développement complet + coaching full"
+    extends: featured
+    coach_level: full
+    sessions:
+      extends: featured
+      - audit
+      - deploy
+      - infra
+      - urgence
+      - refacto
+      - migration
     agents:
+      - coach                   # coach.md full — remplace coach-boot en pro+
       - code-review
       - security
       - testing
@@ -269,10 +336,15 @@ feature_sets:
       - mail
       - brain-compose
       - config-scribe
+      - audit
+      - brain-state-bot
 
   full:
-    description: "Accès complet — usage personnel sans restriction"
+    description: "Accès complet — owner, usage personnel sans restriction + distillation"
     extends: pro
+    coach_level: L2             # coach.md + BACT + milestones long terme
+    sessions: "*"               # inclut kernel + edit-brain — owner uniquement
+    distillation: true
     agents: "*"
 
 # ---
@@ -290,19 +362,25 @@ changelog:
     notes: "BSI (BRAIN-INDEX.md), brain_name, brain-template, aside, brainstorm, brain-compose up"
   - version: "0.3.0"
     date: "2026-03-14"
-    notes: "orchestrator-scribe (free), brain-compose+config-scribe (pro), CHECKPOINT signal, session-as-identity, orchestration-patterns"
+    notes: "orchestrator-scribe (free), brain-compose+config-scribe (pro), CHECKPOINT signal"
   - version: "0.4.0"
     date: "2026-03-14"
-    notes: "Système de modes — 11 modes, permissions BSI par mode, detectmode, toolkit-only autonome avec docs_fetch"
+    notes: "Système de modes — 11 modes, permissions BSI par mode, detectmode"
   - version: "0.5.0"
     date: "2026-03-14"
-    notes: "Multi-sessions BSI v1.2 — CHECKPOINT/HANDOFF signals + handoff files ; brain-watch-vps daemon (stale TTL check, Telegram notifications) ; brain-bot Telegram webhook (/status /sessions /focus /help) ; workspace spec v1.0 (ram.md log.md feedback.md) ; supervisor patterns v1 (7 protocoles) ; statusline session-role ; secrets-guardian recovery protocol ; BLOCKED_ON false-positive fix"
+    notes: "Multi-sessions BSI v1.2 — CHECKPOINT/HANDOFF, brain-bot Telegram, workspace spec v1.0"
   - version: "0.5.1"
     date: "2026-03-14"
-    notes: "Métabolisme v1 — mode conserve, metabolism-scribe, metabolism-spec, progression/metabolism/, helloWorld briefing métabolisme"
+    notes: "Métabolisme v1 — mode conserve, metabolism-scribe, metabolism-spec"
   - version: "0.6.0"
     date: "2026-03-15"
-    notes: "Constitution v1.1.0 — Section 9 North Star + invariants autonomie + auto-amélioration (ADR-011) ; wiki/concepts.md fondamentaux brain V2 ; brain-engine vision north star"
+    notes: "Constitution v1.1.0 — North Star + invariants autonomie"
   - version: "0.7.0"
     date: "2026-03-16"
-    notes: "BSI-v3 fondations — tiered-close, zone-aware claims (ADR-014), result contract, exit triggers ; kerneluser: true ancré kernel ; KERNEL.md délégation human-only phase actuelle"
+    notes: "BSI-v3 fondations — tiered-close, zone-aware claims, kerneluser ancré"
+  - version: "0.8.0"
+    date: "2026-03-17"
+    notes: "Brain API Key Phase 1 — brain_api_key optionnel, feature_set_schema contractuel, tiers free/pro/full"
+  - version: "0.9.0"
+    date: "2026-03-20"
+    notes: "Tier featured ajouté (RAG + coaching complet), sessions par tier, coach_level par tier, identityShow, docs/ 14 pages, BHP Phase 2 (boot-summary/detail 16 agents)"

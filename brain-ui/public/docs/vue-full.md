@@ -1,0 +1,1 @@
+../../../docs/vue-full.md
