@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Brain — Documentation</title>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0d0d0d; color: #e5e7eb;
+      display: flex; height: 100vh; overflow: hidden;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 240px; flex-shrink: 0;
+      background: #141414; border-right: 1px solid #2a2a2a;
+      display: flex; flex-direction: column; overflow-y: auto;
+    }
+    .sidebar-header {
+      padding: 16px; border-bottom: 1px solid #2a2a2a;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .sidebar-header h1 {
+      font-size: 14px; font-weight: 600; color: #fff;
+      font-family: monospace; letter-spacing: 0.05em;
+    }
+    .sidebar-header .badge {
+      font-size: 10px; padding: 2px 6px; border-radius: 4px;
+      background: #22c55e20; color: #22c55e; font-family: monospace;
+    }
+    .group-label {
+      font-size: 10px; font-family: monospace; color: #4b5563;
+      padding: 12px 16px 4px; letter-spacing: 0.1em; text-transform: uppercase;
+    }
+    .doc-link {
+      display: block; padding: 6px 16px; font-size: 13px; color: #9ca3af;
+      cursor: pointer; border: none; background: none; text-align: left;
+      width: 100%; transition: color 0.15s;
+    }
+    .doc-link:hover { color: #e5e7eb; }
+    .doc-link.active { color: #818cf8; background: rgba(99,102,241,0.12); }
+
+    /* Back link */
+    .back-link {
+      margin-top: auto; padding: 12px 16px; border-top: 1px solid #2a2a2a;
+      font-size: 11px; font-family: monospace;
+    }
+    .back-link a { color: #4b5563; text-decoration: none; }
+    .back-link a:hover { color: #6366f1; }
+
+    /* Content */
+    .content {
+      flex: 1; overflow-y: auto; padding: 2rem 3rem;
+    }
+    .content .loading { color: #4b5563; font-family: monospace; font-size: 13px; }
+
+    /* Markdown styles */
+    .md h1 { font-size: 1.8rem; font-weight: 700; color: #fff; margin: 0 0 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid #2a2a2a; }
+    .md h2 { font-size: 1.3rem; font-weight: 600; color: #e5e7eb; margin: 2rem 0 0.8rem; }
+    .md h3 { font-size: 1.1rem; font-weight: 600; color: #d1d5db; margin: 1.5rem 0 0.5rem; }
+    .md p { line-height: 1.7; margin: 0.5rem 0; color: #d1d5db; }
+    .md a { color: #818cf8; text-decoration: none; }
+    .md a:hover { text-decoration: underline; }
+    .md code {
+      font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size: 0.85em;
+      background: #1e1e1e; padding: 2px 6px; border-radius: 4px; color: #e5e7eb;
+    }
+    .md pre {
+      background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 8px;
+      padding: 1rem; overflow-x: auto; margin: 1rem 0;
+    }
+    .md pre code { background: none; padding: 0; font-size: 0.85rem; }
+    .md ul, .md ol { padding-left: 1.5rem; margin: 0.5rem 0; }
+    .md li { line-height: 1.7; color: #d1d5db; margin: 0.2rem 0; }
+    .md blockquote {
+      border-left: 3px solid #2a2a2a; padding: 0.5rem 1rem; margin: 1rem 0;
+      background: #1a1a1a; border-radius: 0 6px 6px 0;
+    }
+    .md blockquote p { color: #9ca3af; }
+    .md table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+    .md th { text-align: left; padding: 8px 12px; border-bottom: 2px solid #2a2a2a; color: #9ca3af; font-weight: 600; }
+    .md td { padding: 8px 12px; border-bottom: 1px solid #1e1e1e; color: #d1d5db; }
+    .md tr:hover td { background: #1a1a1a; }
+    .md img { max-width: 100%; border-radius: 8px; margin: 1rem 0; }
+    .md hr { border: none; border-top: 1px solid #2a2a2a; margin: 2rem 0; }
+
+    /* Tier blockquotes */
+    .md blockquote:has(p:first-child) { }
+    .tier-free { border-left-color: #22c55e; }
+    .tier-featured { border-left-color: #3b82f6; }
+    .tier-pro { border-left-color: #f59e0b; }
+    .tier-full { border-left-color: #a855f7; }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .sidebar { width: 200px; }
+      .content { padding: 1rem; }
+    }
+  </style>
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <h1>brain docs</h1>
+      <span class="badge" id="mode-badge">...</span>
+    </div>
+    <nav id="nav"></nav>
+    <div class="back-link">
+      <a href="/ui/">← brain-ui</a>
+    </div>
+  </aside>
+  <main class="content">
+    <div class="md" id="content">
+      <p class="loading">Chargement...</p>
+    </div>
+  </main>
+
+  <script>
+    const API = '/api'
+    const GROUP_ORDER = ['Guides', 'Agents', 'Vues']
+    const TIER_MARKERS = { '\u{1F7E2}': 'tier-free', '\u{1F535}': 'tier-featured', '\u{1F7E0}': 'tier-pro', '\u{1F7E3}': 'tier-full' }
+
+    let docs = []
+    let activeDoc = null
+    let liveMode = false
+
+    // Static fallback
+    const STATIC_DOCS = [
+      { name: 'getting-started', label: 'Demarrer', group: 'Guides' },
+      { name: 'architecture', label: 'Architecture', group: 'Guides' },
+      { name: 'sessions', label: 'Sessions', group: 'Guides' },
+      { name: 'workflows', label: 'Workflows', group: 'Guides' },
+      { name: 'satellites', label: 'Satellites', group: 'Guides' },
+      { name: 'brain-engine-guide', label: 'Brain-engine', group: 'Guides' },
+      { name: 'agents', label: "Vue d'ensemble", group: 'Agents' },
+      { name: 'agents-code', label: 'Code & Qualite', group: 'Agents' },
+      { name: 'agents-infra', label: 'Infra & Deploy', group: 'Agents' },
+      { name: 'agents-brain', label: 'Brain & Systeme', group: 'Agents' },
+      { name: 'vue-tiers', label: 'Comparatif', group: 'Vues' },
+      { name: 'vue-free', label: 'free', group: 'Vues' },
+      { name: 'vue-featured', label: 'featured', group: 'Vues' },
+      { name: 'vue-pro', label: 'pro', group: 'Vues' },
+      { name: 'vue-full', label: 'full', group: 'Vues' },
+    ]
+
+    async function init() {
+      try {
+        const res = await fetch(`${API}/docs`)
+        if (!res.ok) throw new Error()
+        const data = await res.json()
+        if (data.docs?.length) {
+          docs = data.docs
+          liveMode = true
+        }
+      } catch {
+        docs = STATIC_DOCS
+      }
+
+      document.getElementById('mode-badge').textContent = liveMode ? 'live' : 'static'
+      renderNav()
+
+      // Check URL hash
+      const hash = location.hash.replace('#', '')
+      const target = hash && docs.find(d => d.name === hash) ? hash : 'getting-started'
+      loadDoc(target)
+    }
+
+    function renderNav() {
+      const nav = document.getElementById('nav')
+      const groups = {}
+      docs.forEach(d => {
+        const g = d.group || 'Autres'
+        if (!groups[g]) groups[g] = []
+        groups[g].push(d)
+      })
+
+      const sorted = GROUP_ORDER.filter(g => groups[g]).map(g => [g, groups[g]])
+      Object.entries(groups).forEach(([g, d]) => {
+        if (!GROUP_ORDER.includes(g)) sorted.push([g, d])
+      })
+
+      nav.innerHTML = sorted.map(([group, groupDocs]) => `
+        <div class="group-label">${group}</div>
+        ${groupDocs.map(d => `
+          <button class="doc-link" data-name="${d.name}" onclick="loadDoc('${d.name}')">${d.label}</button>
+        `).join('')}
+      `).join('')
+    }
+
+    async function loadDoc(name) {
+      activeDoc = name
+      location.hash = name
+
+      // Update active state
+      document.querySelectorAll('.doc-link').forEach(el => {
+        el.classList.toggle('active', el.dataset.name === name)
+      })
+
+      const el = document.getElementById('content')
+      el.innerHTML = '<p class="loading">Chargement...</p>'
+
+      try {
+        let md
+        if (liveMode) {
+          const res = await fetch(`${API}/docs/${name}.md`)
+          if (!res.ok) throw new Error(res.status)
+          const data = await res.json()
+          md = data.content
+        } else {
+          const res = await fetch(`/ui/docs/${name}.md`)
+          if (!res.ok) throw new Error(res.status)
+          md = await res.text()
+          md = md.replace(/^---[\s\S]*?---\n*/, '')
+        }
+
+        el.innerHTML = marked.parse(md)
+
+        // Apply tier colors to blockquotes
+        el.querySelectorAll('blockquote').forEach(bq => {
+          const text = bq.textContent
+          for (const [marker, cls] of Object.entries(TIER_MARKERS)) {
+            if (text.includes(marker)) {
+              bq.classList.add(cls)
+              break
+            }
+          }
+        })
+      } catch (err) {
+        el.innerHTML = `<p style="color:#ef4444">Impossible de charger ${name}: ${err.message}</p>`
+      }
+    }
+
+    init()
+  </script>
+</body>
+</html>
