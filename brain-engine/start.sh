@@ -61,7 +61,21 @@ else
     echo "   Le serveur démarre quand même (BSI, docs, endpoints basiques)."
 fi
 
-# 5. Vérifier si déjà en cours
+# 5. Vérifier brain-ui (dashboard + docs)
+UI_DIST="$BRAIN_ROOT/brain-ui/dist"
+if [ ! -d "$UI_DIST" ]; then
+    echo ""
+    echo "⚠️  brain-ui pas buildé — le dashboard ne sera pas disponible."
+    if command -v node &>/dev/null && command -v npm &>/dev/null; then
+        echo "→ Build automatique de brain-ui..."
+        bash "$BRAIN_ROOT/brain-ui/build.sh"
+    else
+        echo "   Node.js/npm requis pour le dashboard."
+        echo "   Installe Node.js 18+ puis lance : bash brain-ui/build.sh"
+    fi
+fi
+
+# 6. Vérifier si déjà en cours (re-check après build éventuel)
 PIDFILE="$BRAIN_ROOT/.brain-engine.pid"
 if [ -f "$PIDFILE" ] && kill -0 "$(cat "$PIDFILE")" 2>/dev/null; then
     echo ""
@@ -71,13 +85,16 @@ if [ -f "$PIDFILE" ] && kill -0 "$(cat "$PIDFILE")" 2>/dev/null; then
     exit 0
 fi
 
-# 6. Lancer le serveur
+# 7. Lancer le serveur
 PORT="${BRAIN_PORT:-7700}"
 LOGFILE="$BRAIN_ROOT/brain-engine/brain-engine.log"
 echo ""
 echo "=== Lancement brain-engine sur port $PORT ==="
 echo "  Health    : http://localhost:$PORT/health"
-echo "  Dashboard : http://localhost:$PORT/ui/"
+if [ -d "$UI_DIST" ]; then
+    echo "  Dashboard : http://localhost:$PORT/ui/"
+fi
+echo "  Docs      : http://localhost:$PORT/ui/docs"
 echo "  Agents    : http://localhost:$PORT/agents"
 echo ""
 

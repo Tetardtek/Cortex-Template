@@ -1,1 +1,0 @@
-../../../docs/vue-tiers.md

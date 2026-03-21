@@ -67,7 +67,7 @@ from pathlib import Path
 import subprocess
 import asyncio
 from fastapi import FastAPI, Header, HTTPException, Query, Body, WebSocket, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.websockets import WebSocketDisconnect
 
 try:
@@ -268,7 +268,13 @@ def health():
         import sqlite3
         from search import DB_PATH
         conn = sqlite3.connect(DB_PATH)
-        count = conn.execute("SELECT COUNT(*) FROM embeddings WHERE indexed=1").fetchone()[0]
+        # embeddings table is created by embed.py (requires Ollama) — optional
+        has_embeddings = conn.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='embeddings'"
+        ).fetchone()
+        count = 0
+        if has_embeddings:
+            count = conn.execute("SELECT COUNT(*) FROM embeddings WHERE indexed=1").fetchone()[0]
         conn.close()
         return {'status': 'ok', 'indexed': count, 'uptime': uptime}
     except Exception as e:
@@ -359,6 +365,12 @@ def brain_compose_tiers():
 
 
 # ── Docs live — sert docs/*.md depuis le filesystem ────────────────────────────
+
+@app.get('/docs/view')
+def docs_redirect():
+    """Redirige /docs/view vers le dashboard docs (pour les navigateurs)."""
+    return RedirectResponse(url='/ui/docs', status_code=302)
+
 
 @app.get('/docs')
 def docs_list():
