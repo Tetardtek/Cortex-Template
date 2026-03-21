@@ -147,7 +147,6 @@ kill $(cat /tmp/brain-engine.pid)
 Ouvre un **nouveau terminal** (brain-engine tourne dans l'autre) :
 
 ```bash
-cd ~/Dev/Brain
 claude
 ```
 
@@ -156,6 +155,8 @@ Claude Code s'ouvre. Tape :
 ```
 brain boot
 ```
+
+> Tu n'as pas besoin d'etre dans le dossier brain. `brain boot` fonctionne depuis n'importe quel repertoire — les chemins dans `~/.claude/CLAUDE.md` sont absolus.
 
 ### Ce que tu dois voir
 
@@ -211,8 +212,8 @@ cp profil/CLAUDE.md.example ~/.claude/CLAUDE.md
 # 3. Lancer le dashboard (optionnel, a chaque session)
 bash brain-engine/start.sh
 
-# 4. Lancer Claude Code (a chaque session)
-cd ~/Dev/Brain && claude
+# 4. Lancer Claude Code (a chaque session, depuis n'importe ou)
+claude
 # Puis : brain boot
 ```
 
