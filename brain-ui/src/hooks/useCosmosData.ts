@@ -43,7 +43,7 @@ export function useCosmosData() {
     setLoading(true)
     setError(null)
 
-    if (USE_MOCK || !API_BASE) {
+    if (USE_MOCK) {
       await new Promise((r) => setTimeout(r, 400))
       setPoints(generateMockPoints())
       setGeneratedAt(new Date().toISOString())

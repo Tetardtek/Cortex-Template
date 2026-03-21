@@ -20,7 +20,7 @@ export function useTier() {
   const [loading, setLoading] = useState(!USE_MOCK)
 
   useEffect(() => {
-    if (USE_MOCK || !API_BASE) {
+    if (USE_MOCK) {
       setTierInfo(MOCK_TIER)
       setLoading(false)
       return

@@ -69,7 +69,7 @@ export default function WorkflowBuilder() {
       gateRequired,
     }
 
-    if (USE_MOCK || !API_BASE) {
+    if (USE_MOCK) {
       // Simulation locale
       await new Promise((r) => setTimeout(r, 600))
       const fakeId = `sess-mock-${Date.now()}`

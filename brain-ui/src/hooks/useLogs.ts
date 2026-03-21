@@ -18,7 +18,7 @@ export function useLogs(project: string, active: boolean) {
   useEffect(() => {
     if (!active) return
 
-    if (USE_MOCK || !API_BASE) {
+    if (USE_MOCK) {
       appendLogs(project, MOCK_LINES)
       return
     }

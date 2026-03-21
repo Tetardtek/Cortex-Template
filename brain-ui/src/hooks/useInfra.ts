@@ -37,7 +37,7 @@ export function useInfra() {
     setLoading(true)
     setError(null)
 
-    if (USE_MOCK || !API_BASE) {
+    if (USE_MOCK) {
       await new Promise(r => setTimeout(r, 300))
       setServices(MOCK_SERVICES)
       setLoading(false)

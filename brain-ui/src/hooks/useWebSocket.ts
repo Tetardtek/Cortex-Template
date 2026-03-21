@@ -24,7 +24,7 @@ export function useWebSocket(addToast?: AddToast) {
   const statusRef = useRef<'connecting' | 'connected' | 'disconnected'>('disconnected')
 
   useEffect(() => {
-    if (USE_MOCK || !API_BASE) {
+    if (USE_MOCK) {
       useBrainStore.getState().setWsStatus('connected')
       return
     }

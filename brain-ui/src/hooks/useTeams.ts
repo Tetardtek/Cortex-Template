@@ -75,7 +75,7 @@ export function useTeams() {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    if (USE_MOCK || !API_BASE) {
+    if (USE_MOCK) {
       setTeams(MOCK_TEAMS)
       setIsLoading(false)
       return

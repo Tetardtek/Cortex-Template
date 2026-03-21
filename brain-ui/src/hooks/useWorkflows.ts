@@ -12,7 +12,7 @@ export function useWorkflows() {
   const setWsStatus  = useBrainStore((s) => s.setWsStatus)
 
   useEffect(() => {
-    if (USE_MOCK || !API_BASE) {
+    if (USE_MOCK) {
       setWorkflows(MOCK_WORKFLOWS)
       setWsStatus('connected')
       return
