@@ -3,14 +3,14 @@
 # Copier depuis brain-compose.local.yml.example, remplir, NE PAS commiter.
 
 kernel_path: <BRAIN_ROOT>
-kernel_version: "0.9.0"
+kernel_version: "0.8.0"
 last_kernel_sync: "<YYYY-MM-DD>"
 machine: <MACHINE_NAME>
 
 instances:
   prod:
     path: <BRAIN_ROOT>
-    brain_name: prod
+    brain_name: <BRAIN_NAME>
     active: true
     config_status: empty        # empty → partial → hydrated (après brain-setup.sh)
     mode: prod

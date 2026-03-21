@@ -19,7 +19,10 @@ if [ ! -f "$BRAIN_ROOT/brain-compose.local.yml" ]; then
     MACHINE=$(hostname)
     sed -i "s|<MACHINE_NAME>|$MACHINE|g" "$BRAIN_ROOT/brain-compose.local.yml"
     sed -i "s|<YYYY-MM-DD>|$(date +%Y-%m-%d)|g" "$BRAIN_ROOT/brain-compose.local.yml"
-    echo "✅ brain-compose.local.yml cree"
+    # brain_name : dérivé du nom du dossier parent (ex: ~/Dev/Brain → brain)
+    BRAIN_NAME=$(basename "$BRAIN_ROOT" | tr '[:upper:]' '[:lower:]' | tr ' ' '-')
+    sed -i "s|<BRAIN_NAME>|$BRAIN_NAME|g" "$BRAIN_ROOT/brain-compose.local.yml"
+    echo "✅ brain-compose.local.yml cree (brain_name: $BRAIN_NAME)"
 else
     echo "✅ brain-compose.local.yml existe deja"
 fi
