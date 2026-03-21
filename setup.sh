@@ -67,6 +67,14 @@ echo "  Ils fonctionnent sans Git. Pour les versionner : docs/satellites.md"
 echo ""
 echo "=== Dashboard ==="
 if [ -d "$BRAIN_ROOT/brain-ui" ]; then
+    # Creer .env.local si absent — pointe vers brain-engine local
+    if [ ! -f "$BRAIN_ROOT/brain-ui/.env.local" ]; then
+        cat > "$BRAIN_ROOT/brain-ui/.env.local" << 'ENVEOF'
+VITE_BRAIN_API=http://localhost:7700
+VITE_USE_MOCK=false
+ENVEOF
+        echo "✅ brain-ui/.env.local cree (API → localhost:7700)"
+    fi
     if [ -d "$BRAIN_ROOT/brain-ui/dist" ]; then
         echo "✅ brain-ui deja build"
     else
