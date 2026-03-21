@@ -9,13 +9,13 @@
 
 | Nom sémantique | Chemin réel | Remote | Gitignored dans brain |
 |----------------|-------------|--------|----------------------|
-| `brain/` | `<BRAIN_ROOT>` | `<GITEA_URL>/<USERNAME>/brain` | — (repo racine) |
-| `toolkit/` | `<BRAIN_ROOT>/toolkit/` | `<GITEA_URL>/<USERNAME>/toolkit` | ✅ |
-| `progression/` | `<BRAIN_ROOT>/progression/` | `<GITEA_URL>/<USERNAME>/progression-coach` | ✅ |
-| `reviews/` | `<BRAIN_ROOT>/reviews/` | `<GITEA_URL>/<USERNAME>/brain-agent-review` | ✅ |
-| `profil/` | `<BRAIN_ROOT>/profil/` | `<GITEA_URL>/<USERNAME>/brain-profil` | ✅ |
-| `todo/` | `<BRAIN_ROOT>/todo/` | `<GITEA_URL>/<USERNAME>/brain-todo` | ✅ |
-| `projects/` | `<PROJECTS_ROOT>` | GitHub | — |
+| `brain/` | `<BRAIN_ROOT>` | `<GIT_HOST>/<ORG>/Cortex-Template` | — (repo racine) |
+| `toolkit/` | `<BRAIN_ROOT>/toolkit/` | `<GIT_HOST>/<ORG>/Cortex-Toolkit` | ✅ |
+| `progression/` | `<BRAIN_ROOT>/progression/` | `<GIT_HOST>/<ORG>/Cortex-Progression` | ✅ |
+| `reviews/` | `<BRAIN_ROOT>/reviews/` | `<GIT_HOST>/<ORG>/Cortex-Reviews` | ✅ |
+| `profil/` | `<BRAIN_ROOT>/profil/` | `<GIT_HOST>/<ORG>/Cortex-Profil` | ✅ |
+| `todo/` | `<BRAIN_ROOT>/todo/` | `<GIT_HOST>/<ORG>/Cortex-Todo` | ✅ |
+| `projects/` | `<PROJECTS_ROOT>` | GitHub / Gitea | — |
 | `home/` | `<HOME>` | — | — |
 
 ## Architecture satellite repos
@@ -23,12 +23,12 @@
 Les repos gitignorés dans `brain/` sont des **satellites autonomes** — chacun a son propre remote.
 
 ```bash
-git clone <GITEA_URL>:<USERNAME>/brain.git <BRAIN_ROOT>
-git clone <GITEA_URL>:<USERNAME>/toolkit.git <BRAIN_ROOT>/toolkit
-git clone <GITEA_URL>:<USERNAME>/progression-coach.git <BRAIN_ROOT>/progression
-git clone <GITEA_URL>:<USERNAME>/brain-agent-review.git <BRAIN_ROOT>/reviews
-git clone <GITEA_URL>:<USERNAME>/brain-profil.git <BRAIN_ROOT>/profil
-git clone <GITEA_URL>:<USERNAME>/brain-todo.git <BRAIN_ROOT>/todo
+git clone <GIT_HOST>:<ORG>/Cortex-Template.git <BRAIN_ROOT>
+git clone <GIT_HOST>:<ORG>/Cortex-Toolkit.git <BRAIN_ROOT>/toolkit
+git clone <GIT_HOST>:<ORG>/Cortex-Progression.git <BRAIN_ROOT>/progression
+git clone <GIT_HOST>:<ORG>/Cortex-Reviews.git <BRAIN_ROOT>/reviews
+git clone <GIT_HOST>:<ORG>/Cortex-Profil.git <BRAIN_ROOT>/profil
+git clone <GIT_HOST>:<ORG>/Cortex-Todo.git <BRAIN_ROOT>/todo
 ```
 
 ---
@@ -43,9 +43,9 @@ git clone <GITEA_URL>:<USERNAME>/brain-todo.git <BRAIN_ROOT>/todo
 ## Procédure — nouvelle machine
 
 ```bash
-# 1. Cloner brain-template ou tous les satellites
-git clone <GITEA_URL>:<USERNAME>/brain.git <BRAIN_ROOT>
-# ... (voir ci-dessus)
+# 1. Cloner le brain + tous les satellites
+git clone <GIT_HOST>:<ORG>/Cortex-Template.git <BRAIN_ROOT>
+# ... (voir ci-dessus pour chaque satellite)
 
 # 2. Installer CLAUDE.md
 cp <BRAIN_ROOT>/profil/CLAUDE.md.example ~/.claude/CLAUDE.md
