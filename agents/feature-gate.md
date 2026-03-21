@@ -2,7 +2,7 @@
 name: feature-gate
 type: protocol
 context_tier: always
-status: draft
+status: active
 brain:
   version:   1
   type:      protocol

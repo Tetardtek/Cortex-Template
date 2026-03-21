@@ -130,7 +130,7 @@ boot_warn_on_drift: true       # manifest.yml vs frontmatter → warn avant sess
 
 ```
 Fichier complet   : ./layer1/manifest.yml
-Section ciblée    : ./layer1/agents/helloworld.md#boot-summary
+Section ciblée    : ./layer1/agents/helloWorld.md#boot-summary
 ```
 
 ### Convention ancres
