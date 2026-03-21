@@ -1,1 +1,1 @@
-../../../docs/vue-tiers.md
+/home/tetardtek/Dev/Brain/docs/vue-tiers.md

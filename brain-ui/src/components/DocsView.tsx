@@ -212,7 +212,14 @@ export default function DocsView() {
             return <article className="docs-markdown"><TierSingle tierName={tierName} /></article>
           }
           if (liveMode && activeDoc === 'agents') {
-            return <article className="docs-markdown"><AgentCatalog /></article>
+            return (
+              <article className="docs-markdown">
+                {!loading && content && (
+                  <ReactMarkdown components={mdComponents}>{content}</ReactMarkdown>
+                )}
+                <AgentCatalog />
+              </article>
+            )
           }
 
           // Mode standard — markdown

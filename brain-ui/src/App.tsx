@@ -1,7 +1,7 @@
 import { useState, useEffect, Suspense, lazy } from 'react'
+import Dashboard from './components/Dashboard'
 import WorkflowBoard from './components/WorkflowBoard'
 import SecretsZone, { MOCK_SECTIONS } from './components/SecretsZone'
-import WorkflowBuilder from './components/WorkflowBuilder'
 import GatesDrawer from './components/GatesDrawer'
 import GateDrawer from './components/GateDrawer'
 import LogDrawer from './components/LogDrawer'
@@ -16,14 +16,15 @@ import { useTier } from './hooks/useTier'
 
 const CosmosView = lazy(() => import('./components/cosmos/CosmosView'))
 const WorkspaceView = lazy(() => import('./components/workspace/WorkspaceView'))
-type ActiveView = 'workflows' | 'builder' | 'secrets' | 'infra' | 'cosmos' | 'workspace'
+const DocsView = lazy(() => import('./components/DocsView'))
+
+type ActiveView = 'dashboard' | 'cosmos' | 'workflows' | 'secrets' | 'infra' | 'workspace'
 
 interface NavItem {
   id: ActiveView
   icon: string
   label: string
   separator?: boolean
-  disabled?: boolean
 }
 
 interface PendingGate {
@@ -33,11 +34,11 @@ interface PendingGate {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { id: 'workflows', icon: '🔀', label: 'Workflows', disabled: true },
-  { id: 'builder',   icon: '⚡', label: 'Nouveau',   disabled: true },
-  { id: 'secrets',   icon: '🔑', label: 'Secrets',   disabled: true },
-  { id: 'infra',     icon: '🖥️', label: 'Infra',     disabled: true },
-  { id: 'cosmos',    icon: '🌌', label: 'Cosmos', separator: true },
+  { id: 'dashboard', icon: '⬡',  label: 'Dashboard' },
+  { id: 'cosmos',    icon: '🌌', label: 'Cosmos'    },
+  { id: 'workflows', icon: '🔀', label: 'Workflows', separator: true },
+  { id: 'infra',     icon: '🖥️', label: 'Infra'     },
+  { id: 'secrets',   icon: '🔑', label: 'Secrets'   },
 ]
 
 function AppInner() {
@@ -46,10 +47,9 @@ function AppInner() {
   // Detect URL path for direct routing (/ui/docs → docs view)
   const initialView = (): ActiveView => {
     const path = window.location.pathname
-    // /docs → redirige vers docs.html (page standalone)
     if (path.includes('/cosmos')) return 'cosmos'
     if (path.includes('/workspace')) return 'workspace'
-    return 'workflows'
+    return 'dashboard'
   }
   const [activeView, setActiveView] = useState<ActiveView>(initialView)
   const [pendingGate, setPendingGate] = useState<PendingGate | null>(null)
@@ -146,19 +146,10 @@ function AppInner() {
                   <div className="mx-3 my-1" style={{ borderTop: '1px solid #2a2a2a' }} />
                 )}
                 <button
-                  onClick={() => !item.disabled && handleViewChange(item.id)}
+                  onClick={() => handleViewChange(item.id)}
                   className="flex items-center gap-3 px-3 py-2 rounded text-sm font-medium text-left transition-colors w-full"
-                  title={item.disabled ? 'Disponible avec brain boot' : undefined}
                   style={
-                    item.disabled
-                      ? {
-                          color: '#374151',
-                          borderLeft: '2px solid transparent',
-                          paddingLeft: 10,
-                          cursor: 'default',
-                          opacity: 0.5,
-                        }
-                      : isActive
+                    isActive
                       ? {
                           background: 'rgba(99,102,241,0.2)',
                           color: '#6366f1',
@@ -174,9 +165,6 @@ function AppInner() {
                 >
                   <span className="text-base leading-none">{item.icon}</span>
                   <span>{item.label}</span>
-                  {item.disabled && (
-                    <span style={{ marginLeft: 'auto', fontSize: 8, color: '#374151', fontFamily: 'monospace' }}>soon</span>
-                  )}
                 </button>
               </div>
             )
@@ -244,15 +232,15 @@ function AppInner() {
 
       {/* Main content */}
       <main className="flex-1 overflow-hidden flex flex-col">
+        {activeView === 'dashboard' && (
+          <Dashboard />
+        )}
         {activeView === 'workflows' && (
           <WorkflowBoard
             workflows={workflows}
             onGateApprove={handleGateApprove}
             onWorkflowClick={(wfId) => setLogsProject(wfId)}
           />
-        )}
-        {activeView === 'builder' && (
-          <WorkflowBuilder />
         )}
         {activeView === 'secrets' && (
           <TierGate feature="secrets" hasFeature={hasFeature}>

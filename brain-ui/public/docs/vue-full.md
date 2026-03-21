@@ -1,1 +1,1 @@
-../../../docs/vue-full.md
+/home/tetardtek/Dev/Brain/docs/vue-full.md

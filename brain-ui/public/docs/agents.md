@@ -1,1 +1,1 @@
-../../../docs/agents.md
+/home/tetardtek/Dev/Brain/docs/agents.md

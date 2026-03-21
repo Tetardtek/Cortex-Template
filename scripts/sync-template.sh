@@ -116,6 +116,18 @@ if [ -d "$BRAIN_ROOT/contexts" ]; then
   echo "  ✅ $ctx_count contexts"
 fi
 
+# --- Brain-UI (source + dist) ---
+echo ""
+echo "── brain-ui/ ──────────────────────────────────"
+if [ -d "$BRAIN_ROOT/brain-ui" ]; then
+  if [ -z "$DRY" ]; then
+    rsync -a --delete \
+      --exclude='node_modules/' \
+      "$BRAIN_ROOT/brain-ui/" "$TEMPLATE_DIR/brain-ui/"
+  fi
+  echo "  ✅ brain-ui (src + dist)"
+fi
+
 # --- Gitkeep ---
 [ -z "$DRY" ] && mkdir -p "$TEMPLATE_DIR/locks" && \
   touch "$TEMPLATE_DIR/locks/.gitkeep"

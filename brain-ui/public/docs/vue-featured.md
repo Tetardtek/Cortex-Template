@@ -1,1 +1,1 @@
-../../../docs/vue-featured.md
+/home/tetardtek/Dev/Brain/docs/vue-featured.md

@@ -1,1 +1,1 @@
-../../../docs/architecture.md
+/home/tetardtek/Dev/Brain/docs/architecture.md
