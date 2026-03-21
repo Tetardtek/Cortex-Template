@@ -106,6 +106,21 @@ agents:
     export: true
     description: "Time anchor — conscience temporelle, recontextualisation, fallback post-compaction MCP KO"
 
+  - id: guide
+    tier: free
+    export: true
+    description: "Guide — onboarding utilisateur, navigation brain, decouverte agents"
+
+  - id: pathfinder
+    tier: free
+    export: true
+    description: "Pathfinder — navigation contextuelle, suggestion de chemins dans le brain"
+
+  - id: catalogist
+    tier: free
+    export: true
+    description: "Catalogist — indexation agents, maintenance CATALOG.yml, coherence registre"
+
   # ── Tier pro — agents avancés ────────────────────────────────────────────
   - id: code-review
     tier: pro
@@ -331,6 +346,21 @@ agents:
     tier: pro
     export: true
     description: "Pre-flight — gate boot, vérifie tier_required + kerneluser + write_lock avant chargement L1"
+
+  - id: progression-scribe
+    tier: pro
+    export: false
+    description: "Progression scribe — persistance satellite progression/, metriques et bilans"
+
+  - id: brain-state-bot
+    tier: pro
+    export: true
+    description: "Brain state bot — generateur workspace/live-states.md, photo instantanee activite"
+
+  - id: secrets-manager
+    tier: pro
+    export: false
+    description: "Secrets manager — cycle de vie secrets, expiry, rotation, audit, sync multi-machine"
 
   # ── Tier owner — agents kernel ───────────────────────────────────────────
   - id: brain-hypervisor
