@@ -3,10 +3,12 @@ import * as THREE from 'three'
 import type { CosmosPoint, ZoneKey } from '../../types'
 
 const ZONE_COLORS: Record<ZoneKey, string> = {
-  public:  '#6366f1',
-  work:    '#22c55e',
-  kernel:  '#f59e0b',
-  unknown: '#6b7280',
+  public:    '#6366f1',
+  work:      '#22c55e',
+  kernel:    '#f59e0b',
+  instance:  '#a855f7',
+  satellite: '#3b82f6',
+  unknown:   '#6b7280',
 }
 
 interface Props {

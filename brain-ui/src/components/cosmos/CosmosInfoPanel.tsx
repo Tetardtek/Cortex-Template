@@ -2,10 +2,12 @@ import { useState } from 'react'
 import type { CosmosPoint, ZoneKey } from '../../types'
 
 const ZONE_BADGE_COLORS: Record<ZoneKey, { bg: string; text: string }> = {
-  public:  { bg: 'rgba(229,231,235,0.1)', text: '#e5e7eb' },
-  work:    { bg: 'rgba(99,102,241,0.15)', text: '#6366f1' },
-  kernel:  { bg: 'rgba(239,68,68,0.15)',  text: '#ef4444' },
-  unknown: { bg: 'rgba(75,85,99,0.2)',    text: '#6b7280' },
+  public:    { bg: 'rgba(229,231,235,0.1)', text: '#e5e7eb' },
+  work:      { bg: 'rgba(99,102,241,0.15)', text: '#6366f1' },
+  kernel:    { bg: 'rgba(239,68,68,0.15)',  text: '#ef4444' },
+  instance:  { bg: 'rgba(168,85,247,0.15)', text: '#a855f7' },
+  satellite: { bg: 'rgba(34,197,94,0.15)',  text: '#22c55e' },
+  unknown:   { bg: 'rgba(75,85,99,0.2)',    text: '#6b7280' },
 }
 
 function getNearestNeighbors(target: CosmosPoint, all: CosmosPoint[], n = 10): CosmosPoint[] {
