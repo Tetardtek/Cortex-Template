@@ -119,9 +119,7 @@
   </main>
 
   <script>
-    // Vide = requetes relatives (meme serveur, meme port)
-    // /api = derriere un proxy Apache (VPS)
-    const API = ''
+    let API = ''
     const GROUP_ORDER = ['Guides', 'Agents', 'Vues']
     const TIER_MARKERS = { '\u{1F7E2}': 'tier-free', '\u{1F535}': 'tier-featured', '\u{1F7E0}': 'tier-pro', '\u{1F7E3}': 'tier-full' }
 
@@ -149,17 +147,21 @@
     ]
 
     async function init() {
-      try {
-        const res = await fetch(`${API}/docs`)
-        if (!res.ok) throw new Error()
-        const data = await res.json()
-        if (data.docs?.length) {
-          docs = data.docs
-          liveMode = true
-        }
-      } catch {
-        docs = STATIC_DOCS
+      // Auto-detect API path : /api (proxy Apache) ou direct (local)
+      for (const prefix of ['', '/api']) {
+        try {
+          const res = await fetch(`${prefix}/docs`)
+          if (!res.ok) continue
+          const data = await res.json()
+          if (data.docs?.length) {
+            API = prefix
+            docs = data.docs
+            liveMode = true
+            break
+          }
+        } catch { /* next */ }
       }
+      if (!liveMode) docs = STATIC_DOCS
 
       document.getElementById('mode-badge').textContent = liveMode ? 'live' : 'static'
       renderNav()
