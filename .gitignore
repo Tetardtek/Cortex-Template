@@ -11,6 +11,7 @@ brain-engine/.venv/
 brain-engine/__pycache__/
 brain-engine/*.log
 brain-engine/viz_cache.json
+.brain-engine.pid
 
 # Brain-ui build + deps
 brain-ui/node_modules/

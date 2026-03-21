@@ -61,14 +61,46 @@ else
     echo "   Le serveur démarre quand même (BSI, docs, endpoints basiques)."
 fi
 
-# 5. Lancer le serveur
+# 5. Vérifier si déjà en cours
+PIDFILE="$BRAIN_ROOT/.brain-engine.pid"
+if [ -f "$PIDFILE" ] && kill -0 "$(cat "$PIDFILE")" 2>/dev/null; then
+    echo ""
+    echo "⚠️  brain-engine tourne déjà (PID $(cat "$PIDFILE"))"
+    echo "   Arrêter : bash brain-engine/stop.sh"
+    echo "   Statut  : bash brain-engine/status.sh"
+    exit 0
+fi
+
+# 6. Lancer le serveur
 PORT="${BRAIN_PORT:-7700}"
+LOGFILE="$BRAIN_ROOT/brain-engine/brain-engine.log"
 echo ""
 echo "=== Lancement brain-engine sur port $PORT ==="
-echo "  Health : http://localhost:$PORT/health"
-echo "  Search : http://localhost:$PORT/search?q=comment+ca+marche"
-echo "  Agents : http://localhost:$PORT/agents"
+echo "  Health    : http://localhost:$PORT/health"
+echo "  Dashboard : http://localhost:$PORT/ui/"
+echo "  Agents    : http://localhost:$PORT/agents"
 echo ""
 
 cd "$BRAIN_ROOT"
-python3 "$SCRIPT_DIR/server.py"
+
+if [ "${1:-}" = "--foreground" ]; then
+    # Mode foreground (debug) — Ctrl+C pour arrêter
+    echo "Mode foreground — Ctrl+C pour arrêter"
+    python3 "$SCRIPT_DIR/server.py"
+else
+    # Mode background (défaut) — PID tracké, log rotatif
+    python3 "$SCRIPT_DIR/server.py" > "$LOGFILE" 2>&1 &
+    ENGINE_PID=$!
+    echo "$ENGINE_PID" > "$PIDFILE"
+    sleep 1
+
+    if kill -0 "$ENGINE_PID" 2>/dev/null; then
+        echo "✅ brain-engine démarré (PID $ENGINE_PID)"
+        echo "   Logs    : tail -f brain-engine/brain-engine.log"
+        echo "   Arrêter : bash brain-engine/stop.sh"
+    else
+        echo "❌ brain-engine n'a pas démarré — voir brain-engine/brain-engine.log"
+        rm -f "$PIDFILE"
+        exit 1
+    fi
+fi

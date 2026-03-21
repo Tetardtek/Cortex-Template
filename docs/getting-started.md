@@ -98,47 +98,44 @@ Brain-engine c'est le serveur local qui fait tourner l'API, le dashboard, et la 
 ### Demarrer
 
 ```bash
-cd ~/Dev/Brain
 bash brain-engine/start.sh
 ```
 
-Tu vois :
+Brain-engine demarre en arriere-plan. Tu vois :
 
 ```
-=== Lancement brain-engine sur port 7700 ===
-  Health : http://localhost:7700/health
-  Dashboard : http://localhost:7700/ui/
+✅ brain-engine demarre (PID 12345)
+   Logs    : tail -f brain-engine/brain-engine.log
+   Arreter : bash brain-engine/stop.sh
 ```
-
-> **Le terminal reste occupe** — brain-engine tourne au premier plan. Ouvre un autre terminal pour la suite.
 
 ### Verifier
 
-Ouvre ton navigateur : `http://localhost:7700/ui/`
+```bash
+bash brain-engine/status.sh
+```
+
+Ou ouvre ton navigateur : `http://localhost:7700/ui/`
 Tu vois le dashboard avec l'onglet Docs — c'est cette documentation.
 
 ### Arreter
 
-Reviens dans le terminal ou brain-engine tourne et fais `Ctrl+C`. C'est tout.
+```bash
+bash brain-engine/stop.sh
+```
+
+### Mode debug (optionnel)
+
+Si tu veux voir les logs en direct dans le terminal :
+
+```bash
+bash brain-engine/start.sh --foreground
+```
+
+`Ctrl+C` pour arreter.
 
 > Brain-engine n'est pas obligatoire pour utiliser le brain avec Claude Code.
 > C'est un bonus (dashboard, search, API). Tu peux faire `brain boot` sans.
-
-### Lancer en arriere-plan (optionnel)
-
-Si tu ne veux pas bloquer un terminal :
-
-```bash
-cd ~/Dev/Brain
-nohup bash brain-engine/start.sh > /tmp/brain-engine.log 2>&1 &
-echo $! > /tmp/brain-engine.pid
-```
-
-Pour l'arreter :
-
-```bash
-kill $(cat /tmp/brain-engine.pid)
-```
 
 ---
 
@@ -223,8 +220,11 @@ claude
 
 ### Brain-engine tourne encore en fond, comment l'arreter ?
 
-Si tu l'as lance au premier plan : `Ctrl+C` dans son terminal.
-Si tu l'as lance en arriere-plan : `kill $(cat /tmp/brain-engine.pid)`
+```bash
+bash brain-engine/stop.sh
+```
+
+Pour verifier s'il tourne : `bash brain-engine/status.sh`
 En dernier recours : `pkill -f 'python3.*server.py'`
 
 ### Je vois "MYSECRETS absent" — c'est grave ?
