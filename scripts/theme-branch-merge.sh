@@ -38,14 +38,13 @@ echo ""
 
 BLOCKERS=()
 
-# --- Check 1 : aucun claim open sur cette branche ---
-OPEN_CLAIMS=$(grep -rl "status: open" "$BRAIN_ROOT/claims/" 2>/dev/null || true)
-if [ -n "$OPEN_CLAIMS" ]; then
-  while IFS= read -r claim; do
-    # Vérifier si le claim référence ce thème ou n'a pas de theme_branch (ambigu)
-    rel="${claim#$BRAIN_ROOT/}"
-    BLOCKERS+=("  🔴 Claim encore ouvert : $rel")
-  done <<< "$OPEN_CLAIMS"
+# --- Check 1 : aucun claim open (ADR-042 — brain.db source unique) ---
+OPEN_COUNT=$(bash "$BRAIN_ROOT/scripts/bsi-query.sh" count-open 2>/dev/null || echo "0")
+if [ "$OPEN_COUNT" -gt 0 ]; then
+  OPEN_LIST=$(bash "$BRAIN_ROOT/scripts/bsi-query.sh" open 2>/dev/null || true)
+  while IFS= read -r line; do
+    BLOCKERS+=("  🔴 Claim ouvert : $line")
+  done <<< "$OPEN_LIST"
 fi
 
 # --- Check 2 : aucun signal BLOCKED_ON pending ---

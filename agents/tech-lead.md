@@ -3,6 +3,21 @@ name: tech-lead
 type: agent
 context_tier: warm
 status: active
+brain:
+  version:   1
+  type:      protocol
+  scope:     kernel
+  owner:     human
+  writer:    human
+  lifecycle: stable
+  read:      trigger
+  triggers:  [tech-lead, gate, sprint, architecture]
+  export:    true
+  ipc:
+    receives_from: [orchestrator, context-broker]
+    sends_to:      [orchestrator, human, scribe, toolkit-scribe]
+    zone_access:   [kernel, project]
+    signals:       [SPAWN, RETURN, ESCALATE]
 ---
 
 # Agent : tech-lead
@@ -363,3 +378,4 @@ INTEGRATOR → merge + push + handoff
 | 2026-03-14 | Patch 1 — KPIs (5 métriques), feedback loop integrator→tech-lead, auto-calibration protocol, règle "patcher tôt" |
 | 2026-03-14 | Patch 2 — KPIs split Tier 1 (mesurables git) / Tier 2 (désactivés sans sink) — honnêteté sur ce qui est réellement mesurable |
 | 2026-03-14 | Patch 3 — Permissions d'écriture explicites, cosign convention, zéro écriture brain/ directe |
+| 2026-03-18 | Review guidée — sends_to IPC complété (scribe + toolkit-scribe) + handoffs/feedback-tech-lead-_template.md créé (Tier 2 KPIs débloqués) |

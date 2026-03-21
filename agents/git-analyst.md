@@ -3,6 +3,21 @@ name: git-analyst
 type: agent
 context_tier: warm
 status: active
+brain:
+  version:   1
+  type:      metier
+  scope:     kernel
+  owner:     human
+  writer:    human
+  lifecycle: stable
+  read:      trigger
+  triggers:  [git, commit, historique, git-analyst]
+  export:    true
+  ipc:
+    receives_from: [orchestrator, human]
+    sends_to:      [orchestrator, scribe]
+    zone_access:   [project]
+    signals:       [SPAWN, RETURN]
 ---
 
 # Agent : git-analyst

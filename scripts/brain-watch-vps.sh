@@ -4,17 +4,16 @@
 # Détecte les changements dans BRAIN-INDEX.md → notifie via Telegram
 #
 # Setup VPS (une seule fois) :
-#   1. Copier ce script sur le VPS : scp brain-watch-vps.sh root@<VPS_IP>:/home/<user>/brain-watch/
+#   1. Copier ce script sur le VPS : scp brain-watch-vps.sh root@VPS:/home/tetardtek/brain-watch/
 #   2. Copier brain-notify.sh aussi
-#   3. Cloner le brain : git clone git@<GITEA_URL>:<USERNAME>/brain.git /home/<user>/brain-watch/brain
-#   4. Copier MYSECRETS sur le VPS : scp MYSECRETS root@<VPS_IP>:/home/<user>/brain-watch/
+#   3. Cloner le brain : git clone git@git.tetardtek.com:Tetardtek/brain.git /home/tetardtek/brain-watch/brain
+#   4. Copier MYSECRETS sur le VPS : scp MYSECRETS root@VPS:/home/tetardtek/brain-watch/
 #   5. Installer le service systemd : install-brain-watch-vps.sh
 #   6. systemctl start brain-watch && systemctl enable brain-watch
 
 set -euo pipefail
 
-# Configurable — override via env ou MYSECRETS (VPS_WATCH_ROOT=...)
-WATCH_ROOT="${VPS_WATCH_ROOT:-$HOME/brain-watch}"
+WATCH_ROOT="/home/tetardtek/brain-watch"
 BRAIN_INDEX="$WATCH_ROOT/brain/BRAIN-INDEX.md"
 NOTIFY="$WATCH_ROOT/brain-notify.sh"
 BRAIN_ROOT="$WATCH_ROOT"  # pour brain-notify.sh — lit MYSECRETS ici
@@ -24,8 +23,7 @@ LOG_PREFIX="[brain-watch-vps]"
 export BRAIN_ROOT
 
 if [[ ! -d "$WATCH_ROOT/brain" ]]; then
-  BRAIN_GIT_URL="${BRAIN_GIT_URL:-$(grep '^BRAIN_GIT_URL=' "$WATCH_ROOT/MYSECRETS" 2>/dev/null | cut -d= -f2-)}"
-  echo "$LOG_PREFIX ERREUR : brain non cloné. Lancer : git clone $BRAIN_GIT_URL $WATCH_ROOT/brain" >&2
+  echo "$LOG_PREFIX ERREUR : brain non cloné. Lancer : git clone git@git.tetardtek.com:Tetardtek/brain.git $WATCH_ROOT/brain" >&2
   exit 1
 fi
 

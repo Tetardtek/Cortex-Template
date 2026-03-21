@@ -42,7 +42,7 @@ Tier free = défaut absolu silencieux.
    (brain-compose.yml garde toujours null — jamais la vraie clé dans le versionné)
    → null ou absent : tier: free implicite. Stop. Rien à écrire.
 
-2. Clé présente → POST https://keys.<OWNER_DOMAIN>/validate
+2. Clé présente → POST https://keys.tetardtek.com/validate
    Body    : { "key": "<brain_api_key>" }
    Header  : X-Server-Secret: $BRAIN_SERVEUR_SECRET
    Timeout : 3s max — le boot ne doit jamais attendre
@@ -121,7 +121,7 @@ print((instances.get(name) or {}).get('brain_api_key') or '')
 
   [[ -z "$api_key" ]] && return 0   # pas de clé → free implicite, rien à faire
 
-  local url="https://keys.<OWNER_DOMAIN>/validate"
+  local url="https://keys.tetardtek.com/validate"
   local secret="${BRAIN_SERVEUR_SECRET:-}"
   local response
 

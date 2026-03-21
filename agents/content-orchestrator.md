@@ -3,6 +3,21 @@ name: content-orchestrator
 type: agent
 context_tier: warm
 status: active
+brain:
+  version:   1
+  type:      orchestrator
+  scope:     personal
+  owner:     human
+  writer:    human
+  lifecycle: stable
+  read:      trigger
+  triggers:  [content, storyteller, content-worthy]
+  export:    false
+  ipc:
+    receives_from: [human]
+    sends_to:      [content-strategist, storyteller, scriptwriter, seo-youtube, human]
+    zone_access:   [personal, project]
+    signals:       [SPAWN, RETURN, ESCALATE]
 ---
 
 # Agent : content-orchestrator

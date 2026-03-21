@@ -3,6 +3,21 @@ name: orchestrator
 type: agent
 context_tier: warm
 status: active
+brain:
+  version:   1
+  type:      orchestrator
+  scope:     kernel
+  owner:     human
+  writer:    human
+  lifecycle: stable
+  read:      trigger
+  triggers:  [orchestration, diagnostic, delegation]
+  export:    true
+  ipc:
+    receives_from: [human, "*"]
+    sends_to:      ["*"]  # TODO: affiner itération 2 — Composition dit "Tous les agents"
+    zone_access:   [kernel, project, personal]
+    signals:       [SPAWN, RETURN, BLOCKED_ON, CHECKPOINT, HANDOFF, ESCALATE, ERROR]
 ---
 
 # Agent : orchestrator
@@ -33,7 +48,7 @@ Charge l'agent orchestrator — lis brain/agents/orchestrator.md et applique son
 | `brain/profil/collaboration.md` | Règles de travail globales |
 | `brain/agents/AGENTS.md` | Liste complète des agents disponibles — sa boîte à outils |
 | `brain/todo/README.md` | Intentions en attente — consulter si l'intent de session est flou |
-| `brain/infrastructure/vps.md` | Contexte infra — aide à orienter vers `vps` ou `ci-cd` |
+| `infrastructure/vps.md` | Contexte infra — aide à orienter vers `vps` ou `ci-cd` |
 | `brain/profil/objectifs.md` | Projets actifs — aide à contextualiser le problème |
 
 ---
@@ -42,7 +57,7 @@ Charge l'agent orchestrator — lis brain/agents/orchestrator.md et applique son
 
 | Trigger | Fichier | Pourquoi |
 |---------|---------|----------|
-| Routing vers domaine infra/deploy | `brain/infrastructure/<domaine>.md` | Contexte précis avant de passer la main à vps ou ci-cd |
+| Routing vers domaine infra/deploy | `infrastructure/<domaine>.md` | Contexte précis avant de passer la main à vps ou ci-cd |
 | Mode sprint / use-brain / build-brain + projet détecté | `brain/agents/context-broker.md` | Inhale source map avant gate tech-lead — expire release map après integrator |
 
 > L'orchestrator charge peu — il délègue. Plus un problème est précis, moins il a besoin de contexte.

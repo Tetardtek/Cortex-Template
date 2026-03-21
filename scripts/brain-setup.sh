@@ -1,151 +1,232 @@
 #!/bin/bash
-# brain-setup.sh — First boot setup (fresh fork)
-# Idempotent — safe à relancer si une étape a échoué.
+# brain-setup.sh — Setup complet brain sur une nouvelle machine
+# Usage : bash brain-setup.sh [brain_name] [brain_root]
+# Ex    : bash brain-setup.sh prod-laptop ~/Dev/Brain
 #
-# Usage : bash scripts/brain-setup.sh
+# Ce script est idempotent — safe à relancer si une étape a échoué.
 
 set -euo pipefail
 
-BRAIN_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-CLAUDE_DIR="$HOME/.claude"
+# ── Config ──────────────────────────────────────────────────────────────────
+GITEA="git@git.tetardtek.com:Tetardtek"
+BRAIN_NAME="${1:-prod-laptop}"
+BRAIN_ROOT="${2:-$HOME/Dev/Brain}"
 
-ok()   { echo "OK  $1"; }
-warn() { echo "WRN $1"; }
-ask()  { printf "\n?   %s\n> " "$1"; }
+REPOS=(
+  "brain:$BRAIN_ROOT"
+  "toolkit:$BRAIN_ROOT/toolkit"
+  "progression-coach:$BRAIN_ROOT/progression"
+  "brain-agent-review:$BRAIN_ROOT/reviews"
+  "brain-profil:$BRAIN_ROOT/profil"
+  "brain-todo:$BRAIN_ROOT/todo"
+  "brain.wiki:$BRAIN_ROOT/wiki"
+)
+# brain-ui est dans le monorepo principal (brain-ui/ sous BRAIN_ROOT) — pas un satellite séparé
+
+# ── Couleurs ─────────────────────────────────────────────────────────────────
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+RED='\033[0;31m'
+NC='\033[0m'
+ok()   { echo -e "${GREEN}✅ $1${NC}"; }
+warn() { echo -e "${YELLOW}⚠️  $1${NC}"; }
+info() { echo -e "   $1"; }
 
 echo ""
-echo "=== brain-template — First boot setup ==="
-echo "    Chemin : $BRAIN_ROOT"
+echo "╔══════════════════════════════════════════════╗"
+echo "║     brain-setup.sh — nouvelle machine        ║"
+echo "║     brain_name : $BRAIN_NAME"
+echo "║     brain_root : $BRAIN_ROOT"
+echo "╚══════════════════════════════════════════════╝"
 echo ""
 
-# ETAPE 1 — PATHS.md
-echo "--- 1/5 Chemins machine ---"
-if grep -q '<BRAIN_ROOT>' "$BRAIN_ROOT/PATHS.md" 2>/dev/null; then
-  ask "Chemin absolu du brain [Entree = $BRAIN_ROOT]"
-  read -r brain_path; brain_path="${brain_path:-$BRAIN_ROOT}"
-
-  ask "Chemin projets [ex: $HOME/Dev/Projects]"
-  read -r projects_path; projects_path="${projects_path:-$HOME/Dev/Projects}"
-
-  ask "URL Git [ex: git@github.com:alice]"
-  read -r gitea_url; gitea_url="${gitea_url:-git@github.com:<USERNAME>}"
-
-  ask "Username Git"
-  read -r username; username="${username:-<USERNAME>}"
-
-  sed -i \
-    -e "s|<BRAIN_ROOT>|$brain_path|g" \
-    -e "s|<PROJECTS_ROOT>|$projects_path|g" \
-    -e "s|<GITEA_URL>|$gitea_url|g" \
-    -e "s|<USERNAME>|$username|g" \
-    -e "s|<HOME>|$HOME|g" \
-    "$BRAIN_ROOT/PATHS.md"
-  ok "PATHS.md configure"
-else
-  ok "PATHS.md deja configure"
-  brain_path="$BRAIN_ROOT"
+# ── Étape 0 — SSH key ────────────────────────────────────────────────────────
+echo "[ 0/5 ] Vérification SSH key Gitea..."
+if ! ssh -T git@git.tetardtek.com -o StrictHostKeyChecking=no 2>&1 | grep -qE "Welcome|Hi there"; then
+  warn "Clé SSH Gitea non configurée."
+  info "Créer une clé :"
+  info "  ssh-keygen -t ed25519 -C 'laptop@brain'"
+  info "  cat ~/.ssh/id_ed25519.pub"
+  info "  → Ajouter dans Gitea : Settings > SSH Keys"
+  echo ""
+  read -p "   Appuie sur Entrée quand la clé est ajoutée dans Gitea..." _
 fi
+ok "SSH Gitea OK"
 
-# ETAPE 2 — CLAUDE.md global
+# ── Étape 1 — Cloner les satellites ──────────────────────────────────────────
 echo ""
-echo "--- 2/5 CLAUDE.md global ---"
-CLAUDE_MD="$CLAUDE_DIR/CLAUDE.md"
-brain_name="prod"
-if [ ! -f "$CLAUDE_MD" ]; then
-  ask "Nom de cette instance ? [prod / dev / laptop]"
-  read -r brain_name; brain_name="${brain_name:-prod}"
-  mkdir -p "$CLAUDE_DIR"
-  cat > "$CLAUDE_MD" << EOF
-# CLAUDE.md
+echo "[ 1/5 ] Clonage des satellites..."
+for entry in "${REPOS[@]}"; do
+  repo="${entry%%:*}"
+  dest="${entry#*:}"
+  dest="${dest/#\~/$HOME}"
 
-brain_root: ${brain_path:-$BRAIN_ROOT}
-brain_name: $brain_name
-
-## Bootstrap
-
-0. ${brain_path:-$BRAIN_ROOT}/PATHS.md
-1. ${brain_path:-$BRAIN_ROOT}/profil/collaboration.md
-2. ${brain_path:-$BRAIN_ROOT}/agents/coach.md
-3. ${brain_path:-$BRAIN_ROOT}/agents/helloWorld.md
-
-helloWorld prend le relais.
-EOF
-  ok "~/.claude/CLAUDE.md cree (brain_name: $brain_name)"
-else
-  ok "~/.claude/CLAUDE.md existe"
-  brain_name=$(grep 'brain_name:' "$CLAUDE_MD" | sed 's/.*: *//' | tr -d ' ' | head -1 || echo "prod")
-fi
-
-# ETAPE 3 — brain-compose.local.yml
-echo ""
-echo "--- 3/5 brain-compose.local.yml ---"
-LOCAL="$BRAIN_ROOT/brain-compose.local.yml"
-tier="free"
-if [ ! -f "$LOCAL" ]; then
-  ask "Tier ? [free / pro / full]"
-  read -r tier; tier="${tier:-free}"
-  api_key=""
-  if [ "$tier" != "free" ]; then
-    ask "Cle API"
-    read -r api_key
-  fi
-  cat > "$LOCAL" << EOF
-brain_name: $brain_name
-kernel_path: ${brain_path:-$BRAIN_ROOT}
-tier: $tier
-$([ -n "${api_key:-}" ] && echo "api_key: $api_key" || echo "# api_key: (tier free)")
-instances:
-  $brain_name:
-    path: ${brain_path:-$BRAIN_ROOT}
-    brain_name: $brain_name
-EOF
-  ok "brain-compose.local.yml cree (tier: $tier)"
-else
-  ok "brain-compose.local.yml existe"
-fi
-
-# ETAPE 3b — collaboration.md
-echo ""
-echo "--- 3b/5 Profil collaboration ---"
-COLLAB="$BRAIN_ROOT/profil/collaboration.md"
-COLLAB_EX="$BRAIN_ROOT/profil/collaboration.md.example"
-if [ ! -f "$COLLAB" ] && [ -f "$COLLAB_EX" ]; then
-  cp "$COLLAB_EX" "$COLLAB"
-  ok "profil/collaboration.md cree depuis .example — a personnaliser"
-else
-  ok "profil/collaboration.md existe"
-fi
-
-# ETAPE 4 — Git remote
-echo ""
-echo "--- 4/5 Git remote ---"
-current_origin=$(git -C "$BRAIN_ROOT" remote get-url origin 2>/dev/null || echo "")
-if echo "$current_origin" | grep -q "brain-template"; then
-  ask "URL de TON repo ? (skip pour ignorer)"
-  read -r new_remote
-  if [ "$new_remote" != "skip" ] && [ -n "$new_remote" ]; then
-    git -C "$BRAIN_ROOT" remote set-url origin "$new_remote"
-    git -C "$BRAIN_ROOT" remote add upstream "$current_origin" 2>/dev/null || true
-    ok "origin -> $new_remote / upstream -> brain-template"
+  if [[ -d "$dest/.git" ]]; then
+    info "$repo → déjà cloné ($dest) — git pull..."
+    git -C "$dest" pull --ff-only 2>/dev/null || warn "$repo : pull échoué (conflits ?) — vérifier manuellement"
   else
-    warn "Remote non modifie"
+    mkdir -p "$(dirname "$dest")"
+    git clone "$GITEA/$repo.git" "$dest"
+    ok "$repo → $dest"
   fi
-else
-  ok "Remote : $current_origin"
+done
+ok "Tous les satellites clonés"
+
+# ── Étape 2 — CLAUDE.md ──────────────────────────────────────────────────────
+echo ""
+echo "[ 2/5 ] Configuration CLAUDE.md..."
+CLAUDE_TARGET="$HOME/.claude/CLAUDE.md"
+CLAUDE_EXAMPLE="$BRAIN_ROOT/profil/CLAUDE.md.example"
+
+mkdir -p "$HOME/.claude"
+
+if [[ -f "$CLAUDE_TARGET" ]]; then
+  warn "~/.claude/CLAUDE.md existe déjà — backup → CLAUDE.md.bak"
+  cp "$CLAUDE_TARGET" "$CLAUDE_TARGET.bak"
 fi
 
-# ETAPE 5 — Validation
-echo ""
-echo "--- 5/5 Validation ---"
-bash "$BRAIN_ROOT/scripts/kernel-isolation-check.sh" 2>&1 | tail -2
+cp "$CLAUDE_EXAMPLE" "$CLAUDE_TARGET"
+sed -i "s|<BRAIN_ROOT>|$BRAIN_ROOT|g" "$CLAUDE_TARGET"
+sed -i "s|<BRAIN_NAME>|$BRAIN_NAME|g" "$CLAUDE_TARGET"
+ok "~/.claude/CLAUDE.md configuré (brain_name=$BRAIN_NAME, brain_root=$BRAIN_ROOT)"
 
+# ── Étape 3 — brain-compose.local.yml ────────────────────────────────────────
 echo ""
-echo "=== Setup termine ==="
+echo "[ 3/5 ] brain-compose.local.yml..."
+LOCAL_COMPOSE="$BRAIN_ROOT/brain-compose.local.yml"
+KERNEL_VERSION=$(grep '^version:' "$BRAIN_ROOT/brain-compose.yml" | awk '{print $2}' | tr -d '"')
+
+if [[ -f "$LOCAL_COMPOSE" ]]; then
+  warn "brain-compose.local.yml existe déjà — skip"
+else
+  cat > "$LOCAL_COMPOSE" << EOF
+# brain-compose.local.yml — Registre machine ($BRAIN_NAME)
+# NON VERSIONNÉ — gitignored.
+
+kernel_path: $BRAIN_ROOT
+kernel_version: "$KERNEL_VERSION"
+last_kernel_sync: "$(date +%Y-%m-%d)"
+machine: $BRAIN_NAME
+write_mode: readonly_kernel   # nouvelle machine = jamais kernel writer
+
+instances:
+  $BRAIN_NAME:
+    path: $BRAIN_ROOT
+    brain_name: $BRAIN_NAME
+    feature_set: full
+    mode: prod
+    docs_fetch: ask
+    config_status: hydrated
+    active: true
+EOF
+  ok "brain-compose.local.yml créé"
+fi
+
+# ── Lock kernel push (nouvelle machine = readonly) ────────────────────────────
+git -C "$BRAIN_ROOT" remote set-url --push origin no_push
+ok "Kernel push lockée (write_mode: readonly_kernel)"
+
+# ── Étape 3.5 — Brain API Key (optionnel) ────────────────────────────────────
 echo ""
-echo "    brain_root : ${brain_path:-$BRAIN_ROOT}"
-echo "    tier       : ${tier:-free}"
+echo "[ 3.5/5 ] Brain API Key (optionnel)..."
+info "Obtenir une clé : contacter le mainteneur du brain (tier free = aucune clé requise)"
+info "Format attendu  : bk_live_<32chars> (prod) ou bk_test_<32chars> (dev)"
 echo ""
-echo "    Ouvre Claude Code dans ce dossier."
-echo "    Il t'attend."
+read -rp "   Brain API Key (Entrée pour passer, tier free) : " api_key
+
+if [[ -n "$api_key" ]]; then
+  if [[ ! "$api_key" =~ ^bk_(live|test)_ ]]; then
+    warn "Format invalide — clé ignorée (attendu : bk_live_... ou bk_test_...)"
+  else
+    sed -i "s|^brain_api_key:.*|brain_api_key: $api_key|" "$BRAIN_ROOT/brain-compose.yml"
+    ok "Clé enregistrée dans brain-compose.yml"
+    info "Le key-guardian validera au prochain boot (timeout 3s, grace 72h si VPS down)."
+  fi
+else
+  info "Tier free — aucune clé configurée."
+fi
+
+# ── Étape 4 — MYSECRETS ──────────────────────────────────────────────────────
 echo ""
-echo "    (Il va te poser une derniere question.)"
+echo "[ 4/5 ] MYSECRETS..."
+MYSECRETS="$BRAIN_ROOT/MYSECRETS"
+
+if [[ -f "$MYSECRETS" ]]; then
+  ok "MYSECRETS présent"
+else
+  warn "MYSECRETS absent — jamais versionné."
+  info ""
+  info "Options pour le récupérer :"
+  info "  A) Copie sécurisée depuis le desktop :"
+  info "     scp tetardtek@<desktop-ip>:~/Dev/Brain/MYSECRETS $MYSECRETS"
+  info ""
+  info "  B) Recréer manuellement :"
+  info "     cp $BRAIN_ROOT/MYSECRETS.example $MYSECRETS  (si le fichier exemple existe)"
+  info "     → Remplir les valeurs manuellement"
+  info ""
+  warn "Le brain fonctionne sans MYSECRETS mais les sessions secrets seront bloquées."
+fi
+
+# ── Étape 5 — Claude Code ────────────────────────────────────────────────────
+echo ""
+echo "[ 5/5 ] Claude Code..."
+if command -v claude &>/dev/null; then
+  ok "Claude Code installé ($(claude --version 2>/dev/null || echo 'version inconnue'))"
+else
+  warn "Claude Code non installé."
+  info "  npm install -g @anthropic-ai/claude-code"
+  info "  ou : https://claude.ai/code"
+fi
+
+# ── Étape 5.5 — Node.js ──────────────────────────────────────────────────────
+echo ""
+echo "[ 5.5 ] Node.js..."
+if command -v node &>/dev/null && command -v npm &>/dev/null; then
+  ok "Node.js $(node --version) / npm $(npm --version)"
+else
+  warn "Node.js ou npm absent."
+  info "  Option A — nvm (recommandé) :"
+  info "    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash"
+  info "    nvm install --lts"
+  info "  Option B — apt :"
+  info "    sudo apt install nodejs npm"
+fi
+
+# ── Étape 5.75 — Python3 + pip + brain-engine deps ───────────────────────────
+echo ""
+echo "[ 5.75 ] Python3 + brain-engine..."
+if ! command -v python3 &>/dev/null; then
+  warn "python3 absent — installer via : sudo apt install python3 python3-pip"
+elif ! command -v pip3 &>/dev/null; then
+  warn "pip3 absent — installer via : sudo apt install python3-pip"
+else
+  ok "Python $(python3 --version 2>&1 | awk '{print $2}') / pip $(pip3 --version 2>&1 | awk '{print $2}')"
+  REQUIREMENTS="$BRAIN_ROOT/brain-engine/requirements.txt"
+  if [[ -f "$REQUIREMENTS" ]]; then
+    info "Installation des dépendances brain-engine..."
+    pip3 install -r "$REQUIREMENTS" --break-system-packages --quiet && ok "brain-engine deps OK" || warn "pip3 install a échoué — vérifier manuellement"
+  else
+    warn "brain-engine/requirements.txt absent — skip pip install"
+  fi
+fi
+
+# ── Résumé ────────────────────────────────────────────────────────────────────
+echo ""
+echo "╔══════════════════════════════════════════════╗"
+echo "║              Setup terminé                   ║"
+echo "╚══════════════════════════════════════════════╝"
+echo ""
+echo "  brain_name : $BRAIN_NAME"
+echo "  brain_root : $BRAIN_ROOT"
+echo ""
+echo "  Modes de démarrage :"
+echo "  → Dev laptop (mock, pas de VPS) :"
+echo "      bash $BRAIN_ROOT/scripts/brain-dev.sh"
+echo "  → Dev laptop + engine local :"
+echo "      bash $BRAIN_ROOT/scripts/brain-dev.sh --engine"
+echo "  → Session Claude Code :"
+echo "      Ouvrir Claude Code dans $BRAIN_ROOT"
+echo "      Le brain se boot automatiquement via CLAUDE.md"
+echo ""
+warn "Si MYSECRETS est absent : le remplir avant la première session work."
+echo ""

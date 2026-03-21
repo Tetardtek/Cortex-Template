@@ -1,0 +1,379 @@
+# agents/CATALOG.yml — Registre des agents par tier
+# Source de vérité pour brain sync kernel + brain-store
+# tier: free = accessible à tous | pro = tier pro requis | owner = kernel writer only
+#
+# export: true  = inclus dans brain-template (distribué)
+# export: false = privé ou avancé (non distribué)
+
+version: "1.0.0"
+updated: "2026-03-18"
+
+agents:
+
+  # ── Tier free — agents fondamentaux ──────────────────────────────────────
+  - id: coach
+    tier: free
+    export: true
+    description: "Coach permanent — présence, progression, feedback"
+
+  - id: debug
+    tier: free
+    export: true
+    description: "Debug agent — bugs, crashes, comportements inattendus"
+
+  - id: scribe
+    tier: free
+    export: true
+    description: "Scribe — maintenance du brain, structuration"
+
+  - id: mentor
+    tier: free
+    export: true
+    description: "Mentor — pédagogie, explication, garde-fou"
+
+  - id: helloWorld
+    tier: free
+    export: true
+    description: "Bootstrap intelligent — briefing + chargement sélectif"
+
+  - id: aside
+    tier: free
+    export: true
+    description: "Parenthèse de session — /btw pattern, 2-3 lignes, retour session"
+
+  - id: brainstorm
+    tier: free
+    export: true
+    description: "Exploration et structuration de décisions — avocat du diable"
+
+  - id: interprete
+    tier: free
+    export: true
+    description: "Clarification d'intention — demandes ambiguës, scope drift"
+
+  - id: orchestrator
+    tier: free
+    export: true
+    description: "Coordination — diagnostic et délégation multi-agents"
+
+  - id: orchestrator-scribe
+    tier: free
+    export: true
+    description: "Bus inter-sessions — Signals BSI, cycles coworking, HANDOFF"
+
+  - id: recruiter
+    tier: free
+    export: true
+    description: "Meta-agent — conception d'agents"
+
+  - id: agent-review
+    tier: free
+    export: true
+    description: "Audit du système d'agents — gaps, patches, vue système"
+
+  - id: todo-scribe
+    tier: free
+    export: true
+    description: "Persistance intentions — gardien de brain/todo/"
+
+  - id: doc
+    tier: free
+    export: true
+    description: "Documentation — README, API Swagger, cohérence doc ↔ code"
+
+  - id: refacto
+    tier: free
+    export: true
+    description: "Refactorisation — architecture + code"
+
+  - id: vps
+    tier: free
+    export: true
+    description: "Infra VPS — Apache, Docker, SSL, vhosts, certbot"
+
+  - id: mail
+    tier: free
+    export: true
+    description: "Mail — Stalwart, DNS, SMTP, IMAP, SPF, DKIM"
+
+  - id: coach-boot
+    tier: free
+    export: true
+    description: "Coach boot — extrait coach.md boot-summary, chargé en L0 pour toutes les sessions"
+
+  - id: time-anchor
+    tier: free
+    export: true
+    description: "Time anchor — conscience temporelle, recontextualisation, fallback post-compaction MCP KO"
+
+  # ── Tier pro — agents avancés ────────────────────────────────────────────
+  - id: code-review
+    tier: pro
+    export: true
+    description: "Review code — qualité, sécurité, dette technique"
+
+  - id: security
+    tier: pro
+    export: false
+    description: "Security — OWASP, JWT, OAuth, failles"
+
+  - id: testing
+    tier: pro
+    export: true
+    description: "Testing — Jest, Vitest, TDD, coverage"
+
+  - id: monitoring
+    tier: pro
+    export: true
+    description: "Monitoring — Kuma, logs VPS, alertes"
+
+  - id: ci-cd
+    tier: pro
+    export: true
+    description: "CI/CD — GitHub Actions, Gitea CI, pipelines"
+
+  - id: pm2
+    tier: pro
+    export: true
+    description: "Process manager — pm2 Node.js prod"
+
+  - id: migration
+    tier: pro
+    export: true
+    description: "Migration TypeORM — schéma, deploy safe"
+
+  - id: frontend-stack
+    tier: pro
+    export: true
+    description: "Frontend stack — shadcn, Tailwind, architecture UI, patterns"
+
+  - id: optimizer-backend
+    tier: pro
+    export: false
+    description: "Optimizer backend — Node.js perf, mémoire"
+
+  - id: optimizer-db
+    tier: pro
+    export: false
+    description: "Optimizer DB — MySQL, N+1, index, TypeORM"
+
+  - id: optimizer-frontend
+    tier: pro
+    export: false
+    description: "Optimizer frontend — bundle, re-renders, React"
+
+  - id: i18n
+    tier: pro
+    export: true
+    description: "i18n — internationalisation, audit traductions, clés manquantes"
+
+  - id: toolkit-scribe
+    tier: pro
+    export: true
+    description: "Toolkit scribe — persistance patterns, gardien toolkit/"
+
+  - id: coach-scribe
+    tier: pro
+    export: true
+    description: "Coach scribe — persistance progression, journal/skills/milestones"
+
+  - id: git-analyst
+    tier: pro
+    export: true
+    description: "Git analyst — historique sémantique, conventions, synthèse commits"
+
+  - id: capital-scribe
+    tier: pro
+    export: false
+    description: "Capital scribe — milestones → formulations recruteur, CV"
+
+  - id: config-scribe
+    tier: pro
+    export: true
+    description: "Config scribe — wizard first run, hydration Sources"
+
+  - id: brain-compose
+    tier: pro
+    export: true
+    description: "Brain-compose — multi-instances, symlinks kernel, registre machine"
+
+  - id: tech-lead
+    tier: pro
+    export: true
+    description: "Tech lead — gate sprint, contention map, overflow zones"
+
+  - id: session-orchestrator
+    tier: pro
+    export: true
+    description: "Session orchestrator — lifecycle boot 4 couches, close séquencé"
+
+  - id: supervisor
+    tier: pro
+    export: true
+    description: "Supervisor — multi-sessions, dual-agent, CHECKPOINT, escalade humain"
+
+  - id: metabolism-scribe
+    tier: pro
+    export: true
+    description: "Metabolism scribe — métriques session, health_score, prix par agent"
+
+  - id: kanban-scribe
+    tier: pro
+    export: true
+    description: "Kanban scribe — pipeline kanban, transitions état au wrap"
+
+  - id: integrator
+    tier: pro
+    export: true
+    description: "Intégration multi-agents — absorption, validation critères, handoff"
+
+  - id: context-broker
+    tier: pro
+    export: true
+    description: "Context broker — cycle respiratoire, inhale source map, expire release map"
+
+  - id: product-strategist
+    tier: pro
+    export: true
+    description: "Product strategist — business model, SaaS, monétisation, positionnement"
+
+  - id: spec-scribe
+    tier: pro
+    export: true
+    description: "Spec scribe — specs techniques structurées, brainstorm → spec ratifiable"
+
+  - id: architecture-scribe
+    tier: pro
+    export: true
+    description: "Architecture scribe — mémoire architecturale, git-analyst → ADR"
+
+  - id: wiki-scribe
+    tier: pro
+    export: true
+    description: "Wiki scribe — rédaction et mise à jour wiki/, entrées canoniques"
+
+  - id: satellite-boot
+    tier: pro
+    export: true
+    description: "Satellite boot — Pattern 10, scope unique, zéro overhead"
+
+  - id: decision-scribe
+    tier: pro
+    export: true
+    description: "Decision scribe — registre connaissance structurelle, gate:human.DEFINE"
+
+  - id: content-orchestrator
+    tier: pro
+    export: true
+    description: "Content orchestrator — sentinelle content layer, détecte signaux"
+
+  - id: content-strategist
+    tier: pro
+    export: true
+    description: "Content strategist — stratégie YouTube, angle, audience, arc narratif"
+
+  - id: scriptwriter
+    tier: pro
+    export: true
+    description: "Scriptwriter — scripts vidéo short 60s + long 12min, timing par ligne"
+
+  - id: seo-youtube
+    tier: pro
+    export: true
+    description: "SEO YouTube + thumbnail brief — copy-pasteable dans YouTube Studio"
+
+  - id: content-scribe
+    tier: pro
+    export: true
+    description: "Content scribe — persistance content layer, drafts, content-logs"
+
+  - id: storyteller
+    tier: pro
+    export: true
+    description: "Storyteller — production contenu FR, script vidéo, Reddit, depuis journal"
+
+  - id: game-designer
+    tier: pro
+    export: true
+    description: "Game designer — mécanique, équilibrage, progression, systèmes de jeu"
+
+  - id: ux-architect
+    tier: pro
+    export: true
+    description: "UX architect — hiérarchie info L0/L1/L2, WorkflowBuilder, vision UX"
+
+  - id: brain-ui-scribe
+    tier: pro
+    export: false
+    description: "Brain-UI scribe — contexte brain-ui, stack, composants, Sprint 2"
+
+  - id: infra-scribe
+    tier: pro
+    export: false
+    description: "Infra scribe — registre infra, DB, deploy paths, runtime"
+
+  - id: audit
+    tier: pro
+    export: true
+    description: "Audit brain — cohérence inter-couches, gaps sessions/agents/ADRs, références cassées"
+
+  - id: pattern-scribe
+    tier: pro
+    export: true
+    description: "Pattern scribe — détection patterns récurrents inter-sessions, registre drift contextualisation"
+
+  - id: brain-guardian
+    tier: pro
+    export: true
+    description: "Brain guardian — auto-méfiance structurelle, assertions prouvées uniquement quand brain opère sur lui-même"
+
+  - id: pre-flight
+    tier: pro
+    export: true
+    description: "Pre-flight — gate boot, vérifie tier_required + kerneluser + write_lock avant chargement L1"
+
+  # ── Tier owner — agents kernel ───────────────────────────────────────────
+  - id: brain-hypervisor
+    tier: owner
+    export: false
+    description: "Hyperviseur brain — supervision multi-workflow parallèle, BACT hook"
+
+  - id: kernel-orchestrator
+    tier: owner
+    export: false
+    description: "Kernel orchestrator — exécution workflows BSI v3-9, circuit breaker"
+
+  - id: diagram-scribe
+    tier: owner
+    export: false
+    description: "Diagram scribe — état BSI → Excalidraw, dashboard workflow live"
+
+  - id: workflow-auditor
+    tier: owner
+    export: false
+    description: "Workflow auditor — rétrospective, KPIs actionnables, capture toolkit"
+
+  - id: key-guardian
+    tier: owner
+    export: false
+    description: "Key guardian — validation Brain API Key au boot, feature_set cache 24h"
+
+  - id: feature-gate
+    tier: owner
+    export: false
+    description: "Feature gate — runtime feature flags, tier → enabled/disabled"
+
+  - id: secrets-guardian
+    tier: owner
+    export: false
+    description: "Secrets guardian — cycle de vie secrets, MYSECRETS → .env, jamais chat"
+
+  - id: secrets-injector
+    tier: owner
+    export: false
+    description: "Secrets injector — injection credentials dans prompts subagents"
+
+  - id: bact-scribe
+    tier: owner
+    export: false
+    description: "BACT scribe — enrichissement contextuel privé, jamais template"

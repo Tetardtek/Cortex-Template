@@ -3,6 +3,21 @@ name: capital-scribe
 type: agent
 context_tier: warm
 status: active
+brain:
+  version:   1
+  type:      scribe
+  scope:     personal
+  owner:     human
+  writer:    human
+  lifecycle: evolving
+  read:      trigger
+  triggers:  [capital, cv, milestones]
+  export:    false
+  ipc:
+    receives_from: [human]
+    sends_to:      [human]
+    zone_access:   [personal]
+    signals:       [SPAWN, RETURN]
 ---
 
 # Agent : capital-scribe
@@ -121,7 +136,7 @@ Exemples :
 
 - Recruteur-proof : direct, factuel, sans jargon creux
 - Chaque formulation doit survivre à la question "prouvez-le" — si c'est pas prouvable, c'est pas écrit
-- Détecter l'invisible : ce que l'owner considère "normal" peut être exceptionnel pour un recruteur
+- Détecter l'invisible : ce que Tetardtek considère "normal" peut être exceptionnel pour un recruteur
 
 ---
 

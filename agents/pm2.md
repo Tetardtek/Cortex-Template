@@ -4,6 +4,21 @@ type: agent
 context_tier: hot
 domain: [pm2, process-manager]
 status: active
+brain:
+  version:   1
+  type:      metier
+  scope:     project
+  owner:     human
+  writer:    human
+  lifecycle: stable
+  read:      trigger
+  triggers:  [pm2, process-manager]
+  export:    true
+  ipc:
+    receives_from: [orchestrator, vps, human]
+    sends_to:      [orchestrator]
+    zone_access:   [project]
+    signals:       [SPAWN, RETURN, BLOCKED_ON]
 ---
 
 # Agent : pm2
@@ -42,8 +57,8 @@ Charge les agents pm2 et ci-cd pour cette session.
 
 | Trigger | Fichier | Pourquoi |
 |---------|---------|----------|
-| Signal reçu (toujours) | `brain/infrastructure/vps.md` | Chemins projets, stack Node.js, services natifs |
-| Signal reçu (toujours) | `brain/infrastructure/cicd.md` | Pipelines existants — intégrer le restart pm2 |
+| Signal reçu (toujours) | `infrastructure/vps.md` | Chemins projets, stack Node.js, services natifs |
+| Signal reçu (toujours) | `infrastructure/cicd.md` | Pipelines existants — intégrer le restart pm2 |
 | Projet identifié | `brain/projets/<projet>.md` | Ports, chemin ecosystem, variables non-secrètes |
 
 > Principe : charger le minimum au démarrage, enrichir au moment exact où c'est utile.
@@ -165,14 +180,14 @@ script: |
 
 ## Projets VPS connus
 
-> Lire `brain/infrastructure/vps.md` pour la liste réelle des projets déployés.
+> Lire `infrastructure/vps.md` pour la liste réelle des projets déployés.
 > Jamais inventer un chemin ou un nom d'app non documenté dans cette source.
 
 ---
 
 ## Anti-hallucination
 
-- Jamais inventer un chemin de projet non documenté dans `brain/infrastructure/vps.md`
+- Jamais inventer un chemin de projet non documenté dans `infrastructure/vps.md`
 - Si le projet n'est pas dans le brain : "Information manquante — préciser le chemin sur le VPS"
 - Ne jamais supposer que pm2 est déjà installé — vérifier avec `pm2 --version`
 - `pm2 startup` génère une commande spécifique à la machine — toujours l'afficher, jamais l'inventer
@@ -191,7 +206,7 @@ script: |
 
 | Avec | Pour quoi |
 |------|-----------|
-| `scribe` | Nouveau process déployé → signaler pour mise à jour brain/infrastructure/vps.md |
+| `scribe` | Nouveau process déployé → signaler pour mise à jour infrastructure/vps.md |
 | `ci-cd` | Intégrer le restart/reload pm2 dans le deploy job |
 | `vps` | Nouveau projet à déployer — pm2 + Apache + SSL |
 | `migration` | Run migrations TypeORM avant pm2 reload en deploy |
@@ -237,7 +252,7 @@ Ne pas invoquer si :
 
 | Date | Changement |
 |------|------------|
-| 2026-03-12 | Création — process manager Node.js prod, ecosystem config, intégration CI/CD, VPS l'owner |
+| 2026-03-12 | Création — process manager Node.js prod, ecosystem config, intégration CI/CD, VPS Tetardtek |
 | 2026-03-13 | v2 — patch post-review Super-OAuth : cluster mode obligatoire pour 0-downtime, env_production, --update-env, guard premier déploiement, anti-hallucination reload |
 | 2026-03-13 | Fondements — Sources conditionnelles, Cycle de vie, Scribe Pattern (délégation scribe) |
 | 2026-03-13 | Environnementalisation — super-oauth/chemins → placeholders, Sources vps+cicd déplacées en conditionnel |

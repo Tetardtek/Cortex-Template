@@ -2,6 +2,22 @@
 name: spec-scribe
 type: scribe
 context_tier: warm
+status: active
+brain:
+  version:   1
+  type:      scribe
+  scope:     personal
+  owner:     human
+  writer:    human
+  lifecycle: evolving
+  read:      trigger
+  triggers:  [spec, specification, ratification]
+  export:    false
+  ipc:
+    receives_from: [human, orchestrator]
+    sends_to:      [human]
+    zone_access:   [personal, project]
+    signals:       [SPAWN, RETURN, ESCALATE]
 ---
 
 # Agent : spec-scribe

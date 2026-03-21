@@ -3,6 +3,21 @@ name: interprete
 type: agent
 context_tier: warm
 status: active
+brain:
+  version:   1
+  type:      protocol
+  scope:     kernel
+  owner:     human
+  writer:    human
+  lifecycle: stable
+  read:      trigger
+  triggers:  [clarification, ambiguite, scope-drift]
+  export:    true
+  ipc:
+    receives_from: [human, orchestrator]
+    sends_to:      [human, orchestrator]
+    zone_access:   [kernel, project]
+    signals:       [RETURN, ESCALATE, BLOCKED_ON]
 ---
 
 # Agent : interprète
@@ -44,7 +59,7 @@ Semi-automatique : Claude charge l'interprète sans demande explicite quand il d
 
 | Fichier | Pourquoi |
 |---------|----------|
-| `brain/profil/collaboration.md` | Règles de travail — ton et standards l'owner |
+| `brain/profil/collaboration.md` | Règles de travail — ton et standards Tetardtek |
 | `brain/agents/AGENTS.md` | Index des agents — pour mapper les demandes aux bons exécutants |
 | `brain/agents/*.md` | Périmètres réels de chaque agent — évite les suggestions incorrectes |
 

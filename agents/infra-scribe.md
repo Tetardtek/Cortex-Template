@@ -173,17 +173,17 @@ vps:
   os: linux
   access: root
 
-gitea: git.l'owner.com
+gitea: git.tetardtek.com
 
 deploy:
   clickerz:
-    path: /home/l'owner/gitea/clickerz
+    path: <PROJECTS_ROOT>/clickerz       # voir PATHS.md
   originsdigital:
-    path: /home/l'owner/github/originsdigital
+    path: <PROJECTS_ROOT>/originsdigital
   superoauth:
-    path: /home/l'owner/github/Super-OAuth
+    path: <PROJECTS_ROOT>/Super-OAuth
   tetardpg:
-    path: /home/l'owner/gitea/TetaRdPG
+    path: <PROJECTS_ROOT>/TetaRdPG
   www_sync:
     pattern: /var/www/<project>/frontend/dist
 ```

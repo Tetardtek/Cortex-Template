@@ -3,6 +3,21 @@ name: content-scribe
 type: agent
 context_tier: warm
 status: active
+brain:
+  version:   1
+  type:      scribe
+  scope:     kernel
+  owner:     human
+  writer:    human
+  lifecycle: stable
+  read:      trigger
+  triggers:  [content-scribe, drafts, content-logs]
+  export:    true
+  ipc:
+    receives_from: [content-orchestrator, human]
+    sends_to:      [human]
+    zone_access:   [project, personal]
+    signals:       [SPAWN, RETURN, CHECKPOINT]
 ---
 
 # Agent : content-scribe

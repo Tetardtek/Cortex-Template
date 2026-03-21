@@ -2,8 +2,23 @@
 name: supervisor
 type: agent
 context_tier: cold
-# cold — daemon VPS, pas agent de session. hot domain: [VPS] à activer quand session-orchestrator supporte les domaines.
+# cold — invocation manuelle uniquement. Pas auto-détecté sur domaine.
 status: active
+brain:
+  version:   1
+  type:      protocol
+  scope:     kernel
+  owner:     human
+  writer:    human
+  lifecycle: stable
+  read:      trigger
+  triggers:  [supervisor, dual-agent, checkpoint]
+  export:    true
+  ipc:
+    receives_from: [human, orchestrator]
+    sends_to:      [human, orchestrator]
+    zone_access:   [kernel, project]
+    signals:       [SPAWN, RETURN, CHECKPOINT, ESCALATE, HANDOFF]
 ---
 
 # Agent : supervisor
@@ -212,9 +227,9 @@ pas seulement à la création.
 
 Fermeture minimale valide :
 ```
-git -C ~/Dev/Docs add BRAIN-INDEX.md
-git -C ~/Dev/Docs commit -m "bsi: close claim <sess-id>"
-git -C ~/Dev/Docs push
+git -C $BRAIN_ROOT add BRAIN-INDEX.md
+git -C $BRAIN_ROOT commit -m "bsi: close claim <sess-id>"
+git -C $BRAIN_ROOT push
 ```
 
 Le coach-scribe (bilan pédagogique) est **optionnel** à la fermeture — utile
@@ -400,3 +415,4 @@ Setup bot   : `bash brain/scripts/install-brain-bot.sh` (sur le VPS)
 | 2026-03-14 | Bot webhook — brain-bot.py, 4 commandes (/help /status /sessions /focus), dual-canal Telegram |
 | 2026-03-14 | Patterns réels v1 — 7 protocoles issus du sprint dual-agent OriginsDigital : planification, routing questions, parallèle, décision scale-appropriée, CHECKPOINT, fermeture minimale, shunting |
 | 2026-03-15 | Patterns v2 — 3 gaps comblés (Shadow Audit Sprint 3) : intel brute→actions implicites, cross-diff contrats avant CHECKPOINT, close order enforcement |
+| 2026-03-18 | Review guidée — HANDOFF ajouté aux signals IPC + path ~/Dev/Docs → $BRAIN_ROOT (Pattern 6) + commentaire context_tier mis à jour |

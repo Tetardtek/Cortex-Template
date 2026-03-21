@@ -4,6 +4,21 @@ type: agent
 context_tier: hot
 domain: [game-design, GDD, mecanique, equilibrage, progression-jeu]
 status: active
+brain:
+  version:   1
+  type:      metier
+  scope:     project
+  owner:     human
+  writer:    human
+  lifecycle: stable
+  read:      trigger
+  triggers:  [game, gdd, mecanique, equilibrage]
+  export:    true
+  ipc:
+    receives_from: [orchestrator, human]
+    sends_to:      [orchestrator]
+    zone_access:   [project]
+    signals:       [SPAWN, RETURN, ESCALATE]
 ---
 
 # Agent : game-designer

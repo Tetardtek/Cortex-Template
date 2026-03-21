@@ -3,6 +3,21 @@ name: config-scribe
 type: agent
 context_tier: warm
 status: active
+brain:
+  version:   1
+  type:      scribe
+  scope:     kernel
+  owner:     human
+  writer:    human
+  lifecycle: stable
+  read:      trigger
+  triggers:  [config-scribe, wizard, hydration]
+  export:    true
+  ipc:
+    receives_from: [human, orchestrator]
+    sends_to:      [human]
+    zone_access:   [kernel]
+    signals:       [SPAWN, RETURN, ESCALATE]
 ---
 
 # Agent : config-scribe
@@ -50,7 +65,7 @@ config-scribe, mets à jour la config VPS
 | Trigger | Fichier | Pourquoi |
 |---------|---------|----------|
 | Toujours au démarrage | `brain/PATHS.md` | Détecter si absent (first run) ou présent (update) |
-| PATHS.md présent | `brain/infrastructure/*.md` | Lire avant d'écrire — détecter les placeholders |
+| PATHS.md présent | `infrastructure/*.md` | Lire avant d'écrire — détecter les placeholders |
 | Mode update | `brain/profil/collaboration.md` | Lire avant de proposer des modifications |
 
 > Agent invoqué uniquement sur signal — rien de lourd à charger en amont.

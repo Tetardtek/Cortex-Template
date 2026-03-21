@@ -25,7 +25,7 @@ set -euo pipefail
 # Configuration — à adapter si besoin
 # ---------------------------------------------------------------------------
 
-WATCH_ROOT="${VPS_WATCH_ROOT:-$HOME/brain-watch}"
+WATCH_ROOT="/home/tetardtek/brain-watch"
 MYSECRETS="$WATCH_ROOT/MYSECRETS"
 BOT_PORT=5001
 BOT_SCRIPT="$WATCH_ROOT/brain-bot.py"
@@ -62,7 +62,7 @@ fi
 # ---------------------------------------------------------------------------
 
 echo ""
-echo "Domaine pour le webhook (ex: bot.<OWNER_DOMAIN>) :"
+echo "Domaine pour le webhook (ex: bot.tetardtek.com) :"
 echo -n "→ "
 read -r BOT_DOMAIN
 
@@ -94,7 +94,7 @@ After=network.target
 
 [Service]
 Type=simple
-User=${VPS_SERVICE_USER:-$(whoami)}
+User=tetardtek
 WorkingDirectory=${WATCH_ROOT}
 Environment=BRAIN_WATCH_ROOT=${WATCH_ROOT}
 Environment=BRAIN_BOT_PORT=${BOT_PORT}

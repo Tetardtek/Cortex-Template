@@ -49,16 +49,17 @@ if ! python3 -c "import sqlite3" 2>/dev/null; then
     exit 1
 fi
 
-# --check : brain.db stale si plus vieux que le dernier commit touchant claims/ ou handoffs/
+# --check : brain.db stale si plus vieux que le dernier commit touchant handoffs/ ou agents/
+# Note: claims/ retiré (ADR-042 — brain.db est la source unique, plus de claims YAML)
 if $CHECK_ONLY; then
     if [[ ! -f "$DB_PATH" ]]; then
         log "STALE: brain.db absent"
         exit 2
     fi
     db_mtime=$(stat -c %Y "$DB_PATH" 2>/dev/null || echo 0)
-    last_commit_ts=$(git -C "$BRAIN_ROOT" log -1 --format="%ct" -- claims/ handoffs/ BRAIN-INDEX.md 2>/dev/null || echo 0)
+    last_commit_ts=$(git -C "$BRAIN_ROOT" log -1 --format="%ct" -- handoffs/ agents/ BRAIN-INDEX.md 2>/dev/null || echo 0)
     if [[ "$last_commit_ts" -gt "$db_mtime" ]]; then
-        log "STALE: brain.db ($db_mtime) < dernier commit claims/handoffs ($last_commit_ts)"
+        log "STALE: brain.db ($db_mtime) < dernier commit handoffs/agents ($last_commit_ts)"
         exit 2
     fi
     log "OK: brain.db à jour"

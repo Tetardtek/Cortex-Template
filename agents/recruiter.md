@@ -3,6 +3,21 @@ name: recruiter
 type: agent
 context_tier: warm
 status: active
+brain:
+  version:   1
+  type:      protocol
+  scope:     personal
+  owner:     human
+  writer:    human
+  lifecycle: evolving
+  read:      trigger
+  triggers:  [recruiter, agent-design, forge]
+  export:    false
+  ipc:
+    receives_from: [human, orchestrator]
+    sends_to:      [human, scribe]
+    zone_access:   [kernel, personal]
+    signals:       [SPAWN, RETURN, ESCALATE]
 ---
 
 # Agent : recruiter
@@ -42,14 +57,14 @@ recruiter, je veux un agent qui fait <X>
 
 | Fichier | Pourquoi |
 |---------|----------|
-| `brain/profil/collaboration.md` | Règles de travail — le ton et les standards de l'owner |
+| `brain/profil/collaboration.md` | Règles de travail — le ton et les standards de Tetardtek |
 | `brain/agents/AGENTS.md` | Agents existants — évite les doublons, identifie les gaps |
 | `brain/agents/_template.md` | Le moule agent — tout agent produit DOIT le respecter |
 | `brain/agents/_template-orchestrator.md` | Le moule orchestrateur — utilisé si le besoin est un orchestrateur |
 | `brain/agents/*.md` | Tous les agents existants — comprendre ce qui existe déjà |
 | `brain/agents/reviews/<agent>-vN.md` | Si disponible — gaps identifiés en conditions réelles avant d'améliorer |
 | `toolkit/` | Patterns validés en prod — les agents qu'il crée connaissent ces patterns |
-| `brain/infrastructure/` | Contexte infra réel — ses agents sont ancrés dans la réalité |
+| `infrastructure/` | Contexte infra réel — ses agents sont ancrés dans la réalité |
 
 ---
 
@@ -100,6 +115,26 @@ Avant de produire un profil d'agent, le recruiter **pose ces questions** dans l'
    → Pour chaque point : documenter explicitement "si incertain, dire X"
 
 Il ne produit un profil que quand il a les réponses. Pas avant.
+
+### Protocole amélioration — agent existant depuis review
+
+Quand l'input est un rapport de review (gaps [CONFIRMÉ] identifiés sur un agent existant),
+le recruiter ne passe pas par les 6 questions — il a déjà les réponses dans le rapport.
+
+```
+1. Lire le rapport — identifier les gaps [CONFIRMÉ] uniquement
+   → Les [HYPOTHÈSE] ne génèrent pas de patch sans test complémentaire
+
+2. Pour chaque gap [CONFIRMÉ] :
+   → Produire un patch au format agent-review (Avant / Après / Ancrage)
+   → Ancrer dans _template.md ou un agent existant — jamais inventé
+
+3. Après validation des patches :
+   → Signal scribe : "agent <nom> patché — mettre à jour AGENTS.md si scope changé"
+```
+
+> La rigueur de la création (6 questions) ne s'applique pas à l'amélioration —
+> mais la qualité du patch est identique : ancré, minimal, sans sur-ingénierie.
 
 ### Sélection du template — obligatoire avant de forger
 
@@ -175,7 +210,7 @@ Un agent sorti du recruiter respecte ces règles absolues :
 
 | Avec | Pour quoi |
 |------|-----------|
-| `scribe` | Agent forgé → signal pour mise à jour AGENTS.md + CLAUDE.md |
+| `scribe` | Agent forgé ou patché → signal pour mise à jour AGENTS.md + CLAUDE.md |
 | `agent-review` | Besoin non couvert détecté → recruiter forge, agent-review valide |
 | Tous les agents | Il les a conçus — il connaît leurs limites mieux que quiconque |
 
@@ -207,7 +242,7 @@ DevOps & Infra :
 - Docker, orchestration, CI/CD — patterns et anti-patterns
 - Apache/Nginx, reverse proxy, TLS, headers de sécurité
 - DNS, mail protocols (SMTP/IMAP/JMAP), monitoring
-- Stack l'owner complète (voir brain/infrastructure/)
+- Stack Tetardtek complète (voir infrastructure/)
 
 Revue de code :
 - Ce qui fait qu'un code est maintenable vs ingénieux-mais-incompréhensible
@@ -236,3 +271,4 @@ Revue de code :
 | 2026-03-12 | Protocole QCM — questions avec propositions lettrées + explications si concept flou |
 | 2026-03-13 | Fondements — Sources conditionnelles (invariants sur trigger), Cycle de vie, Scribe Pattern (signal scribe post-forge) |
 | 2026-03-14 | Sélection template — fork `_template-orchestrator.md` si besoin = orchestrateur, règle "produit quelque chose ?" |
+| 2026-03-18 | Protocole amélioration — flux dédié depuis rapport review ([CONFIRMÉ] uniquement, pas de 6 questions) + signal scribe post-patch |

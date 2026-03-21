@@ -9,6 +9,7 @@
 #   bsi-query.sh count-stale   → nombre de claims stale (entier, stdout)
 #   bsi-query.sh signals       → signaux pending (CHECKPOINT | HANDOFF | BLOCKED_ON)
 #   bsi-query.sh health        → dernière session : health_score + type
+#   bsi-query.sh peers         → claims open sur toutes les instances (SSH)
 #
 # Retour :
 #   Exit 0 = succès (même si 0 résultats)
@@ -26,7 +27,7 @@ CMD="${1:-help}"
 
 # Fallback propre si brain.db absent
 if [[ ! -f "$DB_PATH" ]]; then
-    echo "⚠️  brain.db absent ($DB_PATH) — lancer: brain-db-sync.sh (optionnel)" >&2
+    echo "⚠️  brain.db absent ($DB_PATH) — lancer: python3 brain-engine/migrate.py" >&2
     exit 1
 fi
 
@@ -105,5 +106,43 @@ else:
 conn.close()
 PYEOF
 }
+
+# ── Commande peers : interroge les instances distantes via SSH ─────────
+if [[ "$CMD" == "peers" ]]; then
+    COMPOSE_LOCAL="$BRAIN_ROOT/brain-compose.local.yml"
+    MACHINE=$(python3 -c "
+import yaml
+with open('$COMPOSE_LOCAL') as f:
+    print(yaml.safe_load(f).get('machine', 'unknown'))
+" 2>/dev/null || echo "unknown")
+
+    echo "🖥  $MACHINE (local)"
+    run_query "open"
+
+    # Interroger chaque peer
+    python3 -c "
+import yaml, subprocess, sys
+with open('$COMPOSE_LOCAL') as f:
+    c = yaml.safe_load(f)
+peers = c.get('peers', {})
+for name, info in peers.items():
+    if not info.get('active', False):
+        continue
+    url = info.get('url', '')
+    host = url.replace('http://','').replace('https://','').split(':')[0]
+    print(f'PEER:{name}:{host}')
+" 2>/dev/null | while IFS=: read -r _ name host; do
+        echo ""
+        echo "💻 $name ($host)"
+        result=$(ssh -o BatchMode=yes -o ConnectTimeout=3 "tetardtek@$host" \
+            "cd ~/Dev/Brain && bash scripts/bsi-query.sh open" 2>/dev/null)
+        if [[ -n "$result" ]]; then
+            echo "$result"
+        else
+            echo "  (aucun claim ouvert ou machine injoignable)"
+        fi
+    done
+    exit 0
+fi
 
 run_query "$CMD"

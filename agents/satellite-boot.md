@@ -1,5 +1,6 @@
 ---
 name: satellite-boot
+type: protocol
 context_tier: warm
 status: active
 brain:
@@ -12,6 +13,11 @@ brain:
   read:      full
   triggers:  []
   export:    false
+  ipc:
+    receives_from: [kernel-orchestrator]
+    sends_to:      [kernel-orchestrator]
+    zone_access:   [kernel]
+    signals:       [SPAWN, RETURN, CHECKPOINT]
 ---
 
 # Agent : satellite-boot

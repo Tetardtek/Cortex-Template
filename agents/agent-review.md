@@ -3,6 +3,21 @@ name: agent-review
 type: agent
 context_tier: warm
 status: active
+brain:
+  version:   1
+  type:      metier
+  scope:     kernel
+  owner:     human
+  writer:    human
+  lifecycle: stable
+  read:      trigger
+  triggers:  [audit-agents, agent-gaps]
+  export:    true
+  ipc:
+    receives_from: [human, audit]
+    sends_to:      [human, recruiter]
+    zone_access:   [kernel]
+    signals:       [RETURN, ESCALATE]
 ---
 
 # Agent : agent-review
@@ -76,6 +91,19 @@ L'utilisateur passe un fichier agent. L'agent-review :
 - Produit un rapport de gaps (confirmés vs hypothèses, séparés clairement)
 - Propose un patch prêt à valider, ancré dans `_template.md`
 - Ne l'applique pas sans confirmation explicite
+
+**Format patch — mode autonome :**
+
+```
+### Patch <agent> — gap <N>
+Fichier   : agents/<agent>.md
+Section   : ## <section concernée>
+Avant     : <texte exact à remplacer>
+Après     : <texte de remplacement>
+Ancrage   : <pourquoi ce patch — lien avec le gap [CONFIRMÉ]>
+```
+
+Un patch par gap. Pas de patch groupé si les sections sont distinctes.
 
 ### Mode méta
 
@@ -220,3 +248,4 @@ Ne pas invoquer si :
 | 2026-03-12 | Création — 3 modes, vue système, étiquetage confirmé/hypothèse, signal recruiter, base de connaissance transversale |
 | 2026-03-13 | Fondements — Sources conditionnelles, Cycle de vie |
 | 2026-03-14 | Grille orchestrateur — 6 critères spécifiques (signaux, agents activés, ne produit pas, frontières, BSI, sur-détection) |
+| 2026-03-18 | Format patch mode autonome — Avant/Après/Ancrage structuré, un patch par gap (validé run guidé recruiter) |

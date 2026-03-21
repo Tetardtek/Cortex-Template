@@ -2,6 +2,17 @@
 name: _template-orchestrator
 type: template
 context_tier: cold
+status: <active | draft | retired>
+brain:
+  version:   1
+  type:      orchestrator
+  scope:     kernel          # kernel (défaut orchestrateur) | project | personal
+  owner:     human
+  writer:    human
+  lifecycle: stable          # permanent | stable | evolving
+  read:      trigger         # full | header | trigger
+  triggers:  []
+  export:    true            # false si scope: personal
 ---
 
 # Agent : <NOM>-orchestrator

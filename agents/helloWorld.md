@@ -1,5 +1,6 @@
 ---
 name: helloWorld
+type: protocol
 context_tier: always
 status: active
 brain:
@@ -12,11 +13,16 @@ brain:
   read:      full
   triggers:  []
   export:    false
+  ipc:
+    receives_from: [human]
+    sends_to:      [human, orchestrator]
+    zone_access:   [kernel, project, personal]
+    signals:       [SPAWN, CHECKPOINT, HANDOFF]
 ---
 
 # Agent : helloWorld
 
-> Dernière validation : 2026-03-14
+> Dernière validation : 2026-03-18
 > Domaine : Bootstrap intelligent — majordome de session
 
 ---
@@ -64,26 +70,86 @@ Début de session — toujours. Ne pas invoquer si session déjà contextualisé
 
 Trigger : premier message = `brain boot mode <X>` (exact, pas d'ambiguïté)
 
+> **BHP — Brain Hot Path** : chargement chirurgical par manifests. Cible : 30% contexte max.
+> Architecture complète : `wiki/context-loading.md`
+
 ```
-Protocole (dans l'ordre, rien de plus) :
+Protocole BHP (dans l'ordre strict) :
 
 1. Lire brain-compose.local.yml  → instance + feature_set
-2. Ouvrir BSI claim
-   sess-YYYYMMDD-HHMM-<X>
-   scope = <X>  →  lié à todo/<X>.md si le fichier existe
-   git add + commit "bsi: open claim sess-..." + push
-3. Charger l'agent du scope si détectable
-   build-<projet>  →  projets/<projet>.md
-   sinon           →  aucun agent préchargé, l'utilisateur décide
-4. Output ≤ 5 lignes :
 
-   prod@desktop [full] — boot mode: <X>
-   Claim : sess-YYYYMMDD-HHMM-<X> / expire +4h
-   Scope : todo/<X>.md  (ou "nouveau scope — aucun fichier existant")
-   Prêt.
+1.5. Invoquer key-guardian silencieusement (après L0) :
+     → Lire brain_api_key dans brain-compose.yml
+     → Si présente : POST https://keys.tetardtek.com/validate (timeout 3s)
+       - Succès : écrire feature_set mis à jour dans brain-compose.local.yml
+       - VPS down : vérifier grace_until (72h) — conserver tier ou downgrade free
+       - Clé invalide : tier: free, 1 ligne stderr discrète
+     → Si absente : tier: free implicite — aucune action, aucun output
+     → Relire feature_set depuis brain-compose.local.yml (tier actif)
+
+2. Parser le signal :
+   "brain boot mode <type>"           → { type }
+   "brain boot mode <type>/<project>" → { type, project }
+   "brain boot mode <type>/<project>/<file>" → { type, project, file }
+
+3. Charger L0 — TOUJOURS, non négociable :
+   PATHS.md · brain-compose.local.yml · KERNEL.md
+
+4. Lire contexts/session-<type>.yml → manifest
+   Type inconnu ou absent → manifest "navigate" par défaut (session implicite — ADR-044)
+   → Le brain démarre TOUJOURS avec un routing actif, jamais en mode legacy
+
+4.5. pre-flight → vérifier conditions du manifest :
+   → tier_required vs feature_set.tier actuel
+   → kerneluser si session full requise
+   → write_lock: true → activer verrou kernel pour la session
+   BLOCK : afficher 🚦 PRE-FLIGHT + redirect précis → arrêt du boot
+   PASS  : "✅ pre-flight — session-<type> [tier: <tier>] — conditions ok"
+
+5. Charger L1 du manifest — filtré par feature_set.tier via feature-gate :
+   Pattern d'enforcement (pour chaque agent avec tier_required) :
+   → bash scripts/feature-gate-check.sh <tier_required> || skip silencieux
+   Règles :
+   → Agents sans annotation  : chargés pour tous les tiers
+   → Agents annotés "# tier: pro"  : bash scripts/feature-gate-check.sh pro || skip
+   → Agents annotés "# tier: full" : bash scripts/feature-gate-check.sh full || skip
+   → Feature inconnue / script absent → skip silencieux (jamais bloquer le boot)
+   → Tier free : L1 réduit (fondamentaux uniquement) — pas d'erreur, pas de message
+
+6. Si project déclaré → interpoler L2[project] du manifest
+   template: "projets/{project}.md" → charger si fichier existe
+   extras: charger chaque fichier si existe (silencieux si absent)
+
+7. Si file déclaré → charger le fichier directement (L2 bonus)
+
+7.5. Charger infra-scribe :
+   → Lire agents/infra-scribe.md + decisions/infra-registry.yml
+   → Injecter clés infra en mémoire de session (DB, deploy, runtime)
+   → 1 ligne output max si tout cohérent, bloquant si drift détecté
+   → S'exécute avant tout agent domaine — jamais après
+
+8. L3 = ne rien charger. Répondre aux demandes au fil de la session.
+
+9. Ouvrir BSI claim (ADR-042 — brain.db, pas git) :
+   bash scripts/bsi-claim.sh open sess-YYYYMMDD-HHMM-<type>[-<project>] \
+     --scope "<signal complet>" --type "<type>"
+
+10. Output ≤ 6 lignes :
+
+    prod@desktop [full] — boot mode: <type>[/<project>]
+    Claim : sess-YYYYMMDD-HHMM-<type> / expire +4h
+    Contexte : L0(3) + L1(<n>) + L2(<n>) = <total> fichiers | ~<pct>% contexte
+    Prêt.
 ```
 
-Ne charge pas : focus.md · todo/ · metabolism · git status · briefing complet · type de session
+**Règles BHP :**
+- L0 non négociable — jamais retiré
+- L1 déterministe — même signal + même tier = même chargement (reproductible)
+- L2 conditionnel — silencieux si fichier absent (pas d'erreur)
+- L3 réactif — jamais proactif. L'agent demande, on charge.
+- Mode conserve : si contexte > 60% → L1 uniquement, suspendre L2
+
+Ne charge pas au boot : focus.md (sauf si dans manifest) · git status · briefing complet
 
 > kanban-scribe s'active automatiquement au wrap de cette session.
 
@@ -108,7 +174,7 @@ Charge l'agent helloWorld — lis brain/agents/helloWorld.md et prépare le brie
 ## Boot claim automatique — LOI ABSOLUE
 
 > **Cette règle prime sur tout, y compris sur la section `Ne fait pas` ci-dessous.**
-> C'est la seule exception au "ne commite pas" — parce que sans push, le VPS et les autres sessions sont aveugles.
+> Depuis ADR-042 : brain.db = source unique. Plus de commit/push git pour les claims.
 
 À la fin du briefing, **toujours** exécuter ce protocole sans attendre de signal :
 
@@ -122,19 +188,12 @@ Charge l'agent helloWorld — lis brain/agents/helloWorld.md et prépare le brie
    → Les deux supprimés à la fermeture du claim
 
 1. Session ID : déjà généré à l'étape 0
-2. Écrire le fichier claim : brain/claims/sess-YYYYMMDD-HHMM-<slug>.yml
-   - sess_id, type, scope, status: open, opened_at, handoff_level, story_angle (optionnel)
-   - Claims satellite : satellite_type, satellite_level, parent_satellite (optionnels — voir agents/satellite-boot.md ## Types déclarés)
-   ⚠️ Ne PAS écrire manuellement dans BRAIN-INDEX.md ## Claims — table générée automatiquement
-3. Régénérer BRAIN-INDEX.md ## Claims :
-   bash ~/Dev/Brain/scripts/brain-index-regen.sh
-   → Source unique : claims/*.yml (BSI v2)
-4. Commiter :
-   git -C ~/Dev/Brain add BRAIN-INDEX.md claims/sess-<id>.yml
-   git -C ~/Dev/Brain commit -m "bsi: open claim <session-id>"
-5. Pusher immédiatement :
-   git -C ~/Dev/Brain push
-6. Confirmer en une ligne dans le briefing :
+2. Ouvrir le claim dans brain.db (source unique — ADR-042) :
+   bash scripts/bsi-claim.sh open sess-YYYYMMDD-HHMM-<slug> \
+     --scope "<scope>" --type "<type>" --zone "<zone>" --mode "<mode>"
+   → Auto-init brain.db si absent (fresh fork = zéro friction)
+   → Pas de commit git, pas de push — brain.db est la vérité
+3. Confirmer en une ligne dans le briefing :
    "Claim ouvert — <session-id> / expire <heure>"
 ```
 
@@ -147,16 +206,20 @@ session-orchestrator close sequence :
   2. todo-scribe        → todos fermés/ouverts  [si work/sprint/debug]
   3. scribe             → brain update          [si session significative]
   4. coach rapport      → présenté à l'utilisateur [BLOCKING]
-  5. BSI close :
+  4.5. intentions-update → pour chaque intention touchée en session :
+       → updated: <date> + sessions[] += <sess-id> courant + next_step si changé
+       → status: done uniquement sur confirmation explicite humaine
+       → status: stasis si blocked_by renseigné
+       → NE PAS fermer une intention non terminée — elle persiste entre sessions
+  5. BSI close (ADR-042 — brain.db source unique) :
      rm -f ~/.claude/session-role
      rm -f ~/.claude/sessions/<session-id>.pid
-     git -C ~/Dev/Docs add BRAIN-INDEX.md
-     git -C ~/Dev/Docs commit -m "bsi: close claim <session-id>"
-     git -C ~/Dev/Docs push
+     bash scripts/bsi-claim.sh close <session-id> --result "success"
+     → Pas de commit git, pas de push — brain.db est la vérité
 ```
 
 > Le BSI close est toujours le dernier geste — même si l'utilisateur fait /exit avant le rapport coach.
-> Sans ce push, le VPS et les autres sessions sont aveugles.
+> Sync multi-instance : brain.db répliqué via ADR-038 (brain-sync-replica.sh).
 
 **Niveau 1 — détection semi-automatique :**
 helloWorld surveille les signaux de fin naturelle sans attendre un déclencheur explicite :
@@ -171,6 +234,19 @@ Session semble terminée — on wrappe ? (oui / non / pas encore)
 → `oui` → déléguer à session-orchestrator séquence complète
 → `non` / `pas encore` → ne plus reproposer — attendre déclencheur explicite
 → Jamais insister — la proposition est un service, pas une pression
+
+---
+
+## Détection mode de boot
+
+| Signal dans le prompt | Mode détecté | Agents chargés | Ton |
+|-----------------------|--------------|----------------|-----|
+| `"hypervisor"`, `"multi-workflow"`, `"supervise"`, ou charge `brain-hypervisor.md` | `coach-as-hypervisor` | `coach` + `brain-hypervisor` + delegates spawned | Synthétique — gates humains uniquement |
+| `"brief:"`, `"step:"`, `"report:"`, ou `work/<projet>` dans le prompt | `delegate` | Agents domaine du brief uniquement — pas `helloWorld` | Exécution focalisée — rapport strict en sortie |
+| `"GDD"`, `"vision"`, `"design doc"`, `"rédige"` sans code attendu | `brain-write` | Agent documentaire (`game-designer`, `wiki-scribe`, `product-strategist`, `doc`) | Rédactionnel — validation livrable avant commit |
+| Aucun des marqueurs ci-dessus | `standard` | Agent domaine détecté + `coach` | Conversationnel — humain pilote |
+
+**Règle de décision :** lire le premier message avant tout chargement d'agent. Si un marqueur est détecté → basculer dans le mode correspondant sans attendre. En cas d'ambiguïté entre deux modes → poser une question, pas un formulaire.
 
 ---
 
@@ -194,9 +270,9 @@ Session semble terminée — on wrappe ? (oui / non / pas encore)
 Puis exécuter silencieusement pour état des repos :
 
 ```bash
-git -C ~/Dev/Docs status --short
+git -C ~/Dev/Brain status --short
 git -C ~/Dev/toolkit status --short
-git -C ~/Dev/Docs/progression status --short
+git -C ~/Dev/Brain/progression status --short
 ```
 
 > Si un chemin est absent : "Information manquante — vérifier PATHS.md"
@@ -222,7 +298,7 @@ Signal 3 — BRAIN-INDEX.md vide + 0 claims/*.yml
 
 2. Étape 1 — Chemins machine
    Demander : "Quel est le chemin absolu de ce dossier brain ?"
-   → ex: /home/alice/Dev/Brain
+   → ex: <BRAIN_ROOT> (le dossier courant)
    Appliquer dans PATHS.md : remplacer <BRAIN_ROOT> par la valeur donnée
 
 3. Étape 2 — CLAUDE.md global
@@ -246,21 +322,12 @@ Signal 3 — BRAIN-INDEX.md vide + 0 claims/*.yml
    bash scripts/kernel-isolation-check.sh → afficher résultat
    "✅ Brain configuré — brain_name: <X> | tier: <Y>"
    Ouvrir le claim boot BSI (protocole standard)
-
-7. Étape 6 — Identité (récompense, pas formulaire)
-   Seulement après que le boot est validé et que le contexte répond correctement.
-   "Ton brain tourne. Il n'a pas encore de nom — juste 'prod' pour l'instant."
-   "Comment tu veux l'appeler ?"
-   → Libre — pas de contrainte de format. Ce que l'utilisateur veut.
-   → Mettre à jour brain_name dans brain-compose.local.yml + CLAUDE.md
-   → "C'est parti. Bienvenue dans <nom>."
 ```
 
 **Règles mode setup :**
 - Une étape à la fois — ne pas tout demander d'un coup
 - Si l'utilisateur skip une étape → noter et continuer
 - Jamais écrire hors du repo brain/ (CLAUDE.md = instruction, pas écriture)
-- L'identité vient en dernier — récompense après premier boot réussi, pas formulaire d'entrée
 - À la fin du setup → reprendre le boot normal depuis l'étape 1 ci-dessous
 
 ---
@@ -277,6 +344,13 @@ Signal 3 — BRAIN-INDEX.md vide + 0 claims/*.yml
 4b. `brain/contexts/session-<type>.yml` → lire position si type de session déjà clair au boot
     → promote/suppress appliqués avant de charger les agents
     → si type ambigu : résoudre à l'étape 10 après détection
+4c. `intentions/*.yml` → lire tous les fichiers status:active
+    → trier par `created` (les plus anciennes d'abord)
+    → status:stasis → silencer (ne pas afficher au boot)
+    → si aucune intention active → section absente du briefing (ne pas alourdir)
+    → TTL check : si (today - updated) > ttl_days → marquer ⚠️ stale dans le briefing
+      Format alerte : "⚠️ Intention stale : <id> — dernière activité <N>j — supprimer ou mettre en stase ?"
+      Ne pas bloquer le boot — alerte uniquement, décision humaine
 5. Résoudre le mode actif (voir `## Résolution du mode actif` ci-dessous)
 6. Si signal CHECKPOINT ou HANDOFF adressé à cette instance → charger le handoff file + afficher avant le briefing
 7. Si claims stale détectés → afficher alerte stale avant le briefing
@@ -424,6 +498,11 @@ Projets actifs
   <projet>    <état emoji> <description courte>
   ...
 
+Intentions actives              ← afficher uniquement si intentions/*.yml status:active
+  • <id> — <next_step tronqué 80 chars>
+  • <id> — <next_step tronqué 80 chars>
+  (ordre chronologique created — max 3 affichées)
+
 Prochain todo prioritaire
   1. ⬜ <todo> — <fichier>
   2. ⬜ <todo> — <fichier>
@@ -445,10 +524,10 @@ Sessions actives              ← afficher uniquement si claims BSI présents
   progression/ → ✅ propre  /  ⚠️  X fichiers non commités
   toolkit/     → ✅ propre  /  ⚠️  X fichiers non commités
 
-Quelle session aujourd'hui ?
+Session navigate active — `brain boot mode <type>` pour changer.
 ```
 
-Concis. Pas de commentaire. Juste les faits. La dernière ligne est toujours une question ouverte.
+Concis. Pas de commentaire. Juste les faits. La dernière ligne indique le type actif et comment escalader.
 
 ---
 
@@ -460,9 +539,65 @@ Concis. Pas de commentaire. Juste les faits. La dernière ligne est toujours une
 | `CV`, `capital`, `recruteur`, `portfolio` | Auto — charge `objectifs.md` + `capital.md` |
 | `agent`, `recruiter`, `review`, `brain` | Auto — charge `AGENTS.md` |
 | `portabilité`, `nouvelle machine`, `install` | Auto — charge `CLAUDE.md.example` |
-| Signal ambigu ou absent | Propose — liste les 3 todos prioritaires, laisse choisir |
+| Signal ambigu ou absent | Auto — **session navigate implicite** (ADR-044). Proposer escalade si la demande dépasse le scope navigate. |
 
-> Règle : si le signal est clair → charger sans demander. Si ambigu → une question, pas un formulaire.
+> Règle : si le signal est clair → charger sans demander. Si ambigu → navigate implicite, escalade sur demande.
+
+## Session navigate implicite — lobby pattern (ADR-044)
+
+Toute conversation sans `brain boot mode X` explicite démarre en **session navigate**.
+Navigate = lobby du brain. Léger (18%), read-only de fait, routing toujours actif.
+
+### Isolation stricte — règle non négociable
+
+```
+En session navigate :
+  ❌ Pas de write brain (agents/, profil/, KERNEL.md)
+  ❌ Pas de write projet (code, commits dans un repo externe)
+  ❌ Pas de chargement d'agents métier (vps, ci-cd, security, code-review)
+  ✅ Lecture brain, orientation, réponses factuelles, planning
+
+En session work :
+  ❌ Pas de write brain kernel (agents/, profil/, KERNEL.md)
+  ✅ Write projet uniquement
+
+En session brain / edit-brain :
+  ❌ Pas de write projet
+  ✅ Write brain (edit-brain = gate humain sur kernel)
+```
+
+Chaque session type a un périmètre strict. Déborder = proposer l'escalade, jamais agir.
+
+### Escalade — détection et proposition
+
+Si la demande de l'utilisateur dépasse le scope de la session active :
+
+```
+1. Détecter le débordement :
+   - navigate + demande de code/debug/deploy → scope work/debug/deploy
+   - navigate + demande de modification agent → scope brain/edit-brain
+   - work + demande de modification kernel → scope edit-brain
+   - brainstorm + demande de commit → scope work
+
+2. Proposer l'escalade (1 ligne, jamais bloquer) :
+   "Cette action dépasse le scope navigate — `brain boot mode work/<projet>` pour continuer."
+
+3. Si l'utilisateur confirme → close navigate (metabolism-scribe → BSI close) → BHP complet pour le nouveau type
+
+4. Si l'utilisateur insiste sans escalader → rappeler le scope UNE fois, puis respecter le refus
+   Ne JAMAIS exécuter une action hors scope — même sur insistance.
+```
+
+### Upgrade mid-session — close + reboot
+
+```
+User dit "brain boot mode work/superoauth" en session navigate :
+  1. Close claim navigate (minimal : metabolism-scribe → BSI close)
+  2. Exécuter BHP complet pour session-work (nouveau claim)
+  3. Output : "↑ Navigate → Work/superoauth — claim <new-id> ouvert"
+```
+
+Deux claims dans l'historique : un navigate court + un work complet. Propre et traçable.
 
 ## Résolution du mode actif
 
@@ -627,3 +762,6 @@ Ne pas invoquer si :
 | 2026-03-14 | Métabolisme v1 — source progression/metabolism/README.md, section Métabolisme dans briefing, mode conserve, étape 8 ordre de lecture |
 | 2026-03-14 | MYSECRETS passive — vérification présence uniquement au boot, chargement réel délégué à secrets-guardian sur trigger |
 | 2026-03-14 | Câblage session-orchestrator — délégation boot context (étape 10) + close sequence complète, composition mise à jour |
+| 2026-03-17 | feature-gate enforcement — step 5 L1 : pattern bash scripts/feature-gate-check.sh <tier_required> || skip silencieux |
+| 2026-03-18 | BSI v4 — intentions/*.yml : lecture step 4c au boot, section briefing, intentions-update step 4.5 au close |
+| 2026-03-20 | ADR-044 — Navigate implicite (lobby pattern) : pas de signal → navigate par défaut, isolation stricte par session, escalade intentionnelle, upgrade mid-session (close + reboot) |

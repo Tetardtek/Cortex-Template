@@ -3,6 +3,21 @@ name: kanban-scribe
 type: agent
 context_tier: warm
 status: active
+brain:
+  version:   1
+  type:      scribe
+  scope:     kernel
+  owner:     human
+  writer:    human
+  lifecycle: stable
+  read:      trigger
+  triggers:  [kanban, pipeline, transitions]
+  export:    true
+  ipc:
+    receives_from: [orchestrator, human]
+    sends_to:      [orchestrator]
+    zone_access:   [project]
+    signals:       [SPAWN, RETURN, CHECKPOINT]
 ---
 
 # Agent : kanban-scribe

@@ -13,6 +13,11 @@ brain:
   read:      trigger
   triggers:  [boot, post-compaction]
   export:    true
+  ipc:
+    receives_from: [human, helloWorld]
+    sends_to:      [human]
+    zone_access:   [kernel]
+    signals:       [RETURN, CHECKPOINT]
 ---
 
 # Agent : time-anchor

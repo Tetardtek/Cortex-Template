@@ -2,6 +2,17 @@
 name: _template
 type: template
 context_tier: cold
+status: <active | draft | retired>
+brain:
+  version:   1
+  type:      metier          # protocol | scribe | metier | orchestrator
+  scope:     project         # kernel (distributable) | project (défaut métier) | personal (privé)
+  owner:     human
+  writer:    human
+  lifecycle: stable          # permanent | stable | evolving
+  read:      trigger         # full | header | trigger
+  triggers:  []
+  export:    true            # false si scope: personal
 ---
 
 # Agent : <NOM>
@@ -54,7 +65,7 @@ Fichiers chargés uniquement sur trigger — pas au démarrage.
 
 | Trigger | Fichier | Pourquoi |
 |---------|---------|----------|
-| Signal reçu (toujours) | `brain/infrastructure/<domaine>.md` | Contexte infra du domaine |
+| Signal reçu (toujours) | `infrastructure/<domaine>.md` | Contexte infra du domaine |
 | Projet identifié | `brain/projets/<projet>.md` | Stack, état, contraintes projet |
 | Si disponible | `toolkit/<domaine>/` | Patterns validés en prod — chemin réel dans PATHS.md |
 

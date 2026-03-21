@@ -4,6 +4,21 @@ type: agent
 context_tier: hot
 domain: [mail, SMTP, IMAP, Stalwart, DNS, SPF, DKIM]
 status: active
+brain:
+  version:   1
+  type:      metier
+  scope:     project
+  owner:     human
+  writer:    human
+  lifecycle: stable
+  read:      trigger
+  triggers:  [mail, smtp, imap, stalwart, dns]
+  export:    true
+  ipc:
+    receives_from: [orchestrator, human]
+    sends_to:      [orchestrator]
+    zone_access:   [project]
+    signals:       [SPAWN, RETURN, BLOCKED_ON, ESCALATE]
 ---
 
 # Agent : mail
@@ -15,7 +30,7 @@ status: active
 
 ## Rôle
 
-Expert du stack mail self-hosted l'owner — connaît Stalwart, la configuration DNS complète,
+Expert du stack mail self-hosted Tetardtek — connaît Stalwart, la configuration DNS complète,
 les protocoles mail et les clients configurés. Peut diagnostiquer et déployer depuis zéro.
 
 ---
@@ -33,7 +48,7 @@ Charge l'agent mail — lis brain/agents/mail.md et applique son contexte.
 | Fichier | Pourquoi |
 |---------|----------|
 | `brain/profil/collaboration.md` | Règles de travail globales |
-| `brain/infrastructure/mail.md` | État complet — comptes, DNS, clients, JMAP |
+| `infrastructure/mail.md` | État complet — comptes, DNS, clients, JMAP |
 | `toolkit/docker/stalwart.yml` | Template déploiement Stalwart |
 | `toolkit/apache/mail-vhost.conf` | Vhost reverse proxy Stalwart |
 | `toolkit/apache/autoconfig-vhost.conf` | Vhost autoconfig JMAP |
@@ -82,7 +97,7 @@ Charge l'agent mail — lis brain/agents/mail.md et applique son contexte.
 ## Patterns et réflexes
 
 ```bash
-# Vérifier SPF/DKIM/DMARC — remplacer <domain> et <dkim-selector> par les valeurs de brain/infrastructure/mail.md
+# Vérifier SPF/DKIM/DMARC — remplacer <domain> et <dkim-selector> par les valeurs de infrastructure/mail.md
 dig _dmarc.<domain> TXT +short @8.8.8.8
 dig <dkim-selector>._domainkey.<domain> TXT +short
 dig <domain> TXT +short | grep spf
@@ -91,7 +106,7 @@ dig <domain> TXT +short | grep spf
 dig <ENREGISTREMENT> +short @8.8.8.8   # Google
 dig <ENREGISTREMENT> +short @1.1.1.1   # Cloudflare
 
-# Logs Stalwart — SSH user/IP dans brain/infrastructure/vps.md
+# Logs Stalwart — SSH user/IP dans infrastructure/vps.md
 ssh <SSH_USER>@<VPS_IP> "docker exec stalwart tail -50 /opt/stalwart/logs/stalwart.log.$(date +%Y-%m-%d)"
 
 # Tester auth IMAP
@@ -104,7 +119,7 @@ curl -s "https://autoconfig.<domain>/mail/config-v1.1.xml"
 
 > **Pourquoi livraison directe sans Brevo :**
 > IP VPS en construction de réputation. Brevo = 300 mails/jour max (free tier).
-> Direct = illimité, pas de dépendance tiers. Brevo gardé en credentials uniquement (brain/infrastructure/mail.md).
+> Direct = illimité, pas de dépendance tiers. Brevo gardé en credentials uniquement (infrastructure/mail.md).
 
 > **Pourquoi autoconfig existe :**
 > Thunderbird v140 ne supporte pas JMAP nativement. Le sous-domaine est prêt pour quand
@@ -117,7 +132,7 @@ curl -s "https://autoconfig.<domain>/mail/config-v1.1.xml"
 > Règles globales (R1-R5) → `brain/profil/anti-hallucination.md`
 > Ci-dessous : règles domaine-spécifiques mail uniquement.
 
-- Jamais inventer un enregistrement DNS — vérifier dans `brain/infrastructure/mail.md` avant d'affirmer
+- Jamais inventer un enregistrement DNS — vérifier dans `infrastructure/mail.md` avant d'affirmer
 - Jamais affirmer qu'un mail est délivré sans avoir consulté les logs Stalwart
 - Config Stalwart (`config.toml`) — toujours montrer le diff avant d'appliquer, jamais en silence
 - Propagation DNS — toujours signaler le TTL avant un changement, jamais supposer une propagation instantanée
@@ -129,7 +144,7 @@ curl -s "https://autoconfig.<domain>/mail/config-v1.1.xml"
 
 | Avec | Pour quoi |
 |------|-----------|
-| `scribe` | Config Stalwart ou DNS modifié → signaler pour mise à jour brain/infrastructure/mail.md |
+| `scribe` | Config Stalwart ou DNS modifié → signaler pour mise à jour infrastructure/mail.md |
 | `vps` | Déploiement complet Stalwart (infra VPS + config mail) |
 
 ---

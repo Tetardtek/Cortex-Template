@@ -4,7 +4,7 @@ type: index
 context_tier: cold
 ---
 
-# Agents spécialisés — l'owner
+# Agents spécialisés — Tetardtek
 
 > Index des agents disponibles.
 > Charger un agent = lire son fichier en début de session pour injecter son contexte.
@@ -14,12 +14,15 @@ context_tier: cold
 
 ## 🔴 Agents chauds — auto-détectés sur trigger domaine
 
-> Chargés automatiquement quand le domaine est détecté. Jamais au boot.
+> Chargés automatiquement quand le domaine est détecté. Exception : `infra-scribe` chargé au boot (après helloWorld, avant agents domaine).
 
 | Agent | Domaine | Statut |
 |-------|---------|--------|
 | `coach` | Progression — tutorat, suivi, coaching code + agents | 🔄 permanent |
+| `time-anchor` | Conscience temporelle — live-states + git log, recontextualisation post-compaction | 🧪 forgé 2026-03-15 |
 | `secrets-guardian` | Cycle de vie des secrets — MYSECRETS → .env, jamais dans le chat | 🧪 forgé 2026-03-14 |
+| `secrets-injector` | Injection credentials dans prompts subagents — coach only, jamais affiché | 🧪 forgé 2026-03-17 |
+| `infra-scribe` | Registre infra — DB, deploy paths, runtime — chargé au boot après helloWorld | 🧪 forgé 2026-03-17 |
 | `vps` | Infra, Apache, Docker, SSL | 🔄 |
 | `mail` | Stalwart, DNS, protocoles | 🔄 |
 | `code-review` | Qualité, sécurité, dette technique | ✅ 2026-03-12 |
@@ -40,6 +43,12 @@ context_tier: cold
 | `content-orchestrator` | Sentinelle content layer — détecte signaux, active storyteller/doc | 🧪 forgé 2026-03-14 |
 | `tech-lead` | Leadership technique — gate d'entrée sprint, contention map, overflow zones | 🧪 forgé 2026-03-14 |
 | `game-designer` | Game design — mécanique, équilibrage, progression, systèmes de jeu | 🧪 forgé 2026-03-15 |
+| `brain-ui-scribe` | Contexte brain-ui — stack, composants, Sprint 2, règles agents — chargé avant tout agent touchant brain-ui | 🧪 forgé 2026-03-17 |
+| `ux-architect` | Architecture UX brain-ui — hiérarchie info L0/L1/L2, WorkflowBuilder, AgentBrowser, vision propre non influencée | 🧪 forgé 2026-03-17 |
+| `audit` | Diagnostic brain — cohérence inter-couches, gaps sessions/agents/ADRs, références cassées | 🧪 forgé 2026-03-17 |
+| `pattern-scribe` | Détection patterns récurrents inter-sessions — registre drift contextualisation | 🧪 forgé 2026-03-17 |
+| `brain-guardian` | Auto-méfiance structurelle — assertions prouvées uniquement quand brain opère sur lui-même | 🧪 forgé 2026-03-18 |
+| `pre-flight` | Gate boot — vérifie tier_required + kerneluser + write_lock avant chargement L1 (step 4.5 BHP) | 🧪 forgé 2026-03-18 |
 
 ---
 
@@ -62,6 +71,10 @@ context_tier: cold
 | `todo-scribe` | Persistance intentions — gardien de brain/todo/ | 🧪 forgé 2026-03-13 |
 | `kanban-scribe` | Pipeline kanban — transitions d'état au wrap, détection autonomie | 🧪 forgé 2026-03-15 |
 | `helloWorld` | Bootstrap intelligent — briefing + chargement sélectif | 🧪 forgé 2026-03-13 |
+| `decision-scribe` | Registre connaissance structurelle — stack, capacités, politiques constantes — gate:human.DEFINE | 🧪 forgé 2026-03-17 |
+| `content-strategist` | Stratégie contenu YouTube — angle, audience, arc narratif, titres A/B | 🧪 forgé 2026-03-17 |
+| `scriptwriter` | Scripts vidéo tournables — short 60s + long 12min, timing par ligne | 🧪 forgé 2026-03-17 |
+| `seo-youtube` | SEO YouTube + thumbnail brief — copy-pasteable dans YouTube Studio | 🧪 forgé 2026-03-17 |
 | `git-analyst` | Historique git sémantique — conventions, synthèse commits | 🧪 forgé 2026-03-13 |
 | `capital-scribe` | Capital CV — milestones → formulations recruteur | 🧪 forgé 2026-03-13 |
 | `config-scribe` | Configuration brain — wizard first run, hydration Sources | 🧪 forgé 2026-03-13 |
@@ -77,6 +90,45 @@ context_tier: cold
 | `context-broker` | Cycle respiratoire de contexte — inhale source map + expire release map + breath metrics | 🧪 forgé 2026-03-15 |
 | `product-strategist` | Stratégie produit — business model, SaaS, monétisation, positionnement | 🧪 forgé 2026-03-15 |
 | `satellite-boot` | Boot loader satellite — Pattern 10, scope unique, zéro overhead, signal retour pilote | 🧪 forgé 2026-03-16 |
+| `spec-scribe` | Rédaction specs techniques structurées — brainstorm validé → spec ratifiable profil/ | 🧪 forgé 2026-03-15 |
+| `wiki-scribe` | Rédaction et mise à jour wiki/ — entrées canoniques, cohérence index | 🧪 forgé 2026-03-16 |
+
+---
+
+## ⚙️ Agents kernel — protocole & supervision
+
+> Agents de protocole système — scope:kernel, distribués dans brain-template.
+> Invocation explicite ou via brain-hypervisor. Ne se chargent pas automatiquement.
+
+| Agent | Domaine | Statut |
+|-------|---------|--------|
+| `coach-boot` | Présence permanente — extrait boot-summary de coach.md, chargé L0 CLAUDE.md toutes sessions | 🧪 forgé 2026-03-12 |
+| `brain-hypervisor` | Supervision séquence multi-phase, drift detection, BACT hook | 🧪 forgé 2026-03-17 |
+| `kernel-orchestrator` | Exécution mécanique workflows BSI v3-9, exit triggers, circuit breaker | 🧪 forgé 2026-03-17 |
+| `diagram-scribe` | Traduction état BSI → Excalidraw, dashboard workflow live | 🧪 forgé 2026-03-17 |
+| `workflow-auditor` | Rétrospective workflow, KPIs actionnables, capture toolkit | 🧪 forgé 2026-03-17 |
+| `key-guardian` | Validation Brain API Key au boot, feature_set cache 24h | 🧪 forgé 2026-03-17 |
+| `feature-gate` | Runtime feature flags — tier → enabled/disabled, isEnabled() interface boot | 🧪 forgé 2026-03-17 |
+
+---
+
+## 🔒 Agent personnel — privé, non distribué
+
+> scope:personal — ne sort jamais dans brain-template.
+
+| Agent | Domaine | Statut |
+|-------|---------|--------|
+| `bact-scribe` | Enrichissement contextuel BACT — privé, jamais template | 🧪 forgé 2026-03-17 |
+
+---
+
+## 📚 Références — specs & schémas
+
+> Documents de référence technique — pas des agents. Chargés sur besoin.
+
+| Référence | Contenu | Statut |
+|-----------|---------|--------|
+| `bsi-schema` | Spec BSI v1.3 — schema claim, champs obligatoires, lifecycle | 🧪 forgé 2026-03-16 |
 
 ---
 

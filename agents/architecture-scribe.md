@@ -3,6 +3,21 @@ name: architecture-scribe
 type: agent
 context_tier: warm
 status: active
+brain:
+  version:   1
+  type:      scribe
+  scope:     kernel
+  owner:     human
+  writer:    human
+  lifecycle: stable
+  read:      trigger
+  triggers:  [adr, decisions, architecture]
+  export:    true
+  ipc:
+    receives_from: [orchestrator, human, audit]
+    sends_to:      [orchestrator]
+    zone_access:   [kernel, project]
+    signals:       [SPAWN, RETURN, CHECKPOINT]
 ---
 
 # Agent : architecture-scribe

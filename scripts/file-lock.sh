@@ -1,7 +1,7 @@
 #!/bin/bash
-# file-lock.sh — Mutex fichier BSI-v3-7
+# file-lock.sh — Mutex fichier BSI-v3-7 (ADR-036 : brain.db)
 # Empêche deux satellites d'écrire simultanément dans le même fichier.
-# Complète le scope-lock BSI (niveau dossier) avec une granularité fichier.
+# Source : table locks dans brain.db (ex : locks/*.lock)
 #
 # Usage :
 #   file-lock.sh acquire <filepath> <sess-id> [ttl_minutes]  → acquiert le lock
@@ -18,15 +18,20 @@
 set -euo pipefail
 
 BRAIN_ROOT="$(git -C "$(dirname "$0")" rev-parse --show-toplevel)"
-LOCKS_DIR="$BRAIN_ROOT/locks"
+DB_PATH="$BRAIN_ROOT/brain.db"
 DEFAULT_TTL=60   # minutes
 
-mkdir -p "$LOCKS_DIR"
-
-# Convertit un chemin fichier en nom de lock (remplace / et . par -)
-filepath_to_lockname() {
-  echo "$1" | sed 's|/|-|g' | sed 's|\.|-|g' | sed 's|^-||'
-}
+# Init table si absente
+python3 "$BRAIN_ROOT/scripts/bsi-db.py" -script "
+  CREATE TABLE IF NOT EXISTS locks (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    filepath    TEXT NOT NULL UNIQUE,
+    holder      TEXT NOT NULL,
+    claimed_at  TEXT NOT NULL DEFAULT (datetime('now')),
+    expires_at  TEXT NOT NULL,
+    ttl_min     INTEGER NOT NULL DEFAULT 60
+  );
+"
 
 # --- ACQUIRE ---
 cmd_acquire() {
@@ -34,44 +39,37 @@ cmd_acquire() {
   local sess_id="$2"
   local ttl="${3:-$DEFAULT_TTL}"
 
-  local lockname
-  lockname=$(filepath_to_lockname "$filepath")
-  local lockfile="$LOCKS_DIR/${lockname}.lock"
-  local now
-  now=$(date +%s)
-  local expires_at
-  expires_at=$(date -d "+${ttl} minutes" +%Y-%m-%dT%H:%M 2>/dev/null \
-    || date -v+${ttl}M +%Y-%m-%dT%H:%M)  # macOS compat
+  # Check existing active lock held by someone else
+  local existing
+  existing=$(python3 "$BRAIN_ROOT/scripts/bsi-db.py" "
+    SELECT holder, expires_at FROM locks
+    WHERE filepath = '$filepath'
+      AND julianday('now') < julianday(expires_at)
+      AND holder != '$sess_id'
+    LIMIT 1;
+  ")
 
-  # Vérifier si lock existant et non expiré
-  if [ -f "$lockfile" ]; then
-    existing_holder=$(grep '^holder:' "$lockfile" | sed 's/holder: //')
-    existing_expires=$(grep '^expires_at:' "$lockfile" | sed 's/expires_at: //')
-    existing_epoch=$(date -d "$existing_expires" +%s 2>/dev/null \
-      || date -j -f "%Y-%m-%dT%H:%M" "$existing_expires" +%s 2>/dev/null || echo 0)
-
-    if [ "$now" -lt "$existing_epoch" ]; then
-      echo "🔴 LOCK — $filepath"
-      echo "   Détenu par : $existing_holder"
-      echo "   Expire à   : $existing_expires"
-      echo ""
-      echo "   Attendre le release ou contacter : $existing_holder"
-      exit 1
-    else
-      # Lock expiré — on peut le prendre
-      echo "⚠️  Lock expiré de $existing_holder — acquisition automatique"
-      rm -f "$lockfile"
-    fi
+  if [ -n "$existing" ]; then
+    local holder expires
+    holder=$(echo "$existing" | cut -d'|' -f1)
+    expires=$(echo "$existing" | cut -d'|' -f2)
+    echo "🔴 LOCK — $filepath"
+    echo "   Détenu par : $holder"
+    echo "   Expire à   : $expires"
+    echo ""
+    echo "   Attendre le release ou contacter : $holder"
+    exit 1
   fi
 
-  # Écrire le lock
-  cat > "$lockfile" << EOF
-file: $filepath
-holder: $sess_id
-claimed_at: $(date +%Y-%m-%dT%H:%M)
-expires_at: $expires_at
-ttl_min: $ttl
-EOF
+  # Upsert — remplace si même holder ou expiré
+  python3 "$BRAIN_ROOT/scripts/bsi-db.py" -script "
+    DELETE FROM locks WHERE filepath = '$filepath';
+    INSERT INTO locks (filepath, holder, claimed_at, expires_at, ttl_min)
+    VALUES ('$filepath', '$sess_id', datetime('now'), datetime('now', '+$ttl minutes'), $ttl);
+  "
+
+  local expires_at
+  expires_at=$(python3 "$BRAIN_ROOT/scripts/bsi-db.py" "SELECT expires_at FROM locks WHERE filepath = '$filepath';")
 
   echo "✅ Lock acquis : $filepath"
   echo "   Session  : $sess_id"
@@ -83,22 +81,20 @@ cmd_release() {
   local filepath="$1"
   local sess_id="$2"
 
-  local lockname
-  lockname=$(filepath_to_lockname "$filepath")
-  local lockfile="$LOCKS_DIR/${lockname}.lock"
+  local holder
+  holder=$(python3 "$BRAIN_ROOT/scripts/bsi-db.py" "SELECT holder FROM locks WHERE filepath = '$filepath';")
 
-  if [ ! -f "$lockfile" ]; then
+  if [ -z "$holder" ]; then
     echo "ℹ️  Pas de lock actif sur : $filepath"
     exit 0
   fi
 
-  existing_holder=$(grep '^holder:' "$lockfile" | sed 's/holder: //')
-  if [ "$existing_holder" != "$sess_id" ]; then
-    echo "🚨 Release refusé — lock détenu par : $existing_holder (pas $sess_id)"
+  if [ "$holder" != "$sess_id" ]; then
+    echo "🚨 Release refusé — lock détenu par : $holder (pas $sess_id)"
     exit 2
   fi
 
-  rm -f "$lockfile"
+  python3 "$BRAIN_ROOT/scripts/bsi-db.py" -exec "DELETE FROM locks WHERE filepath = '$filepath' AND holder = '$sess_id'"
   echo "✅ Lock libéré : $filepath"
 }
 
@@ -106,88 +102,67 @@ cmd_release() {
 cmd_check() {
   local filepath="$1"
 
-  local lockname
-  lockname=$(filepath_to_lockname "$filepath")
-  local lockfile="$LOCKS_DIR/${lockname}.lock"
+  local row
+  row=$(python3 "$BRAIN_ROOT/scripts/bsi-db.py" "
+    SELECT holder, expires_at,
+           CASE WHEN julianday('now') < julianday(expires_at) THEN 'active' ELSE 'expired' END
+    FROM locks WHERE filepath = '$filepath';
+  ")
 
-  if [ ! -f "$lockfile" ]; then
+  if [ -z "$row" ]; then
     echo "✅ Libre : $filepath"
     exit 0
   fi
 
-  local now
-  now=$(date +%s)
-  existing_holder=$(grep '^holder:' "$lockfile" | sed 's/holder: //')
-  existing_expires=$(grep '^expires_at:' "$lockfile" | sed 's/expires_at: //')
-  existing_epoch=$(date -d "$existing_expires" +%s 2>/dev/null \
-    || date -j -f "%Y-%m-%dT%H:%M" "$existing_expires" +%s 2>/dev/null || echo 0)
+  local holder expires status
+  holder=$(echo "$row" | cut -d'|' -f1)
+  expires=$(echo "$row" | cut -d'|' -f2)
+  status=$(echo "$row" | cut -d'|' -f3)
 
-  if [ "$now" -lt "$existing_epoch" ]; then
+  if [ "$status" = "active" ]; then
     echo "🔴 Locké : $filepath"
-    echo "   Holder  : $existing_holder"
-    echo "   Expire  : $existing_expires"
+    echo "   Holder  : $holder"
+    echo "   Expire  : $expires"
   else
     echo "⚠️  Lock expiré (nettoyable) : $filepath"
-    echo "   Ancien holder : $existing_holder"
+    echo "   Ancien holder : $holder"
   fi
 }
 
 # --- LIST ---
 cmd_list() {
-  local locks
-  locks=$(find "$LOCKS_DIR" -name "*.lock" | sort)
+  local rows
+  rows=$(python3 "$BRAIN_ROOT/scripts/bsi-db.py" "
+    SELECT filepath, holder, expires_at,
+           CASE WHEN julianday('now') < julianday(expires_at) THEN 'actif' ELSE 'expiré' END
+    FROM locks ORDER BY claimed_at DESC;
+  ")
 
-  if [ -z "$locks" ]; then
+  if [ -z "$rows" ]; then
     echo "✅ Aucun lock actif"
     exit 0
   fi
 
-  local now
-  now=$(date +%s)
   echo "Locks actifs :"
   echo ""
-
-  while IFS= read -r lockfile; do
-    local file holder expires_at epoch status
-    file=$(grep '^file:' "$lockfile" | sed 's/file: *//')
-    holder=$(grep '^holder:' "$lockfile" | sed 's/holder: *//')
-    expires_at=$(grep '^expires_at:' "$lockfile" | sed 's/expires_at: *//')
-    epoch=$(date -d "$expires_at" +%s 2>/dev/null \
-      || date -j -f "%Y-%m-%dT%H:%M" "$expires_at" +%s 2>/dev/null || echo 0)
-
-    if [ "$now" -lt "$epoch" ]; then
-      status="🔴 actif"
-    else
-      status="⚠️  expiré"
-    fi
-
-    echo "  $status | $file | $holder | exp: $expires_at"
-  done <<< "$locks"
+  while IFS='|' read -r filepath holder expires status; do
+    local icon="🔴"
+    [ "$status" = "expiré" ] && icon="⚠️ "
+    echo "  $icon $status | $filepath | $holder | exp: $expires"
+  done <<< "$rows"
 }
 
 # --- CLEANUP ---
 cmd_cleanup() {
-  local now
-  now=$(date +%s)
-  local count=0
-
-  for lockfile in "$LOCKS_DIR"/*.lock; do
-    [ -f "$lockfile" ] || continue
-    expires_at=$(grep '^expires_at:' "$lockfile" | sed 's/expires_at: *//')
-    epoch=$(date -d "$expires_at" +%s 2>/dev/null \
-      || date -j -f "%Y-%m-%dT%H:%M" "$expires_at" +%s 2>/dev/null || echo 0)
-
-    if [ "$now" -ge "$epoch" ]; then
-      file=$(grep '^file:' "$lockfile" | sed 's/file: *//')
-      rm -f "$lockfile"
-      echo "🗑️  Lock expiré supprimé : $file"
-      count=$((count + 1))
-    fi
-  done
+  local count
+  count=$(python3 "$BRAIN_ROOT/scripts/bsi-db.py" "
+    SELECT COUNT(*) FROM locks WHERE julianday('now') >= julianday(expires_at);
+  ")
 
   if [ "$count" -eq 0 ]; then
     echo "✅ Aucun lock expiré à nettoyer"
   else
+    python3 "$BRAIN_ROOT/scripts/bsi-db.py" -exec "DELETE FROM locks WHERE julianday('now') >= julianday(expires_at)"
     echo "✅ $count lock(s) nettoyé(s)"
   fi
 }

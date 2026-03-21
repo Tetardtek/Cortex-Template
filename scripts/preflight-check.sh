@@ -1,7 +1,7 @@
 #!/bin/bash
-# preflight-check.sh — BSI-v3-8 Pre-flight check
+# preflight-check.sh — BSI-v3-8 Pre-flight check (ADR-036 : brain.db)
 # Valide les 6 conditions avant qu'un satellite commence à écrire.
-# Soft-lock kernel : tout satellite hors scope kernel est bloqué sur zone:kernel.
+# Source : tables claims, locks, circuit_breaker dans brain.db
 #
 # Usage :
 #   preflight-check.sh check  <sess_id> <filepath>  → 6 checks, exit 0 = go
@@ -21,14 +21,29 @@
 set -euo pipefail
 
 BRAIN_ROOT="$(git -C "$(dirname "$0")" rev-parse --show-toplevel)"
-CLAIMS_DIR="$BRAIN_ROOT/claims"
-LOCKS_DIR="$BRAIN_ROOT/locks"
-FAILS_DIR="$BRAIN_ROOT/locks/fails"
+DB_PATH="$BRAIN_ROOT/brain.db"
 
-# Chemins zone:kernel — synchronisés avec KERNEL.md + brain-index-regen.sh
+# Chemins zone:kernel — synchronisés avec KERNEL.md
 KERNEL_SCOPES="agents/ profil/ scripts/ KERNEL.md CLAUDE.md PATHS.md brain-compose.yml brain-constitution.md BRAIN-INDEX.md"
 
-mkdir -p "$FAILS_DIR"
+# Init tables si absentes
+python3 "$BRAIN_ROOT/scripts/bsi-db.py" -script "
+  CREATE TABLE IF NOT EXISTS circuit_breaker (
+    sess_id     TEXT PRIMARY KEY,
+    fail_count  INTEGER NOT NULL DEFAULT 0,
+    last_fail_at TEXT,
+    updated_at  TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+"
+
+# Helper : query brain.db (SELECT → stdout)
+q() {
+  python3 "$BRAIN_ROOT/scripts/bsi-db.py" "$1"
+}
+# Helper : write brain.db (INSERT/UPDATE/DELETE)
+qw() {
+  python3 "$BRAIN_ROOT/scripts/bsi-db.py" -exec "$1"
+}
 
 # Détermine si un filepath est zone:kernel
 is_kernel_path() {
@@ -59,20 +74,16 @@ cmd_check() {
   local sess_id="$1"
   local filepath="$2"
 
-  local claim_file="$CLAIMS_DIR/${sess_id}.yml"
-  local fail_count=0
-  local all_ok=true
-
   echo "🛫 PRE-FLIGHT — $sess_id → $filepath"
   echo ""
 
   # CHECK 1 — Claim status
-  if [ ! -f "$claim_file" ]; then
+  local claim_status
+  claim_status=$(q "SELECT status FROM claims WHERE sess_id = '$sess_id';")
+  if [ -z "$claim_status" ]; then
     echo "❌ CHECK 1 — Claim introuvable : $sess_id"
     exit 4
   fi
-  local claim_status
-  claim_status=$(grep '^status:' "$claim_file" | sed 's/^[^:]*: *//' | tr -d '"' | head -1)
   if [ "$claim_status" = "paused" ]; then
     echo "❌ CHECK 1 — Claim en pause : $sess_id"
     echo "   → human-gate-ack.sh resume $sess_id"
@@ -91,28 +102,25 @@ cmd_check() {
 
   # CHECK 1b — Cascade pause (parent paused = enfant bloqué)
   local parent_id
-  parent_id=$(grep '^parent_satellite:' "$claim_file" | sed 's/^[^:]*: *//' | tr -d '"' 2>/dev/null || echo "")
+  parent_id=$(q "SELECT parent_sess FROM claims WHERE sess_id = '$sess_id';")
   if [ -n "$parent_id" ]; then
-    local parent_file="$CLAIMS_DIR/${parent_id}.yml"
-    if [ -f "$parent_file" ]; then
-      local parent_status
-      parent_status=$(grep '^status:' "$parent_file" | sed 's/^[^:]*: *//' | tr -d '"' | head -1)
-      if [ "$parent_status" = "paused" ]; then
-        echo "❌ CHECK 1b — Parent en pause : $parent_id"
-        echo "   → human-gate-ack.sh resume $parent_id"
-        exit 4
-      fi
-      if [ "$parent_status" = "failed" ]; then
-        echo "❌ CHECK 1b — Parent failed : $parent_id — satellite orphelin"
-        exit 4
-      fi
+    local parent_status
+    parent_status=$(q "SELECT status FROM claims WHERE sess_id = '$parent_id';")
+    if [ "$parent_status" = "paused" ]; then
+      echo "❌ CHECK 1b — Parent en pause : $parent_id"
+      echo "   → human-gate-ack.sh resume $parent_id"
+      exit 4
     fi
+    if [ "$parent_status" = "failed" ]; then
+      echo "❌ CHECK 1b — Parent failed : $parent_id — satellite orphelin"
+      exit 4
+    fi
+    echo "✅ CHECK 1b — Parent ok"
   fi
-  [ -n "$parent_id" ] && echo "✅ CHECK 1b — Parent ok" || true
 
   # CHECK 2 — Scope check
   local claim_scope
-  claim_scope=$(grep '^scope:' "$claim_file" | sed 's/^[^:]*: *//' | tr -d '"')
+  claim_scope=$(q "SELECT scope FROM claims WHERE sess_id = '$sess_id';")
   local scope_ok=false
   for scope_entry in $claim_scope; do
     if [[ "$filepath" == ${scope_entry}* ]] || [[ "$filepath" == "$scope_entry" ]]; then
@@ -127,8 +135,6 @@ cmd_check() {
   echo "✅ CHECK 2 — Scope ok"
 
   # CHECK 3 — Zone check (soft lock kernel)
-  # Un satellite dont le scope n'est pas kernel ne peut pas écrire en zone:kernel.
-  # Exception : kerneluser:true → WARNING (pas de blocage) — owner confirme lui-même.
   if is_kernel_path "$filepath"; then
     if ! scope_is_kernel "$claim_scope"; then
       local kerneluser
@@ -139,7 +145,6 @@ cmd_check() {
       else
         echo "❌ CHECK 3 — Zone violation : $filepath est zone:kernel"
         echo "   Scope déclaré [$claim_scope] n'inclut pas de zone:kernel"
-        echo "   → Modification kernel = décision humaine (KERNEL.md règle délégation)"
         exit 5
       fi
     fi
@@ -149,28 +154,26 @@ cmd_check() {
   fi
 
   # CHECK 4 — Lock check
-  local lockname
-  lockname=$(echo "$filepath" | sed 's|/|-|g' | sed 's|\.|-|g' | sed 's|^-||')
-  local lockfile="$LOCKS_DIR/${lockname}.lock"
-  if [ -f "$lockfile" ]; then
-    local now existing_holder existing_expires existing_epoch
-    now=$(date +%s)
-    existing_holder=$(grep '^holder:' "$lockfile" | sed 's/^[^:]*: *//')
-    existing_expires=$(grep '^expires_at:' "$lockfile" | sed 's/^[^:]*: *//')
-    existing_epoch=$(date -d "$existing_expires" +%s 2>/dev/null \
-      || date -j -f "%Y-%m-%dT%H:%M" "$existing_expires" +%s 2>/dev/null || echo 0)
-    if [ "$now" -lt "$existing_epoch" ] && [ "$existing_holder" != "$sess_id" ]; then
-      echo "❌ CHECK 4 — Fichier locké par : $existing_holder (expire : $existing_expires)"
-      exit 2
-    fi
+  local lock_holder
+  lock_holder=$(q "
+    SELECT holder FROM locks
+    WHERE filepath = '$filepath'
+      AND julianday('now') < julianday(expires_at)
+      AND holder != '$sess_id'
+    LIMIT 1;
+  ")
+  if [ -n "$lock_holder" ]; then
+    local lock_expires
+    lock_expires=$(q "SELECT expires_at FROM locks WHERE filepath = '$filepath';")
+    echo "❌ CHECK 4 — Fichier locké par : $lock_holder (expire : $lock_expires)"
+    exit 2
   fi
   echo "✅ CHECK 4 — Lock ok"
 
   # CHECK 5 — Circuit breaker
-  local fail_count_file="$FAILS_DIR/${sess_id}.count"
-  if [ -f "$fail_count_file" ]; then
-    fail_count=$(cat "$fail_count_file")
-  fi
+  local fail_count
+  fail_count=$(q "SELECT COALESCE(fail_count, 0) FROM circuit_breaker WHERE sess_id = '$sess_id';")
+  fail_count="${fail_count:-0}"
   local max_fails
   max_fails=$(grep -A5 'circuit_breaker:' "$BRAIN_ROOT/brain-compose.yml" \
     | grep 'max_consecutive_fails:' | sed 's/^[^:]*: *//' | awk '{print $1}' | head -1 2>/dev/null || echo 3)
@@ -183,7 +186,7 @@ cmd_check() {
 
   # CHECK 6 — Theme branch
   local theme_branch
-  theme_branch=$(grep '^theme_branch:' "$claim_file" | sed 's/^[^:]*: *//' | tr -d '"' 2>/dev/null || echo "")
+  theme_branch=$(q "SELECT COALESCE(theme_branch, '') FROM claims WHERE sess_id = '$sess_id';")
   if [ -n "$theme_branch" ]; then
     local current_branch
     current_branch=$(git -C "$BRAIN_ROOT" branch --show-current 2>/dev/null || echo "")
@@ -202,17 +205,22 @@ cmd_check() {
 # --- FAIL (circuit breaker increment) ---
 cmd_fail() {
   local sess_id="$1"
-  local fail_count_file="$FAILS_DIR/${sess_id}.count"
-  local count=0
-  [ -f "$fail_count_file" ] && count=$(cat "$fail_count_file")
-  count=$((count + 1))
-  echo "$count" > "$fail_count_file"
+  qw "
+    INSERT INTO circuit_breaker (sess_id, fail_count, last_fail_at, updated_at)
+    VALUES ('$sess_id', 1, datetime('now'), datetime('now'))
+    ON CONFLICT(sess_id) DO UPDATE SET
+      fail_count = fail_count + 1,
+      last_fail_at = datetime('now'),
+      updated_at = datetime('now')
+  "
 
+  local fail_count
+  fail_count=$(q "SELECT fail_count FROM circuit_breaker WHERE sess_id = '$sess_id';")
   local max_fails
   max_fails=$(grep -A5 'circuit_breaker:' "$BRAIN_ROOT/brain-compose.yml" \
     | grep 'max_consecutive_fails:' | sed 's/^[^:]*: *//' | awk '{print $1}' | head -1 2>/dev/null || echo 3)
-  echo "⚠️  Fail enregistré : $count/$max_fails ($sess_id)"
-  if [ "$count" -ge "$max_fails" ] 2>/dev/null; then
+  echo "⚠️  Fail enregistré : $fail_count/$max_fails ($sess_id)"
+  if [ "$fail_count" -ge "$max_fails" ] 2>/dev/null; then
     echo "🔴 Circuit breaker déclenché — signal BLOCKED_ON pilote"
   fi
 }
@@ -220,24 +228,23 @@ cmd_fail() {
 # --- RESET (après succès) ---
 cmd_reset() {
   local sess_id="$1"
-  local fail_count_file="$FAILS_DIR/${sess_id}.count"
-  rm -f "$fail_count_file"
+  qw "DELETE FROM circuit_breaker WHERE sess_id = '$sess_id'"
   echo "✅ Circuit breaker reset : $sess_id"
 }
 
 # --- STATUS ---
 cmd_status() {
   local sess_id="$1"
-  local fail_count_file="$FAILS_DIR/${sess_id}.count"
-  local count=0
-  [ -f "$fail_count_file" ] && count=$(cat "$fail_count_file")
+  local fail_count
+  fail_count=$(q "SELECT COALESCE(fail_count, 0) FROM circuit_breaker WHERE sess_id = '$sess_id';")
+  fail_count="${fail_count:-0}"
   local max_fails
   max_fails=$(grep -A5 'circuit_breaker:' "$BRAIN_ROOT/brain-compose.yml" \
     | grep 'max_consecutive_fails:' | sed 's/^[^:]*: *//' | awk '{print $1}' | head -1 2>/dev/null || echo 3)
-  if [ "$count" -ge "$max_fails" ] 2>/dev/null; then
-    echo "🔴 Circuit breaker déclenché : $count/$max_fails ($sess_id)"
+  if [ "$fail_count" -ge "$max_fails" ] 2>/dev/null; then
+    echo "🔴 Circuit breaker déclenché : $fail_count/$max_fails ($sess_id)"
   else
-    echo "✅ Circuit breaker ok : $count/$max_fails ($sess_id)"
+    echo "✅ Circuit breaker ok : $fail_count/$max_fails ($sess_id)"
   fi
 }
 

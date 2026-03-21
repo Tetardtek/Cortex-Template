@@ -3,6 +3,21 @@ name: orchestrator-scribe
 type: agent
 context_tier: warm
 status: active
+brain:
+  version:   1
+  type:      scribe
+  scope:     kernel
+  owner:     human
+  writer:    human
+  lifecycle: stable
+  read:      trigger
+  triggers:  [bsi, signals, handoff]
+  export:    true
+  ipc:
+    receives_from: [scribe, orchestrator, human]
+    sends_to:      [scribe, orchestrator]
+    zone_access:   [kernel]
+    signals:       [SPAWN, RETURN, CHECKPOINT, HANDOFF]
 ---
 
 # Agent : orchestrator-scribe

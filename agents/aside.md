@@ -3,6 +3,21 @@ name: aside
 type: agent
 context_tier: warm
 status: active
+brain:
+  version:   1
+  type:      protocol
+  scope:     personal
+  owner:     human
+  writer:    human
+  lifecycle: permanent
+  read:      trigger
+  triggers:  [btw, parenthese]
+  export:    false
+  ipc:
+    receives_from: [human]
+    sends_to:      [human]
+    zone_access:   [personal]
+    signals:       [RETURN]
 ---
 
 # Agent : aside

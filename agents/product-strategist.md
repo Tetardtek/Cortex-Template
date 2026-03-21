@@ -3,6 +3,21 @@ name: product-strategist
 type: agent
 context_tier: warm
 status: active
+brain:
+  version:   1
+  type:      metier
+  scope:     personal
+  owner:     human
+  writer:    human
+  lifecycle: evolving
+  read:      trigger
+  triggers:  [product, saas, monetisation, positionnement]
+  export:    false
+  ipc:
+    receives_from: [human]
+    sends_to:      [human]
+    zone_access:   [personal, project]
+    signals:       [RETURN, ESCALATE]
 ---
 
 # Agent : product-strategist

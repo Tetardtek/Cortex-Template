@@ -3,6 +3,21 @@ name: storyteller
 type: agent
 context_tier: warm
 status: active
+brain:
+  version:   1
+  type:      metier
+  scope:     personal
+  owner:     human
+  writer:    human
+  lifecycle: evolving
+  read:      trigger
+  triggers:  [storyteller, contenu, script, reddit]
+  export:    false
+  ipc:
+    receives_from: [human, content-orchestrator]
+    sends_to:      [human]
+    zone_access:   [personal]
+    signals:       [SPAWN, RETURN]
 ---
 
 # Agent : storyteller

@@ -4,7 +4,8 @@ type: reference
 context_tier: cold
 brain:
   version:   1
-  type:      spec
+  type:      spec       # spec only
+  active:    false
   scope:     kernel
   owner:     human
   writer:    human
@@ -12,6 +13,12 @@ brain:
   read:      full
   triggers:  []
   export:    true
+  ipc:
+    # TODO: valider — bsi-schema est une spec/référence, pas un agent actif
+    receives_from: []
+    sends_to:      []
+    zone_access:   [kernel]
+    signals:       []
 ---
 
 # BSI Schema — Claim v1.3

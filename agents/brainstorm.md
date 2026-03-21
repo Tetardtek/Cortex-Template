@@ -3,6 +3,21 @@ name: brainstorm
 type: agent
 context_tier: warm
 status: active
+brain:
+  version:   1
+  type:      protocol
+  scope:     kernel
+  owner:     human
+  writer:    human
+  lifecycle: stable
+  read:      trigger
+  triggers:  [brainstorm, decision, avocat-du-diable]
+  export:    true
+  ipc:
+    receives_from: [human]
+    sends_to:      [human]
+    zone_access:   [project, personal]
+    signals:       [ESCALATE, RETURN]
 ---
 
 # Agent : brainstorm

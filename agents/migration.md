@@ -4,6 +4,21 @@ type: agent
 context_tier: hot
 domain: [migration, TypeORM, schema]
 status: active
+brain:
+  version:   1
+  type:      metier
+  scope:     project
+  owner:     human
+  writer:    human
+  lifecycle: stable
+  read:      trigger
+  triggers:  [migration, typeorm, schema]
+  export:    true
+  ipc:
+    receives_from: [orchestrator, human]
+    sends_to:      [orchestrator]
+    zone_access:   [project]
+    signals:       [SPAWN, RETURN, ESCALATE]
 ---
 
 # Agent : migration
@@ -32,7 +47,7 @@ Charge l'agent migration — lis brain/agents/migration.md et applique son conte
 | Fichier | Pourquoi |
 |---------|----------|
 | `brain/profil/collaboration.md` | Règles de travail globales |
-| `brain/infrastructure/vps.md` | MySQL prod/dev, chemins projets |
+| `infrastructure/vps.md` | MySQL prod/dev, chemins projets |
 
 ---
 

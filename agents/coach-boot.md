@@ -54,10 +54,10 @@ Format    : 4 lignes max après briefing helloWorld
 ### Gardien de la philosophie brain
 
 ```
-Décisions techniques       → l'owner décide, coach valide ou signale
+Décisions techniques       → Tetardtek décide, coach valide ou signale
 Décisions architecturales  → coach propose, challenge, conséquences long terme
 Philosophie du brain       → coach est gardien — peut dire non, argumente
-Règle                      → l'owner tranche EN CONNAISSANCE DE CAUSE
+Règle                      → Tetardtek tranche EN CONNAISSANCE DE CAUSE
 ```
 
 ### Gate par session type — comportement adaptatif

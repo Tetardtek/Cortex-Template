@@ -127,13 +127,21 @@ Repos projets : GitHub, Gitea projets clients/perso
 
 | Type session | Zones accessibles | Zones interdites |
 |-------------|------------------|-----------------|
-| `brain` | KERNEL (agents/, profil/) | WORK |
-| `work` | KERNEL (lecture) + INSTANCE + SATELLITES | — |
-| `deploy` | KERNEL (lecture) + INSTANCE | progression/ |
-| `debug` | Toutes (lecture) + zone du bug | — |
 | `audit` | Toutes (lecture seule) | Écriture directe |
-| `coach` | SATELLITES progression/ | KERNEL (écriture) |
+| `brain` | KERNEL (agents/, profil/) | WORK |
 | `brainstorm` | Toutes (lecture) + todo/ | KERNEL (écriture) |
+| `capital` | SATELLITES progression/ + profil/ (capital, objectifs) | KERNEL (écriture) |
+| `coach` | SATELLITES progression/ | KERNEL (écriture) |
+| `debug` | Toutes (lecture) + zone du bug | — |
+| `deploy` | KERNEL (lecture) + INSTANCE | progression/ |
+| `edit-brain` | KERNEL (écriture — gate humain) + INSTANCE + SATELLITES | — |
+| `handoff` | Hérite du handoff — scope défini par le fichier handoff | — |
+| `infra` | KERNEL (lecture) + INSTANCE + WORK (VPS ops) | progression/ |
+| `kernel` | Toutes (lecture seule) | Toute écriture |
+| `navigate` | KERNEL (lecture) + INSTANCE (focus) | Écriture |
+| `pilote` | Toutes — gates architecturaux sur forks irréversibles | — |
+| `urgence` | KERNEL (lecture) + INSTANCE + WORK (hotfix) | progression/ |
+| `work` | KERNEL (lecture) + INSTANCE + SATELLITES | — |
 
 ---
 
@@ -179,7 +187,7 @@ Déclaration dans le claim pilote :
 
 ```
 INTERDIT dans agents/ distribuables :
-  - Chemin machine absolu hardcodé (/home/<owner>/..., /root/...)
+  - Chemin machine absolu hardcodé (/home/tetardtek/..., /root/...)
   - toolkit/private/ — patterns privés non distribués
   - require:/load:/source: vers MYSECRETS ou tout fichier zone:personal
 
@@ -237,11 +245,29 @@ Le kernel-orchestrator (BSI-v3-9) n'existe pas encore. Laisser des satellites é
 ```yaml
 # Dans brain-compose.yml
 kerneluser: true   → propriétaire de ce brain — sudo sur toutes les zones
-kerneluser: false  → utilisateur invité (SaaS futur) — zone:kernel bloquée
+kerneluser: false  → utilisateur invité (BaaS futur) — zone:kernel bloquée
 ```
 
 `kerneluser: true` est le défaut sur tout brain forké. L'owner est toujours kerneluser.
-La restriction `false` s'active uniquement en contexte multi-user futur.
+La restriction `false` s'active uniquement en contexte multi-user / BaaS.
+
+**Conséquences directes de kerneluser :**
+
+```
+kerneluser: true  →  identityShow: on  (défaut owner — présence visuelle complète des agents)
+                     kernel write : autorisé (avec confirmation humaine)
+                     agents : complets (coach, secrets-guardian, tous)
+                     tier : owner
+
+kerneluser: false →  identityShow: off (défaut client — mode clean/pro)
+                     kernel write : BLOCKED_ON
+                     agents : scoped (rendering mode)
+                     tier : selon clé keys.tetardtek.com
+```
+
+> `identityShow` n'est pas une bascule UI arbitraire — c'est une conséquence de `kerneluser`.
+> Deux couches orthogonales : `kerneluser` = identité/UX, `api_key` = accès/données.
+> Le fork du kernel distribue le moteur (open-core) — il ne distribue jamais le back (RAG, distillation).
 
 ---
 
@@ -275,3 +301,5 @@ helloWorld Couche 0 — invariant [toujours, avant tout agent] :
 | 2026-03-15 | brain-constitution.md ajouté — zone KERNEL Absolu, Chargement Couche 0 |
 | 2026-03-16 | ADR-014 ancré — mapping zones BSI, règle délégation kernel human-only phase actuelle, kerneluser |
 | 2026-03-16 | Isolation kernel — règle distribution, scripts kernel-lock-gen + kernel-isolation-check |
+| 2026-03-18 | kerneluser → identityShow ancré — deux couches orthogonales : identité/UX vs accès/données |
+| 2026-03-20 | ADR-044 — § Session type → zone access complété (15 types, 8 ajoutés) |

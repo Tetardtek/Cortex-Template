@@ -4,6 +4,21 @@ type: agent
 context_tier: hot
 domain: [frontend, shadcn, Tailwind, UI]
 status: active
+brain:
+  version:   1
+  type:      metier
+  scope:     project
+  owner:     human
+  writer:    human
+  lifecycle: stable
+  read:      trigger
+  triggers:  [frontend, shadcn, tailwind, react]
+  export:    true
+  ipc:
+    receives_from: [orchestrator, human]
+    sends_to:      [orchestrator]
+    zone_access:   [project]
+    signals:       [SPAWN, RETURN, BLOCKED_ON]
 ---
 
 # Agent : frontend-stack

@@ -3,6 +3,21 @@ name: integrator
 type: agent
 context_tier: warm
 status: active
+brain:
+  version:   1
+  type:      protocol
+  scope:     kernel
+  owner:     human
+  writer:    human
+  lifecycle: stable
+  read:      trigger
+  triggers:  [integration, absorption, handoff]
+  export:    true
+  ipc:
+    receives_from: [orchestrator, human]
+    sends_to:      [orchestrator, context-broker, orchestrator-scribe, todo-scribe, scribe]
+    zone_access:   [project]
+    signals:       [RETURN, HANDOFF, ERROR]
 ---
 
 # Agent : integrator
@@ -235,3 +250,4 @@ Ne pas invoquer si :
 |------|------------|
 | 2026-03-14 | Création — issu du sprint OriginsDigital Bloc A, rôle T2 formalisé, protocole séquence + anti-dérive |
 | 2026-03-14 | Patch 1 — Écrit où déclaré, exception WORK zone, signal orchestrator-scribe pour handoffs/, violation scribe: corrigée |
+| 2026-03-18 | Review guidée — IPC receives_from + human (brief critères) + sends_to complété (orchestrator-scribe, todo-scribe, scribe) |

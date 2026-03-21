@@ -38,9 +38,9 @@ Sans ce scribe, les agents re-découvrent l'architecture à chaque session.
 ## État actuel (2026-03-18)
 
 ### Déploiement
-- **URL** : https://brain.<OWNER_DOMAIN>/ui/ (Basic Auth actif)
-- **Repo** : git.l'owner.com:Tetardtek/brain-ui.git
-- **VPS** : /home/l'owner/gitea/brain-ui/ → dist/ servi par Apache
+- **URL** : https://brain.tetardtek.com/ui/ (Basic Auth actif)
+- **Repo** : git.tetardtek.com:Tetardtek/brain-ui.git
+- **VPS** : `$VPS_GITEA_PATH/brain-ui/` → dist/ servi par Apache (voir PATHS.md)
 - **Local** : `npm run dev` → localhost:5173
 
 ### Stack

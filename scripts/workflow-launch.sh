@@ -7,7 +7,7 @@
 #   bash scripts/workflow-launch.sh <workflow.yml> --step N     # step spécifique
 #   bash scripts/workflow-launch.sh <workflow.yml> --status     # état de la chaîne
 #
-# Le claim généré est affiché + écrit dans claims/ — l'humain lance le satellite.
+# Le claim est écrit dans brain.db (ADR-042) — l'humain lance le satellite.
 # (Futur : kernel-orchestrator lancera automatiquement — BSI-v3-9)
 
 set -euo pipefail
@@ -53,20 +53,26 @@ echo "📋 Workflow : $THEME_NAME"
 echo "   Branche  : $THEME_BRANCH"
 echo ""
 
-# --- Mode status : afficher l'état de la chaîne ---
+# --- Mode status : afficher l'état de la chaîne (brain.db — ADR-042) ---
 if [ "$MODE" = "status" ]; then
   echo "État des claims pour ce thème :"
   echo ""
-  # Trouver les claims qui référencent ce theme_branch
-  for claim in "$BRAIN_ROOT/claims/"sess-*.yml; do
-    if grep -q "theme_branch: $THEME_BRANCH" "$claim" 2>/dev/null; then
-      sess_id=$(grep '^sess_id:' "$claim" | sed 's/sess_id: *//')
-      status=$(grep '^status:' "$claim" | sed 's/status: *//')
-      step=$(grep '^workflow_step:' "$claim" 2>/dev/null | sed 's/workflow_step: *//' || echo "?")
-      result_status=$(grep 'status:' "$claim" | grep -v '^status:' | head -1 | sed 's/.*status: *//' || echo "-")
-      echo "  Step $step — $sess_id [$status] result:$result_status"
-    fi
-  done
+  python3 -c "
+import sqlite3, sys
+conn = sqlite3.connect('$BRAIN_ROOT/brain.db')
+conn.row_factory = sqlite3.Row
+rows = conn.execute(
+    'SELECT sess_id, status, workflow_step, result_status FROM claims WHERE theme_branch = ? ORDER BY workflow_step',
+    ('$THEME_BRANCH',)
+).fetchall()
+conn.close()
+if not rows:
+    print('  (aucun claim pour ce thème)')
+for r in rows:
+    step = r['workflow_step'] or '?'
+    result = r['result_status'] or '-'
+    print(f\"  Step {step} — {r['sess_id']} [{r['status']}] result:{result}\")
+" 2>/dev/null || echo "  ⚠️ brain.db inaccessible"
   exit 0
 fi
 
@@ -130,19 +136,17 @@ fi
 if [ -n "$TARGET_STEP" ]; then
   STEP_IDX=$((TARGET_STEP - 1))
 else
-  # Trouver le dernier step complété via les claims
-  LAST_DONE=0
-  for claim in "$BRAIN_ROOT/claims/"sess-*.yml; do
-    if grep -q "theme_branch: $THEME_BRANCH" "$claim" 2>/dev/null; then
-      if grep -q "status: closed" "$claim" 2>/dev/null; then
-        claim_step=$(grep '^workflow_step:' "$claim" 2>/dev/null \
-          | sed 's/workflow_step: *//' || echo "0")
-        if [ "$claim_step" -gt "$LAST_DONE" ] 2>/dev/null; then
-          LAST_DONE="$claim_step"
-        fi
-      fi
-    fi
-  done
+  # Trouver le dernier step complété via brain.db (ADR-042)
+  LAST_DONE=$(python3 -c "
+import sqlite3
+conn = sqlite3.connect('$BRAIN_ROOT/brain.db')
+r = conn.execute(
+    'SELECT MAX(workflow_step) FROM claims WHERE theme_branch = ? AND status = ?',
+    ('$THEME_BRANCH', 'closed')
+).fetchone()
+conn.close()
+print(r[0] if r[0] is not None else 0)
+" 2>/dev/null || echo 0)
   STEP_IDX=$LAST_DONE
 fi
 
@@ -188,29 +192,25 @@ fi
 DATETIME=$(date +%Y%m%d-%H%M)
 SCOPE_SLUG=$(echo "$STEP_SCOPE" | tr '/' '-' | sed 's/-$//' | tr '[:upper:]' '[:lower:]')
 SESS_ID="sess-${DATETIME}-${THEME_NAME}-step${STEP_NUM}"
-CLAIM_FILE="$BRAIN_ROOT/claims/${SESS_ID}.yml"
 
-# Écrire le claim
-cat > "$CLAIM_FILE" << EOF
-sess_id:          $SESS_ID
-type:             satellite
-scope:            $STEP_SCOPE
-agent:            satellite-boot
-status:           open
-opened_at:        "$(date +%Y-%m-%dT%H:%M)"
-handoff_level:    0
-story_angle:      "$STEP_ANGLE"
-satellite_type:   $STEP_TYPE
-satellite_level:  leaf
-parent_satellite: ~
-theme_branch:     $THEME_BRANCH
-workflow:         $THEME_NAME
-workflow_step:    $STEP_NUM
-on_done:          $ON_DONE
-on_fail:          $ON_FAIL
-EOF
+# Écrire le claim dans brain.db (ADR-042 — source unique)
+bash "$BRAIN_ROOT/scripts/bsi-claim.sh" open "$SESS_ID" \
+  --scope "$STEP_SCOPE" --type "satellite" --zone "project" \
+  --story "$STEP_ANGLE" --mode "$STEP_TYPE"
 
-echo "✅ Claim généré : claims/${SESS_ID}.yml"
+# Enrichir avec les champs workflow spécifiques
+python3 -c "
+import sqlite3
+conn = sqlite3.connect('$BRAIN_ROOT/brain.db')
+conn.execute('''
+    UPDATE claims SET satellite_type = ?, satellite_level = 'leaf',
+           theme_branch = ?, workflow = ?, workflow_step = ?
+    WHERE sess_id = ?
+''', ('$STEP_TYPE', '$THEME_BRANCH', '$THEME_NAME', $STEP_NUM, '$SESS_ID'))
+conn.commit()
+conn.close()
+" 2>/dev/null
+
 echo ""
 echo "  Step        : $STEP_NUM / $TOTAL_STEPS"
 echo "  Type        : $STEP_TYPE"
@@ -221,6 +221,3 @@ echo "  Gate        : $STEP_GATE"
 fi
 echo "  On done     : $ON_DONE"
 echo "  On fail     : $ON_FAIL"
-echo ""
-echo "→ Commiter le claim :"
-echo "  git add claims/${SESS_ID}.yml && git commit -m \"bsi: open satellite ${SESS_ID}\""

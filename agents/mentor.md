@@ -3,6 +3,21 @@ name: mentor
 type: agent
 context_tier: warm
 status: active
+brain:
+  version:   1
+  type:      protocol
+  scope:     kernel
+  owner:     human
+  writer:    human
+  lifecycle: stable
+  read:      trigger
+  triggers:  [pedagogie, explication]
+  export:    true
+  ipc:
+    receives_from: [human]
+    sends_to:      [human]
+    zone_access:   [project, personal]
+    signals:       [RETURN]
 ---
 
 # Agent : mentor
@@ -37,7 +52,7 @@ mentor, vérifie que j'ai bien compris avant qu'on continue
 
 | Fichier | Pourquoi |
 |---------|----------|
-| `brain/profil/collaboration.md` | Règles de travail + niveau de l'owner |
+| `brain/profil/collaboration.md` | Règles de travail + niveau de Tetardtek |
 | `brain/profil/objectifs.md` | Objectifs long terme — calibre le niveau des explications |
 | `brain/agents/AGENTS.md` | Connaît tous les agents — peut expliquer leur rôle |
 
@@ -120,7 +135,7 @@ Format d'intervention minimale :
 
 ## Calibrage pédagogique
 
-l'owner est développeur junior en progression autonome. Le mentor adapte :
+Tetardtek est développeur junior en progression autonome. Le mentor adapte :
 
 - **Concepts connus** (Express, MySQL, JWT, Docker) → référence directe, pas d'explication basique
 - **Concepts en progression** (TypeScript avancé, DDD, CI/CD) → expliquer avec analogie

@@ -6,7 +6,7 @@
 #   scripts/install-brain-hooks.sh --check  → vérifie si les hooks sont installés
 #
 # Hooks installés :
-#   post-commit → déclenche brain-db-sync.sh si claims/ handoffs/ ou BRAIN-INDEX.md changent
+#   post-commit → déclenche brain-db-sync.sh si handoffs/ agents/ ou BRAIN-INDEX.md changent
 #
 # Idempotent — peut être relancé sans risque.
 # À relancer sur chaque clone frais (hooks non versionnés dans git).
@@ -46,7 +46,7 @@ if [[ -f "$POST_COMMIT" ]] && ! grep -q "brain-db-sync" "$POST_COMMIT"; then
     cat >> "$POST_COMMIT" <<'HOOK'
 # Déclenche brain-db-sync.sh si claims, handoffs ou BRAIN-INDEX ont changé
 _brain_changed=$(git diff HEAD~1 --name-only 2>/dev/null \
-    | grep -qE '^(claims/|handoffs/|BRAIN-INDEX\.md)' && echo yes || echo no)
+    | grep -qE '^(handoffs/|agents/|BRAIN-INDEX\.md)' && echo yes || echo no)
 if [[ "$_brain_changed" == "yes" ]]; then
     BRAIN_ROOT="$(git rev-parse --show-toplevel)"
     bash "$BRAIN_ROOT/scripts/brain-db-sync.sh" --quiet || true
@@ -61,7 +61,7 @@ else
 
 # Sync brain.db si claims, handoffs ou BRAIN-INDEX ont changé
 _brain_changed=$(git diff HEAD~1 --name-only 2>/dev/null \
-    | grep -qE '^(claims/|handoffs/|BRAIN-INDEX\.md)' && echo yes || echo no)
+    | grep -qE '^(handoffs/|agents/|BRAIN-INDEX\.md)' && echo yes || echo no)
 if [[ "$_brain_changed" == "yes" ]]; then
     BRAIN_ROOT="$(git rev-parse --show-toplevel)"
     bash "$BRAIN_ROOT/scripts/brain-db-sync.sh" --quiet || true
@@ -73,6 +73,6 @@ fi
 
 echo ""
 echo "Hooks brain actifs :"
-echo "  post-commit → brain-db-sync.sh (déclenché sur claims/ handoffs/ BRAIN-INDEX.md)"
+echo "  post-commit → brain-db-sync.sh (déclenché sur handoffs/ agents/ BRAIN-INDEX.md)"
 echo ""
 echo "Pour vérifier : scripts/install-brain-hooks.sh --check"

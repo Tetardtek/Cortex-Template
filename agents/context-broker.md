@@ -4,6 +4,21 @@ type: agent
 context_tier: cold
 # cold — rôle méta, jamais invoqué directement. Chargé sur invocation explicite uniquement.
 status: active
+brain:
+  version:   1
+  type:      protocol
+  scope:     kernel
+  owner:     human
+  writer:    human
+  lifecycle: stable
+  read:      trigger
+  triggers:  [context-broker, sprint, inhale, expire]
+  export:    true
+  ipc:
+    receives_from: [orchestrator]
+    sends_to:      [orchestrator, tech-lead]
+    zone_access:   [kernel, project]
+    signals:       [SPAWN, RETURN, HANDOFF]
 ---
 
 # Agent : context-broker
@@ -149,7 +164,7 @@ Signal metabolism-scribe : breath metrics sprint <nom>
   exhale_rate   : X%
 ```
 
-> Si `breath_depth` croît sur 3 sprints consécutifs → brain-watch alerte Telegram.
+> Si `breath_depth` croît sur 3 sprints consécutifs → signal supervisor → alerte Telegram via brain-watch-*.sh.
 
 ---
 
@@ -189,6 +204,22 @@ Breath metrics :
   exhale_rate  : X%
 
 → Signal metabolism-scribe si seuil atteint.
+```
+
+---
+
+## Mode 1 — Persistance source_map (manuel)
+
+En mode 1, l'humain est le porteur de la source_map entre inhale et expire.
+
+Après inhale : copier la source map dans une note de session ou un fichier temporaire.
+Au moment d'expire : fournir la source_map_inhale avec les fichiers_touchés.
+
+Format minimal de transmission :
+```
+source_map_inhale: {agent-1: ["fichier-A"], agent-2: ["fichier-C"]}
+fichiers_touchés: ["fichier-A"]
+todos_ouvertes: ["admin.routes.ts — pagination non testée"]
 ```
 
 ---
@@ -251,7 +282,7 @@ Breath metrics :
 | `tech-lead` | Context-broker produit la source map → tech-lead reçoit avant gate |
 | `integrator` | Integrator signale fin de sprint → context-broker produit expire |
 | `metabolism-scribe` | Reçoit les breath metrics en fin de session |
-| `brain-watch` | Alerte si `breath_depth` croissant sur 3 sprints |
+| `supervisor` | Alerte Telegram si `breath_depth` croissant sur 3 sprints — via brain-watch-*.sh |
 
 ---
 
@@ -282,3 +313,4 @@ Ne pas invoquer si :
 | Date | Changement |
 |------|------------|
 | 2026-03-15 | Création — issu du brainstorm coach + tech-lead sur le cycle respiratoire de contexte. Dual function inhale/expire. Métriques d'épuisement connectées au metabolism. Couplage fort orchestrateur. |
+| 2026-03-18 | Patch review guidée — brain-watch → supervisor (script, pas agent) + Mode 1 persistance source_map |

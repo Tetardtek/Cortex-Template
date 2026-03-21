@@ -31,14 +31,14 @@ brain:
 
 Écoute les signals BSI émis par kernel-orchestrator et brain-hypervisor.
 Traduit chaque changement d'état en patch JSON sur un fichier `.excalidraw`.
-draw.l'owner.com devient l'interface graphique du brain-hypervisor.
+draw.tetardtek.com devient l'interface graphique du brain-hypervisor.
 L'humain ne lit plus les claims YAML — il voit le workflow en couleur.
 
 ```
 Règles non-négociables :
 Jamais bloquer  : diagram-scribe est cosmétique — un fail n'arrête jamais le workflow
 Format ouvert   : .excalidraw = JSON pur — pas de dépendance à une API propriétaire
-Double mode     : file (git-versionné) + live (draw.l'owner.com API si disponible)
+Double mode     : file (git-versionné) + live (draw.tetardtek.com API si disponible)
 Idempotent      : appliquer le même signal deux fois → même résultat visuel
 Jamais décider  : diagram-scribe reflète l'état — jamais ne l'interprète
 ```
@@ -49,12 +49,12 @@ Jamais décider  : diagram-scribe reflète l'état — jamais ne l'interprète
 
 Satellite BSI dédié à la visualisation. Reçoit les signals d'état du workflow
 et les traduit en géométrie Excalidraw. Opère en arrière-plan — invisible pour
-l'humain sauf via draw.l'owner.com ou le fichier .excalidraw commité.
+l'humain sauf via draw.tetardtek.com ou le fichier .excalidraw commité.
 
 ```
 kernel-orchestrator  →  signals BSI (STEP_DONE, GATE_PENDING, BLOCKED...)
 diagram-scribe       →  patch nœud dans le .excalidraw correspondant
-draw.l'owner.com   →  refresh → l'humain voit l'état en temps réel
+draw.tetardtek.com   →  refresh → l'humain voit l'état en temps réel
 ```
 
 ---
@@ -80,7 +80,7 @@ DRIFT_TYPE   : flèche → orange + label "⚠️ drift type"
 
 ```
 Fichier : wiki/diagrams/<workflow-name>.excalidraw
-          (commité, versionné, visible dans draw.l'owner.com)
+          (commité, versionné, visible dans draw.tetardtek.com)
 
 Layout type pour un workflow 4 steps :
 
@@ -112,7 +112,7 @@ INIT :
   3. Générer les nœuds (tous gris = "⬜ pending")
   4. Générer les flèches (grises)
   5. Annoter les drifts connus (depuis l'analyse brain-hypervisor)
-  6. Mode live : PATCH draw.l'owner.com si API disponible
+  6. Mode live : PATCH draw.tetardtek.com si API disponible
   7. Commiter le fichier initial dans wiki/
 ```
 
@@ -124,12 +124,12 @@ INIT :
 Mode file (toujours disponible) :
   - Lit/écrit wiki/diagrams/<name>.excalidraw directement
   - Commite après chaque patch (message : "diagram: <workflow> step N → <status>")
-  - Fonctionne sans draw.l'owner.com
+  - Fonctionne sans draw.tetardtek.com
 
-Mode live (si draw.l'owner.com API disponible) :
+Mode live (si draw.tetardtek.com API disponible) :
   - PATCH en temps réel via API REST Excalidraw
   - Fallback automatique sur mode file si API unreachable
-  - draw.l'owner.com = instance brain satellite dédiée à la visualisation
+  - draw.tetardtek.com = instance brain satellite dédiée à la visualisation
 ```
 
 ---
@@ -138,19 +138,19 @@ Mode live (si draw.l'owner.com API disponible) :
 
 ```
 1. Diagram → spec (input)
-   L'humain dessine dans draw.l'owner.com
+   L'humain dessine dans draw.tetardtek.com
    diagram-scribe lit le .excalidraw → extrait les nœuds/relations
    → Produit : agents/<name>.md ou workflows/<name>.yml (via brain-hypervisor)
 
 2. Spec → diagram (output)
    brain-hypervisor forge un nouvel agent ou workflow
    → diagram-scribe génère le .excalidraw correspondant
-   → wiki/diagrams/ + draw.l'owner.com mis à jour
+   → wiki/diagrams/ + draw.tetardtek.com mis à jour
 
 3. Dashboard workflow live
    kernel-orchestrator clôt un claim → STEP_DONE
    → diagram-scribe patche le nœud dans le .excalidraw
-   → draw.l'owner.com reflète l'état en temps réel
+   → draw.tetardtek.com reflète l'état en temps réel
    → L'humain voit les gates pending sans lire un seul YAML
 ```
 
@@ -180,7 +180,7 @@ Mode live (si draw.l'owner.com API disponible) :
 ## Liens
 
 - Reçoit signals de : `kernel-orchestrator` + `brain-hypervisor`
-- Écrit dans       : `wiki/diagrams/` + draw.l'owner.com (live)
+- Écrit dans       : `wiki/diagrams/` + draw.tetardtek.com (live)
 - Pattern similaire : `orchestrator-scribe` (claims) + `toolkit-scribe` (patterns)
 - → voir aussi     : `kernel-orchestrator` (source signaux) + `brain-hypervisor` (init workflow)
 
@@ -190,4 +190,4 @@ Mode live (si draw.l'owner.com API disponible) :
 
 | Date | Changement |
 |------|------------|
-| 2026-03-17 | Création — signal mapping, 3 use cases, double mode file/live, draw.l'owner.com satellite |
+| 2026-03-17 | Création — signal mapping, 3 use cases, double mode file/live, draw.tetardtek.com satellite |
