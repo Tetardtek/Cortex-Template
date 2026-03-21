@@ -9,7 +9,7 @@ function buildWsUrl(): string {
   // Si API_BASE est un chemin relatif (ex: '/api'), construire l'URL dynamiquement
   if (!API_BASE || API_BASE.startsWith('/')) {
     const proto = location.protocol === 'https:' ? 'wss' : 'ws'
-    const base  = API_BASE || '/api'
+    const base  = API_BASE || ''
     return `${proto}://${location.host}${base}/ws`
   }
   // Si API_BASE est une URL absolue (ex: 'http://localhost:3333/api')
