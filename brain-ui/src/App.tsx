@@ -23,6 +23,7 @@ interface NavItem {
   icon: string
   label: string
   separator?: boolean
+  disabled?: boolean
 }
 
 interface PendingGate {
@@ -32,7 +33,11 @@ interface PendingGate {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { id: 'cosmos',    icon: '🌌', label: 'Cosmos' },
+  { id: 'workflows', icon: '🔀', label: 'Workflows', disabled: true },
+  { id: 'builder',   icon: '⚡', label: 'Nouveau',   disabled: true },
+  { id: 'secrets',   icon: '🔑', label: 'Secrets',   disabled: true },
+  { id: 'infra',     icon: '🖥️', label: 'Infra',     disabled: true },
+  { id: 'cosmos',    icon: '🌌', label: 'Cosmos', separator: true },
 ]
 
 function AppInner() {
@@ -141,10 +146,19 @@ function AppInner() {
                   <div className="mx-3 my-1" style={{ borderTop: '1px solid #2a2a2a' }} />
                 )}
                 <button
-                  onClick={() => handleViewChange(item.id)}
+                  onClick={() => !item.disabled && handleViewChange(item.id)}
                   className="flex items-center gap-3 px-3 py-2 rounded text-sm font-medium text-left transition-colors w-full"
+                  title={item.disabled ? 'Disponible avec brain boot' : undefined}
                   style={
-                    isActive
+                    item.disabled
+                      ? {
+                          color: '#374151',
+                          borderLeft: '2px solid transparent',
+                          paddingLeft: 10,
+                          cursor: 'default',
+                          opacity: 0.5,
+                        }
+                      : isActive
                       ? {
                           background: 'rgba(99,102,241,0.2)',
                           color: '#6366f1',
@@ -160,6 +174,9 @@ function AppInner() {
                 >
                   <span className="text-base leading-none">{item.icon}</span>
                   <span>{item.label}</span>
+                  {item.disabled && (
+                    <span style={{ marginLeft: 'auto', fontSize: 8, color: '#374151', fontFamily: 'monospace' }}>soon</span>
+                  )}
                 </button>
               </div>
             )
