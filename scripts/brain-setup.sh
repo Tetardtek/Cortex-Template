@@ -8,7 +8,7 @@
 set -euo pipefail
 
 # ── Config ──────────────────────────────────────────────────────────────────
-GITEA="git@git.tetardtek.com:Tetardtek"
+GITEA="${GIT_SERVER:-git@git.tetardtek.com}:${GIT_ORG:-Tetardtek}"
 BRAIN_NAME="${1:-prod-laptop}"
 BRAIN_ROOT="${2:-$HOME/Dev/Brain}"
 
@@ -42,7 +42,8 @@ echo ""
 
 # ── Étape 0 — SSH key ────────────────────────────────────────────────────────
 echo "[ 0/5 ] Vérification SSH key Gitea..."
-if ! ssh -T git@git.tetardtek.com -o StrictHostKeyChecking=no 2>&1 | grep -qE "Welcome|Hi there"; then
+GIT_HOST=$(echo "$GITEA" | cut -d: -f1 | sed 's/.*@//')
+if ! ssh -T "git@$GIT_HOST" -o StrictHostKeyChecking=no 2>&1 | grep -qE "Welcome|Hi there"; then
   warn "Clé SSH Gitea non configurée."
   info "Créer une clé :"
   info "  ssh-keygen -t ed25519 -C 'laptop@brain'"
@@ -158,7 +159,7 @@ else
   info ""
   info "Options pour le récupérer :"
   info "  A) Copie sécurisée depuis le desktop :"
-  info "     scp tetardtek@<desktop-ip>:~/Dev/Brain/MYSECRETS $MYSECRETS"
+  info "     scp <user>@<desktop-ip>:~/Dev/$(basename "$BRAIN_ROOT")/MYSECRETS $MYSECRETS"
   info ""
   info "  B) Recréer manuellement :"
   info "     cp $BRAIN_ROOT/MYSECRETS.example $MYSECRETS  (si le fichier exemple existe)"

@@ -61,8 +61,8 @@ for name, info in peers.items():
     try:
         result = subprocess.run(
             ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=3",
-             f"tetardtek@{host}",
-             f"cd ~/Dev/Brain && bash scripts/bsi-query.sh open 2>/dev/null"],
+             f"{os.environ.get('SSH_USER', 'tetardtek')}@{host}",
+             f"cd {info.get('path', '~/Dev/Brain')} && bash scripts/bsi-query.sh open 2>/dev/null"],
             capture_output=True, text=True, timeout=10
         )
         peer_claims = result.stdout.strip()

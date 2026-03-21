@@ -13,7 +13,7 @@
 
 set -euo pipefail
 
-WATCH_ROOT="/home/tetardtek/brain-watch"
+WATCH_ROOT="${WATCH_ROOT:-/home/$(whoami)/brain-watch}"
 BRAIN_INDEX="$WATCH_ROOT/brain/BRAIN-INDEX.md"
 NOTIFY="$WATCH_ROOT/brain-notify.sh"
 BRAIN_ROOT="$WATCH_ROOT"  # pour brain-notify.sh — lit MYSECRETS ici
@@ -23,7 +23,7 @@ LOG_PREFIX="[brain-watch-vps]"
 export BRAIN_ROOT
 
 if [[ ! -d "$WATCH_ROOT/brain" ]]; then
-  echo "$LOG_PREFIX ERREUR : brain non cloné. Lancer : git clone git@git.tetardtek.com:Tetardtek/brain.git $WATCH_ROOT/brain" >&2
+  echo "$LOG_PREFIX ERREUR : brain non clone. Lancer : git clone <GIT_HOST>:<ORG>/brain.git $WATCH_ROOT/brain" >&2
   exit 1
 fi
 
@@ -37,7 +37,7 @@ PREV_HASH=$(md5sum "$BRAIN_INDEX" 2>/dev/null | cut -d' ' -f1 || echo "")
 PREV_CLAIMS=$(grep -v '^\*Aucun claim' "$BRAIN_INDEX" 2>/dev/null | grep -c '^\| sess-' || echo 0)
 
 # Dédup stale — évite de respammer la même notif à chaque poll
-STALE_NOTIFIED_FILE="/tmp/brain-watch-stale-notified.txt"
+STALE_NOTIFIED_FILE="${WATCH_ROOT}/.stale-notified.txt"
 touch "$STALE_NOTIFIED_FILE"
 
 check_stale_claims() {

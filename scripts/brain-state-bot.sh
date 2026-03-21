@@ -13,7 +13,7 @@
 
 set -uo pipefail
 
-BRAIN_ROOT="${BRAIN_ROOT:-/home/tetardtek/Dev/Brain}"
+BRAIN_ROOT="${BRAIN_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}"
 LIVE_STATES="$BRAIN_ROOT/workspace/live-states.md"
 DRY_RUN=0
 
@@ -81,8 +81,8 @@ _find_project_repo() {
     "$BRAIN_ROOT"
     "$BRAIN_ROOT/brain-ui"
     "$BRAIN_ROOT/brain-engine"
-    "/home/tetardtek/Dev/Gitea"
-    "/home/tetardtek/Dev/Github"
+    "${PROJECTS_ROOT:-$HOME/Dev}/Gitea"
+    "${PROJECTS_ROOT:-$HOME/Dev}/Github"
   )
 
   # Match direct : brain → BRAIN_ROOT
