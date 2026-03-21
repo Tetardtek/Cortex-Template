@@ -70,10 +70,12 @@ if [ -d "$BRAIN_ROOT/brain-ui" ]; then
     # Creer .env.local si absent — pointe vers brain-engine local
     if [ ! -f "$BRAIN_ROOT/brain-ui/.env.local" ]; then
         cat > "$BRAIN_ROOT/brain-ui/.env.local" << 'ENVEOF'
-VITE_BRAIN_API=http://localhost:7700
+# VITE_BRAIN_API vide = requetes relatives (meme serveur)
+# brain-engine sert l'UI ET l'API sur le meme port
+VITE_BRAIN_API=
 VITE_USE_MOCK=false
 ENVEOF
-        echo "✅ brain-ui/.env.local cree (API → localhost:7700)"
+        echo "✅ brain-ui/.env.local cree"
     fi
     if [ -d "$BRAIN_ROOT/brain-ui/dist" ]; then
         echo "✅ brain-ui deja build"
