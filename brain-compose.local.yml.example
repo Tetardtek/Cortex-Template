@@ -12,7 +12,7 @@ instances:
     path: <BRAIN_ROOT>
     brain_name: <BRAIN_NAME>
     active: true
-    config_status: empty        # empty → partial → hydrated (après brain-setup.sh)
+    config_status: empty        # empty → partial → hydrated (gere par setup.sh, ne pas modifier)
     mode: prod
 
     # Brain API Key — optionnelle
