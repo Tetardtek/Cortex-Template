@@ -32,11 +32,7 @@ interface PendingGate {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { id: 'workflows', icon: '🔀', label: 'Workflows' },
-  { id: 'builder',   icon: '⚡', label: 'Nouveau'   },
-  { id: 'secrets',   icon: '🔑', label: 'Secrets'   },
-  { id: 'infra',     icon: '🖥️', label: 'Infra'     },
-  { id: 'cosmos',    icon: '🌌', label: 'Cosmos', separator: true },
+  { id: 'cosmos',    icon: '🌌', label: 'Cosmos' },
 ]
 
 function AppInner() {
