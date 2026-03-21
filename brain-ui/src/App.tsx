@@ -16,9 +16,7 @@ import { useTier } from './hooks/useTier'
 
 const CosmosView = lazy(() => import('./components/cosmos/CosmosView'))
 const WorkspaceView = lazy(() => import('./components/workspace/WorkspaceView'))
-const DocsView = lazy(() => import('./components/DocsView'))
-
-type ActiveView = 'workflows' | 'builder' | 'secrets' | 'infra' | 'cosmos' | 'workspace' | 'docs'
+type ActiveView = 'workflows' | 'builder' | 'secrets' | 'infra' | 'cosmos' | 'workspace'
 
 interface NavItem {
   id: ActiveView
@@ -39,7 +37,6 @@ const NAV_ITEMS: NavItem[] = [
   { id: 'secrets',   icon: '🔑', label: 'Secrets'   },
   { id: 'infra',     icon: '🖥️', label: 'Infra'     },
   { id: 'cosmos',    icon: '🌌', label: 'Cosmos', separator: true },
-  { id: 'docs',      icon: '📖', label: 'Docs' },
 ]
 
 function AppInner() {
@@ -48,7 +45,7 @@ function AppInner() {
   // Detect URL path for direct routing (/ui/docs → docs view)
   const initialView = (): ActiveView => {
     const path = window.location.pathname
-    if (path.includes('/docs')) return 'docs'
+    // /docs → redirige vers docs.html (page standalone)
     if (path.includes('/cosmos')) return 'cosmos'
     if (path.includes('/workspace')) return 'workspace'
     return 'workflows'
@@ -173,6 +170,21 @@ function AppInner() {
           })}
         </nav>
 
+        {/* Docs — lien externe standalone */}
+        <div className="px-2 mt-2">
+          <a
+            href="/ui/docs.html"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-3 px-3 py-2 rounded text-sm font-medium text-left w-full transition-colors"
+            style={{ color: '#9ca3af', borderLeft: '2px solid transparent', paddingLeft: 10, textDecoration: 'none' }}
+          >
+            <span className="text-base leading-none">📖</span>
+            <span>Docs</span>
+            <span style={{ marginLeft: 'auto', fontSize: 9, color: '#4b5563' }}>↗</span>
+          </a>
+        </div>
+
         {/* Bouton Logs */}
         <div className="px-2 mt-2">
           <button
@@ -249,15 +261,6 @@ function AppInner() {
               <CosmosView />
             </Suspense>
           </div>
-        )}
-        {activeView === 'docs' && (
-          <Suspense fallback={
-            <div className="flex items-center justify-center h-full" style={{ color: '#4b5563' }}>
-              <span className="text-sm font-mono">Chargement Docs...</span>
-            </div>
-          }>
-            <DocsView />
-          </Suspense>
         )}
         {activeView === 'workspace' && (
           <Suspense fallback={
