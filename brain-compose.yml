@@ -281,6 +281,9 @@ feature_sets:
       - agent-review
       - time-anchor
       - pattern-scribe
+      - guide
+      - catalogist
+      - pathfinder
 
   featured:
     description: "Progression personnelle — RAG + distillation pour apprendre avec un brain qui connaît l'utilisateur"

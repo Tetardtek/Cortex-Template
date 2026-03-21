@@ -22,6 +22,9 @@ L1:
   - focus.md                        # projets actifs + prochaine frontière
   - BRAIN-INDEX.md                  # claims actifs + signaux
   - todo/README.md                  # index intentions (warm — fichiers projet sur demande)
+  - agents/guide.md                  # presentation systeme — accueil fresh fork + on demand
+  - agents/catalogist.md             # exploration registres (agents, tiers, features)
+  - agents/pathfinder.md             # routage intentionnel — oriente vers la bonne session
 
 # L2 — Project scope (~2%) — déclenché si project déclaré dans le signal
 L2:
