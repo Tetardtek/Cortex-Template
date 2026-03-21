@@ -27,17 +27,61 @@ else
     echo "✅ brain-compose.local.yml existe deja"
 fi
 
-# 2. Satellites — creer les dossiers de base si absents
+# 2. Satellites — cloner les repos si dispo, sinon creer les dossiers
 echo ""
 echo "=== Satellites ==="
-SATELLITES="todo toolkit progression reviews claims handoffs workspace"
-for sat in $SATELLITES; do
-    if [ ! -d "$BRAIN_ROOT/$sat" ]; then
-        mkdir -p "$BRAIN_ROOT/$sat"
-        echo "# $sat" > "$BRAIN_ROOT/$sat/README.md"
-        echo "  → $sat/ cree (vide)"
+
+# Satellites git (repos autonomes) — clones si l'org GitHub est detectee
+# L'utilisateur peut definir BRAIN_GIT_ORG pour pointer vers son fork
+if [ -z "${BRAIN_GIT_ORG:-}" ]; then
+    # Detecter l'org depuis le remote origin du brain
+    ORIGIN_URL=$(git -C "$BRAIN_ROOT" remote get-url origin 2>/dev/null || echo "")
+    if echo "$ORIGIN_URL" | grep -q "github.com"; then
+        BRAIN_GIT_ORG=$(echo "$ORIGIN_URL" | sed -E 's|.*github.com[:/]([^/]+)/.*|\1|')
+        BRAIN_GIT_HOST="https://github.com"
+    fi
+fi
+
+# Table des satellites git : dossier local → nom du repo
+declare -A SAT_REPOS=(
+    [profil]="Cortex-Profil"
+    [todo]="Cortex-Todo"
+    [toolkit]="Cortex-Toolkit"
+    [progression]="Cortex-Progression"
+    [reviews]="Cortex-Reviews"
+)
+
+for sat in "${!SAT_REPOS[@]}"; do
+    if [ -d "$BRAIN_ROOT/$sat/.git" ]; then
+        echo "  ✅ $sat/ — repo git present"
+    elif [ -n "${BRAIN_GIT_ORG:-}" ] && [ -n "${BRAIN_GIT_HOST:-}" ]; then
+        REPO_URL="$BRAIN_GIT_HOST/$BRAIN_GIT_ORG/${SAT_REPOS[$sat]}.git"
+        echo "  → Clone $sat/ depuis $REPO_URL..."
+        if git clone "$REPO_URL" "$BRAIN_ROOT/$sat" 2>/dev/null; then
+            echo "  ✅ $sat/ clone"
+        else
+            echo "  ⚠️  $sat/ — clone echoue (repo inexistant ?). Creation dossier vide."
+            mkdir -p "$BRAIN_ROOT/$sat"
+            echo "# $sat" > "$BRAIN_ROOT/$sat/README.md"
+        fi
+    else
+        if [ ! -d "$BRAIN_ROOT/$sat" ]; then
+            mkdir -p "$BRAIN_ROOT/$sat"
+            echo "# $sat" > "$BRAIN_ROOT/$sat/README.md"
+            echo "  → $sat/ cree (vide — pas de remote detecte)"
+        fi
     fi
 done
+
+# Dossiers internes (pas des repos git)
+for dir in claims handoffs workspace; do
+    if [ ! -d "$BRAIN_ROOT/$dir" ]; then
+        mkdir -p "$BRAIN_ROOT/$dir"
+        echo "# $dir" > "$BRAIN_ROOT/$dir/README.md"
+        echo "  → $dir/ cree"
+    fi
+done
+
 # focus.md — fichier critique pour helloWorld
 if [ ! -f "$BRAIN_ROOT/focus.md" ]; then
     cat > "$BRAIN_ROOT/focus.md" << 'FOCUSEOF'
@@ -54,14 +98,20 @@ if [ ! -f "$BRAIN_ROOT/profil/collaboration.md" ] && [ -f "$BRAIN_ROOT/profil/co
     cp "$BRAIN_ROOT/profil/collaboration.md.example" "$BRAIN_ROOT/profil/collaboration.md"
     echo "  → profil/collaboration.md cree depuis l'exemple"
 fi
+echo ""
 echo "✅ Satellites prets"
 echo ""
-echo "  Les satellites sont des dossiers ou le brain ecrit :"
+echo "  Satellites git (repos autonomes, gitignores) :"
+echo "    profil/       → specs, ADRs, contextes, collaboration"
 echo "    todo/         → tes intentions de session"
 echo "    progression/  → ton parcours et tes metriques"
 echo "    toolkit/      → tes patterns valides en prod"
 echo "    reviews/      → audits de tes agents"
-echo "  Ils fonctionnent sans Git. Pour les versionner : docs/satellites.md"
+echo "  Dossiers internes :"
+echo "    claims/       → sessions BSI actives"
+echo "    handoffs/     → transferts entre sessions"
+echo "    workspace/    → espace de travail temporaire"
+echo "  Pour versionner les satellites : docs/satellites.md"
 
 # 3. Build dashboard
 echo ""
