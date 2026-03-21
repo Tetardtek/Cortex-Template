@@ -55,6 +55,13 @@ if [ ! -f "$BRAIN_ROOT/profil/collaboration.md" ] && [ -f "$BRAIN_ROOT/profil/co
     echo "  → profil/collaboration.md cree depuis l'exemple"
 fi
 echo "✅ Satellites prets"
+echo ""
+echo "  Les satellites sont des dossiers ou le brain ecrit :"
+echo "    todo/         → tes intentions de session"
+echo "    progression/  → ton parcours et tes metriques"
+echo "    toolkit/      → tes patterns valides en prod"
+echo "    reviews/      → audits de tes agents"
+echo "  Ils fonctionnent sans Git. Pour les versionner : docs/satellites.md"
 
 # 3. Build dashboard
 echo ""

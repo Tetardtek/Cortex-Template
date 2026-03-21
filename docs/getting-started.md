@@ -55,7 +55,7 @@ bash setup.sh
 Le script fait tout automatiquement :
 
 1. **Cree `brain-compose.local.yml`** — ta config machine (chemins auto-detectes)
-2. **Cree les dossiers satellites** — todo/, progression/, toolkit/, reviews/, workspace/
+2. **Cree les dossiers satellites** — todo/, progression/, toolkit/, reviews/, workspace/ ([pourquoi ?](satellites.md))
 3. **Copie `profil/collaboration.md`** — regles de travail
 4. **Build le dashboard** — `brain-ui/` (npm install + vite build)
 5. **Init brain-engine** — cree l'environnement Python + brain.db
