@@ -1,1 +1,0 @@
-/home/tetardtek/Dev/Brain/docs/vue-full.md
