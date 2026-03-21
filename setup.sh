@@ -66,15 +66,21 @@ echo "  Ils fonctionnent sans Git. Pour les versionner : docs/satellites.md"
 # 3. Build dashboard
 echo ""
 echo "=== Dashboard ==="
-if [ -d "$BRAIN_ROOT/brain-ui/dist" ]; then
-    echo "✅ brain-ui deja build"
-else
-    if command -v node &>/dev/null && command -v npm &>/dev/null; then
-        bash "$BRAIN_ROOT/brain-ui/build.sh"
+if [ -d "$BRAIN_ROOT/brain-ui" ]; then
+    if [ -d "$BRAIN_ROOT/brain-ui/dist" ]; then
+        echo "✅ brain-ui deja build"
     else
-        echo "⚠️  Node.js/npm absent — le dashboard ne sera pas disponible."
-        echo "   Installe Node.js 18+ puis relance : bash brain-ui/build.sh"
+        if command -v node &>/dev/null && command -v npm &>/dev/null; then
+            echo "→ Build brain-ui..."
+            cd "$BRAIN_ROOT/brain-ui" && npm install --silent && npm run build && cd "$BRAIN_ROOT"
+            echo "✅ brain-ui build"
+        else
+            echo "⚠️  Node.js/npm absent — le dashboard ne sera pas disponible."
+            echo "   Installe Node.js 18+ puis relance setup.sh"
+        fi
     fi
+else
+    echo "⚠️  brain-ui/ absent — dashboard non disponible."
 fi
 
 # 3. Init brain-engine
