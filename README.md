@@ -6,11 +6,13 @@ Le brain est un **cerveau externalise** : 75 agents specialises, un protocole de
 
 ```
 git clone <ce-repo> ~/Dev/Brain
-bash brain-ui/build.sh
+cd ~/Dev/Brain && bash setup.sh
 bash brain-engine/start.sh
 ```
 
 Ouvre Claude Code dans le dossier et tape `brain boot`. C'est tout.
+
+> Guide complet : [docs/getting-started.md](docs/getting-started.md)
 
 ---
 
@@ -47,7 +49,7 @@ Le brain a 4 niveaux. Chaque niveau debloque des agents et des capacites :
 - Python 3.10+
 - Node.js 18+ et npm
 - Claude Code CLI
-- Ollama (optionnel — pour la recherche semantique)
+- Ollama (recommande — active la recherche semantique et le RAG au boot)
 
 ### 1. Cloner
 
@@ -56,22 +58,19 @@ git clone <ce-repo> ~/Dev/Brain
 cd ~/Dev/Brain
 ```
 
-### 2. Configurer
+### 2. Setup
 
 ```bash
-# Config machine
-cp brain-compose.local.yml.example brain-compose.local.yml
-# Editer : kernel_path, brain_name
-
-# Config Claude Code
-cp profil/CLAUDE.md.example ~/.claude/CLAUDE.md
-# Editer : brain_root → ton chemin
+bash setup.sh
 ```
 
-### 3. Build le dashboard
+Le script fait tout : config machine, satellites, dashboard, brain-engine.
+
+### 3. Configurer Claude Code
 
 ```bash
-bash brain-ui/build.sh
+cp profil/CLAUDE.md.example ~/.claude/CLAUDE.md
+# Editer : brain_root et brain_name
 ```
 
 ### 4. Lancer brain-engine
@@ -104,9 +103,15 @@ brain/
   brain-engine/    moteur local (API, search, RAG, MCP, embeddings)
   brain-ui/        dashboard React (docs, workflows, cosmos 3D)
   scripts/         protocole BSI (claims, locks, gates, feature-gate)
-  profil/          identite, collaboration, decisions architecturales
   brain-compose.yml   config, modes, tiers, agents autorises
   KERNEL.md        loi des zones — ce qui est protege
+
+  # Satellites (repos git autonomes, clones par setup.sh)
+  profil/          identite, collaboration, decisions architecturales
+  todo/            intentions de session
+  toolkit/         patterns valides en prod
+  progression/     parcours, metriques, bilans
+  reviews/         audits agents
 ```
 
 ---
@@ -152,4 +157,4 @@ Ouvre le dashboard (`http://localhost:7700/ui/`) et va dans l'onglet Docs :
 
 ## Licence
 
-MIT — kernel libre, agents libres, protocole libre.
+BSL 1.1 — usage libre sauf hosting commercial. Apache 2.0 en 2028.

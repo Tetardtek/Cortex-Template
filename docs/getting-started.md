@@ -1,6 +1,6 @@
 # Demarrer avec le brain — le vrai tuto
 
-> Du fork au premier `brain boot`. 10 minutes.
+> Du fork au premier `brain boot`. 10 minutes (prerequis deja installes).
 > Envie de comprendre le projet avant de fork ? → [story.tetardtek.com](https://story.tetardtek.com)
 
 ---
@@ -36,10 +36,11 @@ sudo apt install -y python3 python3-pip python3-venv nodejs npm
 npm install -g @anthropic-ai/claude-code
 ```
 
-**Optionnel mais recommande :**
+**Recommande (recherche semantique + RAG) :**
 
 ```bash
-# Ollama — active la recherche semantique dans le brain
+# Ollama — active brain_search et le RAG au boot
+# Sans Ollama le brain fonctionne mais la recherche semantique est desactivee
 curl -fsSL https://ollama.com/install.sh | sh
 ollama pull nomic-embed-text
 ```
@@ -56,10 +57,11 @@ bash setup.sh
 Le script fait tout automatiquement :
 
 1. **Cree `brain-compose.local.yml`** — ta config machine (chemins auto-detectes)
-2. **Cree les dossiers satellites** — todo/, progression/, toolkit/, reviews/, workspace/
-3. **Copie `profil/collaboration.md`** — regles de travail
-4. **Build le dashboard** — `brain-ui/` (npm install + vite build)
-5. **Init brain-engine** — cree l'environnement Python + brain.db
+2. **Clone les satellites git** — profil/, todo/, progression/, toolkit/, reviews/ (depuis ton fork GitHub)
+3. **Cree les dossiers internes** — claims/, handoffs/, workspace/
+4. **Copie `profil/collaboration.md`** — regles de travail
+5. **Build le dashboard** — `brain-ui/` (npm install + vite build)
+6. **Init brain-engine** — cree l'environnement Python + brain.db
 
 Tu n'as rien a repondre — tout est automatique.
 
@@ -234,7 +236,11 @@ Non. MYSECRETS c'est pour les projets qui ont des secrets (tokens API, mots de p
 
 ### Je vois des fichiers "non trackes" au boot — c'est normal ?
 
-Oui. `focus.md`, `workspace/`, `brain-ui/package-lock.json` sont crees localement par setup.sh et le build. Tu peux les commiter ou les ignorer.
+Oui. `focus.md`, `workspace/`, `claims/` sont crees localement par setup.sh. Les satellites (`profil/`, `todo/`, `toolkit/`, etc.) sont des repos git autonomes gitignores dans le kernel — c'est intentionnel. Ne les ajoute pas au kernel avec `git add`.
+
+### Plusieurs forks du brain sur la meme machine ?
+
+Un seul `~/.claude/CLAUDE.md` par machine. Si tu as plusieurs brains, utilise `brain-compose.local.yml` section `instances` pour les declarer. `brain_root` dans CLAUDE.md pointe vers le brain actif.
 
 ### Comment mettre a jour le kernel depuis l'upstream ?
 
