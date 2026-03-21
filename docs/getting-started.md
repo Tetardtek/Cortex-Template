@@ -1,6 +1,7 @@
 # Demarrer avec le brain — le vrai tuto
 
 > Du fork au premier `brain boot`. 10 minutes.
+> Envie de comprendre le projet avant de fork ? → [story.tetardtek.com](https://story.tetardtek.com)
 
 ---
 
@@ -55,7 +56,7 @@ bash setup.sh
 Le script fait tout automatiquement :
 
 1. **Cree `brain-compose.local.yml`** — ta config machine (chemins auto-detectes)
-2. **Cree les dossiers satellites** — todo/, progression/, toolkit/, reviews/, workspace/ ([pourquoi ?](satellites.md))
+2. **Cree les dossiers satellites** — todo/, progression/, toolkit/, reviews/, workspace/
 3. **Copie `profil/collaboration.md`** — regles de travail
 4. **Build le dashboard** — `brain-ui/` (npm install + vite build)
 5. **Init brain-engine** — cree l'environnement Python + brain.db
@@ -98,44 +99,47 @@ Brain-engine c'est le serveur local qui fait tourner l'API, le dashboard, et la 
 ### Demarrer
 
 ```bash
+cd ~/Dev/Brain
 bash brain-engine/start.sh
 ```
 
-Brain-engine demarre en arriere-plan. Tu vois :
+Tu vois :
 
 ```
-✅ brain-engine demarre (PID 12345)
-   Logs    : tail -f brain-engine/brain-engine.log
-   Arreter : bash brain-engine/stop.sh
+=== Lancement brain-engine sur port 7700 ===
+  Health : http://localhost:7700/health
+  Dashboard : http://localhost:7700/ui/
 ```
+
+> **Le terminal reste occupe** — brain-engine tourne au premier plan. Ouvre un autre terminal pour la suite.
 
 ### Verifier
 
-```bash
-bash brain-engine/status.sh
-```
-
-Ou ouvre ton navigateur : `http://localhost:7700/ui/`
+Ouvre ton navigateur : `http://localhost:7700/ui/`
 Tu vois le dashboard avec l'onglet Docs — c'est cette documentation.
 
 ### Arreter
 
-```bash
-bash brain-engine/stop.sh
-```
-
-### Mode debug (optionnel)
-
-Si tu veux voir les logs en direct dans le terminal :
-
-```bash
-bash brain-engine/start.sh --foreground
-```
-
-`Ctrl+C` pour arreter.
+Reviens dans le terminal ou brain-engine tourne et fais `Ctrl+C`. C'est tout.
 
 > Brain-engine n'est pas obligatoire pour utiliser le brain avec Claude Code.
 > C'est un bonus (dashboard, search, API). Tu peux faire `brain boot` sans.
+
+### Lancer en arriere-plan (optionnel)
+
+Si tu ne veux pas bloquer un terminal :
+
+```bash
+cd ~/Dev/Brain
+nohup bash brain-engine/start.sh > /tmp/brain-engine.log 2>&1 &
+echo $! > /tmp/brain-engine.pid
+```
+
+Pour l'arreter :
+
+```bash
+kill $(cat /tmp/brain-engine.pid)
+```
 
 ---
 
@@ -220,11 +224,8 @@ claude
 
 ### Brain-engine tourne encore en fond, comment l'arreter ?
 
-```bash
-bash brain-engine/stop.sh
-```
-
-Pour verifier s'il tourne : `bash brain-engine/status.sh`
+Si tu l'as lance au premier plan : `Ctrl+C` dans son terminal.
+Si tu l'as lance en arriere-plan : `kill $(cat /tmp/brain-engine.pid)`
 En dernier recours : `pkill -f 'python3.*server.py'`
 
 ### Je vois "MYSECRETS absent" — c'est grave ?
@@ -242,6 +243,20 @@ git remote add upstream <URL_DU_TEMPLATE_ORIGINAL>
 git fetch upstream
 git merge upstream/main
 ```
+
+### J'utilise Gitea self-hosted et git clone echoue ?
+
+Gitea en Docker ecoute souvent sur un port SSH non standard (2222 au lieu de 22). Ajoute dans `~/.ssh/config` :
+
+```
+Host git.example.com
+    HostName git.example.com
+    Port 2222
+    User git
+    IdentityFile ~/.ssh/id_ed25519
+```
+
+Puis ajoute la host key : `ssh-keyscan -p 2222 git.example.com >> ~/.ssh/known_hosts`
 
 ### Ou est la documentation complete ?
 

@@ -4,7 +4,7 @@
 
 session_type: coach
 description: "Session coaching — progression, réflexion, cap stratégique, clarté"
-tier_required: pro    # coaching complet (coach.md 365 lignes) = feature pro
+tier_required: featured    # coaching complet (coach.md) = tier featured (RAG + progression)
 
 # L0 — Invariant (~5%)
 L0:

@@ -7,7 +7,7 @@
 
 ## 🟢 free — Ce que tu as
 
-> 🟢 **14 agents invocables + 8 systeme. 6 sessions.**
+> 🟢 **17 agents invocables + 9 systeme. 6 sessions.**
 
 ### Sessions
 
@@ -36,6 +36,11 @@
 - `aside` — parenthese /btw en session
 - `pattern-scribe` — detection patterns recurrents
 - `time-anchor` — conscience temporelle, recontextualisation
+
+**S'orienter**
+- `guide` — presentation du systeme, accueil fresh fork
+- `catalogist` — exploration des registres (agents, tiers, features)
+- `pathfinder` — routage intentionnel, oriente vers la bonne session
 
 ### Agents systeme (tournent a chaque boot)
 

@@ -1,6 +1,7 @@
 # docs/ — Documentation humaine
 
 > Guides lisibles sans contexte brain. Pour forks, onboarding, ou quand tu veux comprendre comment ca marche.
+> L'histoire du projet → [story.tetardtek.com](https://story.tetardtek.com)
 
 ---
 

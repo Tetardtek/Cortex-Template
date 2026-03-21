@@ -10,7 +10,7 @@ Le brain c'est 3 couches :
 
 **1. Le kernel** — l'identite
 - Les regles qui ne changent pas (KERNEL.md, constitution, PATHS.md)
-- Les agents specialises (~75 fichiers .md)
+- Les agents specialises (~81 fichiers .md)
 - Le profil de collaboration
 - Le brain-compose.yml (config, tiers, modes)
 

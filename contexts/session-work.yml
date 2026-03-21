@@ -16,9 +16,13 @@ L0:
 L1:
   - now.md                          # bridge session précédente
   - focus.md                        # focus actuel, todos prioritaires
-  - agents/coach.md                 # coach complet byTask — observe le projet en cours
+  - agents/coach-boot.md            # coach boot-summary — observe le projet en cours (free)
   - agents/debug.md                 # bug, crash, comportement inattendu
   - metabolism/README.md            # état métabolique, énergie session
+
+# L1_featured — chargé si tier: featured+ — coach complet remplace coach-boot
+L1_featured:
+  - agents/coach.md                 # coach complet byTask — observe le projet en cours
 
 # L1_pro — Session type (~5%) — chargé uniquement si tier: pro déclaré
 # Pas de code-review ni security pour tier free — chargement explicite sur demande sinon

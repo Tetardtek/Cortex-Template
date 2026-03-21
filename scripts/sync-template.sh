@@ -92,6 +92,30 @@ if [ -d "$BRAIN_ROOT/wiki" ]; then
   fi
 fi
 
+# --- Docs ---
+echo ""
+echo "── docs/ ───────────────────────────────────────"
+if [ -d "$BRAIN_ROOT/docs" ]; then
+  if [ -z "$DRY" ]; then
+    mkdir -p "$TEMPLATE_DIR/docs"
+    rsync -a --delete "$BRAIN_ROOT/docs/" "$TEMPLATE_DIR/docs/"
+  fi
+  doc_count=$(ls "$BRAIN_ROOT/docs/"*.md 2>/dev/null | wc -l | tr -d ' ')
+  echo "  ✅ $doc_count docs"
+fi
+
+# --- Contexts ---
+echo ""
+echo "── contexts/ ──────────────────────────────────"
+if [ -d "$BRAIN_ROOT/contexts" ]; then
+  if [ -z "$DRY" ]; then
+    mkdir -p "$TEMPLATE_DIR/contexts"
+    rsync -a --delete "$BRAIN_ROOT/contexts/" "$TEMPLATE_DIR/contexts/"
+  fi
+  ctx_count=$(ls "$BRAIN_ROOT/contexts/"*.yml 2>/dev/null | wc -l | tr -d ' ')
+  echo "  ✅ $ctx_count contexts"
+fi
+
 # --- Gitkeep ---
 [ -z "$DRY" ] && mkdir -p "$TEMPLATE_DIR/locks" && \
   touch "$TEMPLATE_DIR/locks/.gitkeep"

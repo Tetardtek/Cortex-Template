@@ -1,8 +1,12 @@
 # Le brain en 30 secondes
 
-Un brain, c'est un systeme de **specialistes IA** qui travaillent ensemble. Chaque specialiste (agent) fait une chose bien : debugger, reviewer du code, deployer, ecrire des tests. Tu n'en charges jamais plus de 5 a la fois — le brain sait lesquels activer selon ce que tu fais.
+## Pourquoi un brain plutot que Claude seul ?
 
-Tu forkes le brain, tu codes. Les agents se chargent automatiquement.
+Claude est puissant. Mais a chaque session, il repart de zero. Tu re-expliques ton projet, ta stack, tes conventions. Tu repetes les memes consignes. Tu perds du contexte a chaque compaction.
+
+Le brain resout ca : **un systeme de specialistes IA qui persistent entre sessions.** Chaque specialiste (agent) fait une chose bien — debugger, reviewer du code, deployer, ecrire des tests. Ils connaissent tes regles, ta stack, tes decisions passees. Tu n'en charges jamais plus de 5 a la fois — le brain sait lesquels activer selon ce que tu fais.
+
+Tu forkes le brain, tu codes. Les agents se chargent automatiquement. Ton contexte survit aux sessions.
 
 ---
 
@@ -10,25 +14,25 @@ Tu forkes le brain, tu codes. Les agents se chargent automatiquement.
 
 > 🟢 **free — Tu forkes, ca marche**
 >
-> **14 agents + 8 systeme. 6 sessions.** Pas de cle API, pas de config.
+> **17 agents + 9 systeme. 6 sessions.** Pas de cle API, pas de config.
 >
-> Debug, brainstorm, scribes automatiques, protection secrets, creation d'agents custom. Le coach observe en arriere-plan.
+> Debug, brainstorm, scribes automatiques, protection secrets, creation d'agents custom. 3 agents d'onboarding (guide, catalogist, pathfinder) pour t'orienter. Le coach observe en arriere-plan.
 
 > 🔵 **featured — Le brain te connait**
 >
-> **18 agents + systeme. 8 sessions.** Le coach se reveille.
+> **21 agents + systeme. 8 sessions.** Le coach se reveille.
 >
 > Bilans de session, objectifs concrets, progression tracee. Le brain se souvient de tes acquis entre sessions grace a la distillation RAG.
 
 > 🟠 **pro — L'atelier complet**
 >
-> **40 agents + systeme. 12 sessions.** Tu ship en prod.
+> **42 agents + systeme. 14 sessions.** Tu ship en prod.
 >
 > Code review (7 priorites), audit securite (8 priorites OWASP), tests automatises, 3 optimiseurs perf, deploy VPS + CI/CD + SSL, sessions urgence et infra.
 
 > 🟣 **full — Ton brain, tes regles**
 >
-> **75 agents (tous). 15 sessions.** Tu es owner.
+> **81 agents (tous). 15 sessions.** Tu es owner.
 >
 > Modification du kernel, copilotage long (mode pilote), supervision multi-phase (hypervisor), coach proactif qui anticipe.
 
@@ -66,6 +70,11 @@ Charge les agents security et code-review
 
 **Ils ne chargent que l'essentiel.** Un agent de 200 lignes → ~25 lignes au boot. Le reste se charge quand tu en as besoin.
 
+**Premier fork ? 3 agents t'orientent.**
+- `guide` — presente le systeme, repond a "c'est quoi ce truc ?"
+- `catalogist` — explore ce qui est disponible (agents, tiers, features)
+- `pathfinder` — t'oriente vers la bonne session selon ce que tu veux faire
+
 ---
 
 ## Explore les agents par famille
@@ -80,10 +89,19 @@ Charge les agents security et code-review
 
 ---
 
+## Pour aller plus loin
+
+**L'histoire du projet** — [story.tetardtek.com](https://story.tetardtek.com) raconte le pourquoi, le parcours, les decisions. Si tu veux comprendre la vision avant de fork.
+
+---
+
 ## Nouveautes
 
 | Date | Quoi de neuf |
 |------|-------------|
+| 2026-03-21 | 3 agents onboarding (guide, catalogist, pathfinder) — le brain accueille les nouveaux |
+| 2026-03-21 | Docs live — git pull = docs a jour, zero rebuild |
+| 2026-03-21 | VPS scission — vitrine template publique separee du brain prod |
 | 2026-03-20 | Agents 87% plus legers au boot |
 | 2026-03-20 | Coach adaptatif — 5 comportements selon la session |
 | 2026-03-20 | Fermeture fiable — sequence deterministe |
