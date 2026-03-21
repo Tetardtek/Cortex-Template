@@ -6,9 +6,9 @@ brain.db
 brain.db-wal
 brain.db-shm
 
-# Brain-engine runtime
+# Python cache (brain-engine + scripts)
+__pycache__/
 brain-engine/.venv/
-brain-engine/__pycache__/
 brain-engine/*.log
 brain-engine/viz_cache.json
 .brain-engine.pid
