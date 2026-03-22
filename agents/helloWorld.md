@@ -321,6 +321,25 @@ Signal 3 — BRAIN-INDEX.md vide + 0 claims/*.yml
    Lire brain-compose.local.yml → confirmer kernel_path + brain_name + tier
    bash scripts/kernel-isolation-check.sh → afficher résultat
    "✅ Brain configuré — brain_name: <X> | tier: <Y>"
+
+7. Étape 6 — Déclaration d'ownership (le moment clé)
+   Présenter :
+   "Ton brain est configuré. Il reste une dernière étape :
+   la déclaration d'ownership.
+
+   Jusqu'ici ce brain est un template — tout est visible dans git.
+   En déclarant l'ownership, les satellites (profil/, toolkit/, todo/,
+   progression/, reviews/) et les dossiers locaux (claims/, workspace/)
+   passent en gitignore. Ils vivent dans leurs propres repos ou restent locaux.
+
+   C'est ton premier commit — il marque la transition template → brain personnel.
+   On y va ?"
+
+   → Si oui : bash scripts/ownership.sh
+   → Si skip : noter — proposer à la prochaine session
+   → Si non : respecter — le brain fonctionne quand même (satellites trackés)
+
+   Après ownership :
    Ouvrir le claim boot BSI (protocole standard)
 ```
 
@@ -328,6 +347,7 @@ Signal 3 — BRAIN-INDEX.md vide + 0 claims/*.yml
 - Une étape à la fois — ne pas tout demander d'un coup
 - Si l'utilisateur skip une étape → noter et continuer
 - Jamais écrire hors du repo brain/ (CLAUDE.md = instruction, pas écriture)
+- L'ownership est proposée, jamais forcée — le brain fonctionne avec ou sans
 - À la fin du setup → reprendre le boot normal depuis l'étape 1 ci-dessous
 
 ---
