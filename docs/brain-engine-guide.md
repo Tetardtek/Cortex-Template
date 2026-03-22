@@ -1,6 +1,6 @@
 # Brain-engine — guide pratique
 
-> Demarrer, arreter, diagnostiquer. Les commandes du quotidien.
+> Demarrer, arreter, diagnostiquer, graduer. Les commandes du quotidien.
 
 ---
 
@@ -17,74 +17,122 @@ Brain-engine c'est le serveur local de ton brain. Il fait 3 choses :
 
 ---
 
+## Commandes essentielles
+
+Tout passe par une seule CLI : `bash scripts/brain-engine.sh`
+
+```bash
+brain-engine.sh start          # demarrer (background)
+brain-engine.sh start --fg     # demarrer (foreground — Ctrl+C pour arreter)
+brain-engine.sh stop           # arreter proprement
+brain-engine.sh status         # PID, port, mode, uptime
+brain-engine.sh embed          # lancer un embedding one-shot
+brain-engine.sh logs           # tail des logs
+brain-engine.sh install pm2    # installer via pm2
+brain-engine.sh install systemd # installer via systemd
+```
+
+---
+
 ## Demarrer
 
 ```bash
-cd ~/Dev/Brain
-bash brain-engine/start.sh
+bash scripts/brain-engine.sh start
 ```
 
-Le script :
-1. Cree l'environnement Python (une seule fois)
-2. Installe les dependances (une seule fois)
-3. Init brain.db si absent
-4. Indexe le corpus si Ollama est disponible
-5. Lance le serveur sur le port 7700
+```
+▶ brain-engine start
+   mode : dev
+   port : 7700
+✅ brain-engine demarre (PID 12345, port 7700)
+   logs : tail -f brain-engine.log
+```
 
-**Le terminal reste occupe.** Ouvre un autre terminal pour Claude Code.
+Dashboard : `http://localhost:7700/ui/`
 
 ---
 
 ## Verifier que ca tourne
 
 ```bash
-# Health check
-curl http://localhost:7700/health
+bash scripts/brain-engine.sh status
+```
 
-# Dashboard
-# Ouvre dans ton navigateur :
-http://localhost:7700/ui/
+```
+▶ brain-engine status
+   mode : dev
+   port : 7700
+   pid  : 12345
+   up   : 2h 15m
+✅ en cours — /health OK
 ```
 
 ---
 
 ## Arreter
 
-### Premier plan (cas normal)
-
-Tu as lance `bash brain-engine/start.sh` dans un terminal → **Ctrl+C** dans ce terminal.
-
-### Arriere-plan
-
-Si tu l'as lance avec `nohup` :
-
 ```bash
-kill $(cat /tmp/brain-engine.pid)
+bash scripts/brain-engine.sh stop
 ```
 
-### Dernier recours
-
-```bash
-pkill -f 'python3.*server.py'
-```
+En dernier recours : `pkill -f 'python3.*server.py'`
 
 ---
 
-## Lancer en arriere-plan
+## Modes
 
-Si tu ne veux pas bloquer un terminal :
+Brain-engine detecte automatiquement son mode depuis `brain-compose.local.yml` ou la variable `BRAIN_MODE`.
+
+| Mode | Usage | Write API | Secrets | Embed |
+|------|-------|-----------|---------|-------|
+| **dev** | Developpement local | oui | optionnels | manuel |
+| **prod** | Instance personnelle en service | oui | requis | cron 6h |
+| **demo** | Vitrine template | non (read-only) | non requis | desactive |
+
+---
+
+## Graduation — du manuel au permanent
+
+Commence en manuel. Quand tu as confiance, monte d'un cran.
+
+### Niveau 1 — Manuel (debut)
 
 ```bash
-cd ~/Dev/Brain
-nohup bash brain-engine/start.sh > /tmp/brain-engine.log 2>&1 &
-echo $! > /tmp/brain-engine.pid
+bash scripts/brain-engine.sh start    # quand tu en as besoin
+bash scripts/brain-engine.sh stop     # quand tu as fini
 ```
 
-Verifier les logs :
+Le serveur s'arrete si tu eteins la machine ou fermes le terminal.
+
+### Niveau 2 — pm2 (restart on crash)
 
 ```bash
-tail -f /tmp/brain-engine.log
+bash scripts/brain-engine.sh install pm2
 ```
+
+pm2 relance automatiquement brain-engine si il crashe. Pas au reboot.
+
+```bash
+pm2 status                    # voir l'etat
+pm2 logs brain-engine         # voir les logs
+pm2 stop brain-engine         # arreter
+```
+
+### Niveau 3 — systemd (survit au reboot)
+
+```bash
+bash scripts/brain-engine.sh install systemd
+```
+
+brain-engine demarre au boot, survit aux reboots, logs dans journald.
+
+```bash
+sudo systemctl status brain-engine    # etat
+sudo journalctl -u brain-engine -f    # logs
+sudo systemctl stop brain-engine      # arreter
+```
+
+En mode prod, le script propose aussi d'activer le cron embed (toutes les 6h).
 
 ---
 
@@ -102,23 +150,16 @@ ollama pull nomic-embed-text
 ### Indexer le corpus
 
 ```bash
-cd ~/Dev/Brain
-brain-engine/.venv/bin/python3 brain-engine/embed.py
-```
-
-Apres l'indexation, la recherche fonctionne :
-
-```bash
-curl "http://localhost:7700/search?q=comment+fonctionnent+les+sessions"
-```
-
-### Re-indexer apres des modifications
-
-```bash
-brain-engine/.venv/bin/python3 brain-engine/embed.py
+bash scripts/brain-engine.sh embed
 ```
 
 > L'indexation est incrementale — seuls les fichiers modifies sont re-indexes.
+
+### Automatiser (apres install systemd)
+
+En mode prod, l'embedding tourne toutes les 6h via cron. Le script d'installation propose la commande.
+
+En mode demo, l'embedding est desactive (donnees statiques).
 
 ---
 
@@ -127,9 +168,6 @@ brain-engine/.venv/bin/python3 brain-engine/embed.py
 Brain-engine expose un serveur MCP pour que Claude Code puisse chercher dans ton brain :
 
 ```bash
-# Lancer le MCP server (port 7701)
-brain-engine/.venv/bin/python3 brain-engine/mcp_server.py
-
 # Ajouter dans Claude Code
 claude mcp add brain --transport http http://localhost:7701/mcp/
 ```
@@ -147,11 +185,11 @@ use brain_search to find context about <sujet>
 ### Le serveur ne demarre pas
 
 ```bash
+# Voir les logs
+bash scripts/brain-engine.sh logs
+
 # Verifier que le port n'est pas deja utilise
 lsof -i :7700
-
-# Verifier les logs
-cat /tmp/brain-engine.log
 ```
 
 ### "no such table: embeddings"
@@ -165,8 +203,9 @@ Normal si Ollama n'est pas installe. La recherche ne fonctionne pas mais le dash
 ls ~/Dev/Brain/brain-ui/dist/index.html
 
 # Si absent, rebuild :
-bash brain-ui/build.sh
+cd ~/Dev/Brain/brain-ui && npm run build
 # Puis relancer brain-engine
+bash scripts/brain-engine.sh stop && bash scripts/brain-engine.sh start
 ```
 
 ---
