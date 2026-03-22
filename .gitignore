@@ -17,12 +17,15 @@ brain-engine/viz_cache.json
 brain-ui/node_modules/
 brain-ui/dist/
 
-# Satellites (repos independants clones localement)
-toolkit/
-progression/
-reviews/
-profil/
-todo/
+# Satellites — visibles dans le template, gitignores apres ownership declaration
+# (bash scripts/ownership.sh pour basculer)
+# toolkit/
+# progression/
+# reviews/
+# profil/
+# todo/
+# claims/
+# workspace/
 
 # OS
 .DS_Store
