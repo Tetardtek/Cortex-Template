@@ -32,8 +32,7 @@ Un agent qui sait dans quelle zone il opère sait automatiquement ce qu'il peut 
 ```
 Fichiers : KERNEL.md, CLAUDE.md, PATHS.md, brain-compose.yml, BRAIN-INDEX.md
            brain-constitution.md
-           agents/
-           profil/  (satellite autonome — meme niveau de protection que le kernel)
+           agents/   profil/
 ```
 
 | Règle | Détail |
@@ -44,17 +43,13 @@ Fichiers : KERNEL.md, CLAUDE.md, PATHS.md, brain-compose.yml, BRAIN-INDEX.md
 | **Commit type** | `kernel:` (contrat), `feat:` (nouvelle capacité), `bsi:` (claims/signals) |
 | **Scribe** | `scribe` (agents/, profil/ état), `orchestrator-scribe` (BRAIN-INDEX.md) |
 
-**Sous-zone PROFIL — l'ame**
+**Sous-zone PROFIL — l'âme**
 ```
-profil/   →  Satellite git autonome (Cortex-Profil), gitignore dans le kernel.
-              Meme niveau de protection que le kernel — jamais modifie sans decision humaine.
-              Clone par setup.sh ou manuellement (voir PATHS.md).
-
-              Invariant (collaboration, kernel-zones, architecture) : jamais surcharge
-              Contexte (session-types, agent-types, contexts/) : evolue sur signal valide
-              Reference (bsi-spec, scribe-system) : mis a jour sur changement de spec
+profil/   →  Invariant (collaboration, kernel-zones, architecture) : jamais surchargé
+              Contexte (session-types, agent-types, contexts/) : évolue sur signal validé
+              Référence (bsi-spec, scribe-system) : mis à jour sur changement de spec
 ```
-Le profil modelise la **personnalite** du brain. Un Invariant profil = valeur aussi dure que le kernel.
+Le profil modèle la **personnalité** du brain. Un Invariant profil = valeur aussi dure que le kernel.
 
 ---
 

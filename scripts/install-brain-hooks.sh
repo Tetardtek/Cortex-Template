@@ -71,27 +71,8 @@ HOOK
     echo "✅ Hook post-commit installé"
 fi
 
-# ── commit-msg — strip Co-Authored-By Claude ─────────────────────────────────
-
-COMMIT_MSG="$HOOKS_DIR/commit-msg"
-
-if [[ ! -f "$COMMIT_MSG" ]] || ! grep -q "Co-Authored-By" "$COMMIT_MSG" 2>/dev/null; then
-    cat > "$COMMIT_MSG" <<'HOOK'
-#!/usr/bin/env bash
-# brain commit-msg hook — strip Co-Authored-By Claude
-# Le brain a sa propre identite — pas de signature Claude dans les commits.
-
-sed -i '/Co-Authored-By:.*[Cc]laude/d' "$1"
-# Nettoyer les lignes vides en fin de message
-sed -i -e :a -e '/^\n*$/{$d;N;ba' -e '}' "$1"
-HOOK
-    chmod +x "$COMMIT_MSG"
-    echo "✅ Hook commit-msg installé (strip Co-Authored-By Claude)"
-fi
-
 echo ""
 echo "Hooks brain actifs :"
 echo "  post-commit → brain-db-sync.sh (déclenché sur handoffs/ agents/ BRAIN-INDEX.md)"
-echo "  commit-msg  → strip Co-Authored-By Claude (le brain a sa propre identite)"
 echo ""
 echo "Pour vérifier : scripts/install-brain-hooks.sh --check"

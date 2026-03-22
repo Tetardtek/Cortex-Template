@@ -2,7 +2,7 @@
 name: diagram-scribe
 type: agent
 context_tier: warm
-status: active
+status: draft
 brain:
   version:   1
   type:      protocol

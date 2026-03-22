@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
 
 const USE_MOCK = import.meta.env.VITE_USE_MOCK !== 'false'
+const DEMO_MODE = import.meta.env.VITE_DEMO_MODE === 'true'
 const API_BASE = import.meta.env.VITE_BRAIN_API ?? ''
 
 export interface TierInfo {
-  tier: 'owner' | 'pro' | 'free'
+  tier: 'owner' | 'pro' | 'free' | 'visitor'
   features: string[]
   kernel_access: boolean
 }
@@ -15,11 +16,23 @@ const MOCK_TIER: TierInfo = {
   kernel_access: true,
 }
 
+const DEMO_TIER: TierInfo = {
+  tier: 'visitor',
+  features: ['cosmos', 'workspace'],
+  kernel_access: false,
+}
+
 export function useTier() {
-  const [tierInfo, setTierInfo] = useState<TierInfo>(MOCK_TIER)
-  const [loading, setLoading] = useState(!USE_MOCK)
+  const [tierInfo, setTierInfo] = useState<TierInfo>(DEMO_MODE ? DEMO_TIER : MOCK_TIER)
+  const [loading, setLoading] = useState(!USE_MOCK && !DEMO_MODE)
 
   useEffect(() => {
+    if (DEMO_MODE) {
+      setTierInfo(DEMO_TIER)
+      setLoading(false)
+      return
+    }
+
     if (USE_MOCK) {
       setTierInfo(MOCK_TIER)
       setLoading(false)

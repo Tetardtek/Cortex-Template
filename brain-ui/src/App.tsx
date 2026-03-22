@@ -25,8 +25,6 @@ interface NavItem {
   icon: string
   label: string
   separator?: boolean
-  disabled?: boolean
-  soon?: boolean
 }
 
 interface PendingGate {
@@ -38,14 +36,10 @@ interface PendingGate {
 const NAV_ITEMS: NavItem[] = [
   { id: 'dashboard', icon: '⬡',  label: 'Dashboard' },
   { id: 'cosmos',    icon: '🌌', label: 'Cosmos'    },
-  { id: 'workflows', icon: '🔀', label: 'Workflows', separator: true, disabled: true, soon: true },
-  { id: 'infra',     icon: '🖥️', label: 'Infra',     disabled: true, soon: true },
-  { id: 'secrets',   icon: '🔑', label: 'Secrets',   disabled: true, soon: true },
+  { id: 'workflows', icon: '🔀', label: 'Workflows', separator: true },
+  { id: 'infra',     icon: '🖥️', label: 'Infra'     },
+  { id: 'secrets',   icon: '🔑', label: 'Secrets'   },
 ]
-
-// Note: Infra et Secrets desactives sur le template — ils exposent
-// les vrais services/secrets de l'instance owner en prod.
-// Un fork active ces onglets en retirant disabled/soon dans NAV_ITEMS.
 
 function AppInner() {
   const { addToast } = useToast()
@@ -152,20 +146,10 @@ function AppInner() {
                   <div className="mx-3 my-1" style={{ borderTop: '1px solid #2a2a2a' }} />
                 )}
                 <button
-                  onClick={() => !item.disabled && handleViewChange(item.id)}
-                  disabled={item.disabled}
-                  title={item.soon ? 'Bientot disponible' : undefined}
+                  onClick={() => handleViewChange(item.id)}
                   className="flex items-center gap-3 px-3 py-2 rounded text-sm font-medium text-left transition-colors w-full"
                   style={
-                    item.disabled
-                      ? {
-                          color: '#4b5563',
-                          borderLeft: '2px solid transparent',
-                          paddingLeft: 10,
-                          cursor: 'not-allowed',
-                          opacity: 0.5,
-                        }
-                      : isActive
+                    isActive
                       ? {
                           background: 'rgba(99,102,241,0.2)',
                           color: '#6366f1',
@@ -181,7 +165,6 @@ function AppInner() {
                 >
                   <span className="text-base leading-none">{item.icon}</span>
                   <span>{item.label}</span>
-                  {item.soon && <span style={{ fontSize: 9, color: '#6b7280', marginLeft: 'auto' }}>soon</span>}
                 </button>
               </div>
             )
@@ -253,11 +236,13 @@ function AppInner() {
           <Dashboard />
         )}
         {activeView === 'workflows' && (
-          <WorkflowBoard
-            workflows={workflows}
-            onGateApprove={handleGateApprove}
-            onWorkflowClick={(wfId) => setLogsProject(wfId)}
-          />
+          <TierGate feature="workflows" hasFeature={hasFeature}>
+            <WorkflowBoard
+              workflows={workflows}
+              onGateApprove={handleGateApprove}
+              onWorkflowClick={(wfId) => setLogsProject(wfId)}
+            />
+          </TierGate>
         )}
         {activeView === 'secrets' && (
           <TierGate feature="secrets" hasFeature={hasFeature}>

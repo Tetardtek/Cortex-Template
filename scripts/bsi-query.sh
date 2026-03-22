@@ -134,9 +134,8 @@ for name, info in peers.items():
 " 2>/dev/null | while IFS=: read -r _ name host; do
         echo ""
         echo "💻 $name ($host)"
-        ssh_user="${SSH_USER:-$(whoami)}"
-        result=$(ssh -o BatchMode=yes -o ConnectTimeout=3 "${ssh_user}@${host}" \
-            "cd \$BRAIN_ROOT && bash scripts/bsi-query.sh open" 2>/dev/null)
+        result=$(ssh -o BatchMode=yes -o ConnectTimeout=3 "tetardtek@$host" \
+            "cd ~/Dev/Brain && bash scripts/bsi-query.sh open" 2>/dev/null)
         if [[ -n "$result" ]]; then
             echo "$result"
         else

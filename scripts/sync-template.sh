@@ -116,16 +116,25 @@ if [ -d "$BRAIN_ROOT/contexts" ]; then
   echo "  ✅ $ctx_count contexts"
 fi
 
-# --- Brain-UI (source + dist) ---
+# --- Brain-UI — satellite en prod, inclus dans le template ---
+# En prod brain-ui est un satellite Gitea (travail séparé du kernel).
+# Dans le template il est inclus pour que l'utilisateur ait tout au fork.
 echo ""
-echo "── brain-ui/ ──────────────────────────────────"
-if [ -d "$BRAIN_ROOT/brain-ui" ]; then
+echo "── brain-ui/ ───────────────────────────────────"
+if [ -d "$BRAIN_ROOT/brain-ui/src" ]; then
   if [ -z "$DRY" ]; then
+    mkdir -p "$TEMPLATE_DIR/brain-ui"
     rsync -a --delete \
       --exclude='node_modules/' \
+      --exclude='dist/' \
+      --exclude='.env.local' \
+      --exclude='.env' \
+      --exclude='.git/' \
       "$BRAIN_ROOT/brain-ui/" "$TEMPLATE_DIR/brain-ui/"
   fi
-  echo "  ✅ brain-ui (src + dist)"
+  echo "  ✅ brain-ui (sources, sans node_modules/dist/.env.local)"
+else
+  echo "  ⏭  brain-ui/src absent — skip"
 fi
 
 # --- Gitkeep ---
