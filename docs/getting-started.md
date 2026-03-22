@@ -177,19 +177,6 @@ Quelle session aujourd'hui ?
 
 **C'est normal que ce soit vide** — c'est un brain neuf. Il n'a pas encore de projets, de todos, ni de focus.
 
-### Declaration d'ownership
-
-A la fin du premier boot, le brain te propose la **declaration d'ownership** :
-
-```
-Ton brain est configure. On declare l'ownership ?
-```
-
-Dis **oui**. C'est ton premier commit — il marque la transition template → brain personnel.
-Les satellites (profil/, toolkit/, todo/...) passent en gitignore et vivent dans leurs propres repos.
-
-> Tu peux aussi le faire manuellement : `bash scripts/ownership.sh`
-
 ### Ce que tu peux repondre
 
 - `brain boot mode work/<ton-projet>` — si tu veux coder sur un projet
