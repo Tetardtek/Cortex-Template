@@ -1,15 +1,16 @@
 #!/usr/bin/env bash
-# bsi-claim.sh — Open/close claims dans brain.db (source unique — ADR-042)
+# bsi-claim.sh — Open/close claims dans Dolt (source unique — ADR-042)
 #
 # Usage :
 #   bsi-claim.sh open  <sess_id> [--scope X] [--type X] [--zone X] [--mode X] [--story "X"]
 #   bsi-claim.sh close <sess_id> [--result X]
 #   bsi-claim.sh close-stale          → ferme tous les claims open > TTL (4h par défaut)
 #   bsi-claim.sh exists <sess_id>     → exit 0 si open, exit 1 sinon
-#   bsi-claim.sh init                 → crée brain.db + table claims si absent
+#   bsi-claim.sh init                 → vérifie Dolt repo + table claims
 #
-# Garantie tier free : python3 + sqlite3 stdlib — zéro dépendance externe.
-# Auto-init : si brain.db ou table claims absente → créée automatiquement.
+# Backend : Dolt (MySQL-compatible, version-controlled)
+# Garantie tier free : python3 + dolt CLI — zéro serveur requis.
+# Auto-init : si brain-dolt/ absent → dolt init automatique.
 #
 # Exit codes :
 #   0 = succès
@@ -19,55 +20,65 @@
 set -euo pipefail
 
 BRAIN_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-DB_PATH="$BRAIN_ROOT/brain.db"
+DOLT_DIR="$BRAIN_ROOT/brain-dolt"
 CMD="${1:-help}"
 shift || true
 
-python3 - "$DB_PATH" "$CMD" "$@" <<'PYEOF'
-import sqlite3
+python3 - "$DOLT_DIR" "$CMD" "$@" <<'PYEOF'
+import subprocess
 import sys
+import csv
+import io
+import os
 from datetime import datetime, timezone
 
-db_path = sys.argv[1]
+dolt_dir = sys.argv[1]
 cmd = sys.argv[2] if len(sys.argv) > 2 else "help"
 args = sys.argv[3:]
 
-CLAIMS_SCHEMA = """
-CREATE TABLE IF NOT EXISTS claims (
-    sess_id TEXT PRIMARY KEY,
-    type TEXT,
-    scope TEXT,
-    status TEXT DEFAULT 'open',
-    opened_at TEXT,
-    closed_at TEXT,
-    handoff_level TEXT,
-    story_angle TEXT,
-    health_score REAL,
-    context_at_close REAL,
-    cold_start_kpi_pass INTEGER,
-    ttl_hours REAL DEFAULT 4.0,
-    expires_at TEXT,
-    instance TEXT,
-    parent_sess TEXT,
-    satellite_type TEXT,
-    satellite_level TEXT,
-    theme_branch TEXT,
-    zone TEXT,
-    mode TEXT,
-    workflow TEXT,
-    workflow_step INTEGER,
-    result_status TEXT,
-    result_json TEXT
-)
-"""
+def dolt_sql(query, expect_rows=False):
+    """Execute a SQL query via dolt sql CLI. Returns list of dicts if expect_rows."""
+    fmt = ["-r", "csv"] if expect_rows else []
+    result = subprocess.run(
+        ["dolt", "sql", "-q", query] + fmt,
+        cwd=dolt_dir,
+        capture_output=True, text=True
+    )
+    if result.returncode != 0:
+        print(f"❌ Dolt SQL error: {result.stderr.strip()}", file=sys.stderr)
+        sys.exit(2)
+    if expect_rows and result.stdout.strip():
+        reader = csv.DictReader(io.StringIO(result.stdout))
+        return list(reader)
+    return []
 
-def get_db():
-    """Connect and ensure table exists (auto-init for fresh forks)."""
-    conn = sqlite3.connect(db_path)
-    conn.row_factory = sqlite3.Row
-    conn.execute(CLAIMS_SCHEMA)
-    conn.commit()
-    return conn
+def dolt_commit(message):
+    """Stage all changes and commit to Dolt."""
+    subprocess.run(["dolt", "add", "."], cwd=dolt_dir, capture_output=True)
+    result = subprocess.run(
+        ["dolt", "commit", "-m", message],
+        cwd=dolt_dir, capture_output=True, text=True
+    )
+    # Silently ignore "nothing to commit"
+    return result.returncode == 0
+
+def esc(val):
+    """Escape a string for SQL. Returns 'NULL' for None."""
+    if val is None:
+        return "NULL"
+    return "'" + val.replace("'", "''") + "'"
+
+def ensure_init():
+    """Ensure Dolt repo exists with claims table."""
+    if not os.path.isdir(os.path.join(dolt_dir, ".dolt")):
+        os.makedirs(dolt_dir, exist_ok=True)
+        subprocess.run(
+            ["dolt", "init", "--name", "tetardtek", "--email", "tetardtek@tetardtek.com"],
+            cwd=dolt_dir, capture_output=True
+        )
+    # Check table exists (Dolt schema is managed separately — schema.sql)
+    rows = dolt_sql("SELECT COUNT(*) as n FROM claims", expect_rows=True)
+    return int(rows[0]["n"]) if rows else 0
 
 def parse_opts(args):
     """Parse --key value pairs from args."""
@@ -88,32 +99,30 @@ def cmd_open():
 
     sess_id = args[0]
     opts = parse_opts(args[1:])
-    now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M")
+    now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
 
-    conn = get_db()
+    ensure_init()
 
     # Vérifier si déjà open
-    existing = conn.execute(
-        "SELECT status FROM claims WHERE sess_id = ?", (sess_id,)
-    ).fetchone()
-    if existing and existing["status"] == "open":
+    existing = dolt_sql(
+        f"SELECT status FROM claims WHERE sess_id = {esc(sess_id)}", expect_rows=True
+    )
+    if existing and existing[0].get("status") == "open":
         print(f"⚠️  Claim déjà ouvert : {sess_id}")
-        conn.close()
         sys.exit(0)
 
     new_scope = opts.get("scope", "brain/")
 
     # Scope overlap detection — BSI mutex
-    open_claims = conn.execute(
-        "SELECT sess_id, scope, zone FROM claims WHERE status = 'open'"
-    ).fetchall()
+    open_claims = dolt_sql(
+        "SELECT sess_id, scope, zone FROM claims WHERE status = 'open'", expect_rows=True
+    )
 
     for oc in open_claims:
-        oc_scope = oc["scope"] or ""
-        # Overlap = un scope est préfixe de l'autre, ou identique
+        oc_scope = oc.get("scope") or ""
         if (new_scope.startswith(oc_scope) or oc_scope.startswith(new_scope)
                 or new_scope == oc_scope):
-            oc_zone = oc["zone"] or "project"
+            oc_zone = oc.get("zone") or "project"
 
             # Zone kernel = hard block
             if oc_zone == "kernel" or opts.get("zone") == "kernel":
@@ -121,34 +130,31 @@ def cmd_open():
                 print(f"   Existant : {oc['sess_id']} → scope: {oc_scope} (zone: {oc_zone})")
                 print(f"   Demandé  : {sess_id} → scope: {new_scope}")
                 print(f"   → Fermer le claim existant d'abord : bsi-claim.sh close {oc['sess_id']}")
-                conn.close()
                 sys.exit(1)
 
-            # Zone project = soft warning (parallélisme autorisé avec avertissement)
+            # Zone project = soft warning
             print(f"⚠️  SCOPE OVERLAP détecté")
             print(f"   Existant : {oc['sess_id']} → scope: {oc_scope}")
             print(f"   Demandé  : {sess_id} → scope: {new_scope}")
             print(f"   → Parallélisme autorisé — attention aux conflits d'écriture")
 
-    conn.execute("""
-        INSERT OR REPLACE INTO claims
+    claim_type = esc(opts.get("type", "navigate"))
+    zone = esc(opts.get("zone", "project"))
+    mode = esc(opts.get("mode"))
+    story = esc(opts.get("story"))
+    handoff = esc(opts.get("handoff", "0"))
+    instance = esc(opts.get("instance"))
+
+    dolt_sql(f"""
+        REPLACE INTO claims
             (sess_id, type, scope, status, opened_at, zone, mode, story_angle,
              handoff_level, instance, ttl_hours, expires_at)
-        VALUES (?, ?, ?, 'open', ?, ?, ?, ?, ?, ?, 4.0, datetime(?, '+4 hours'))
-    """, (
-        sess_id,
-        opts.get("type", "navigate"),
-        new_scope,
-        now,
-        opts.get("zone", "project"),
-        opts.get("mode"),
-        opts.get("story"),
-        opts.get("handoff", "0"),
-        opts.get("instance"),
-        now,
-    ))
-    conn.commit()
-    conn.close()
+        VALUES ({esc(sess_id)}, {claim_type}, {esc(new_scope)}, 'open', {esc(now)},
+                {zone}, {mode}, {story}, {handoff}, {instance},
+                4.0, DATE_ADD({esc(now)}, INTERVAL 4 HOUR))
+    """)
+
+    dolt_commit(f"bsi: open claim {sess_id}")
     print(f"✅ Claim ouvert : {sess_id}")
 
 def cmd_close():
@@ -158,56 +164,72 @@ def cmd_close():
 
     sess_id = args[0]
     opts = parse_opts(args[1:])
-    now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M")
+    now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+    result_status = esc(opts.get("result", "success"))
 
-    conn = get_db()
-    cur = conn.execute(
-        "UPDATE claims SET status = 'closed', closed_at = ?, result_status = ? WHERE sess_id = ? AND status = 'open'",
-        (now, opts.get("result", "success"), sess_id)
+    ensure_init()
+
+    # Check if open first
+    existing = dolt_sql(
+        f"SELECT sess_id FROM claims WHERE sess_id = {esc(sess_id)} AND status = 'open'",
+        expect_rows=True
     )
-    conn.commit()
 
-    if cur.rowcount == 0:
+    if not existing:
         print(f"⚠️  Claim non trouvé ou déjà fermé : {sess_id}")
-    else:
-        print(f"✅ Claim fermé : {sess_id}")
-    conn.close()
+        return
+
+    dolt_sql(f"""
+        UPDATE claims
+        SET status = 'closed', closed_at = {esc(now)}, result_status = {result_status}
+        WHERE sess_id = {esc(sess_id)} AND status = 'open'
+    """)
+
+    dolt_commit(f"bsi: close claim {sess_id}")
+    print(f"✅ Claim fermé : {sess_id}")
 
 def cmd_close_stale():
-    conn = get_db()
-    cur = conn.execute("""
+    ensure_init()
+
+    # Find stale claims first
+    stale = dolt_sql("""
+        SELECT sess_id FROM claims
+        WHERE status = 'open'
+          AND TIMESTAMPDIFF(HOUR, opened_at, NOW()) > COALESCE(ttl_hours, 4)
+    """, expect_rows=True)
+
+    if not stale:
+        print("ℹ️  Aucun claim stale")
+        return
+
+    dolt_sql("""
         UPDATE claims
         SET status = 'closed',
-            closed_at = datetime('now'),
+            closed_at = NOW(),
             result_status = 'stale-auto-closed'
         WHERE status = 'open'
-          AND julianday('now') > julianday(opened_at, '+' || COALESCE(ttl_hours, 4) || ' hours')
+          AND TIMESTAMPDIFF(HOUR, opened_at, NOW()) > COALESCE(ttl_hours, 4)
     """)
-    conn.commit()
-    n = cur.rowcount
-    if n > 0:
-        print(f"✅ {n} claim(s) stale fermé(s)")
-    else:
-        print("ℹ️  Aucun claim stale")
-    conn.close()
+
+    n = len(stale)
+    dolt_commit(f"bsi: auto-close {n} stale claim(s)")
+    print(f"✅ {n} claim(s) stale fermé(s)")
 
 def cmd_exists():
     if not args:
         print("❌ Usage: bsi-claim.sh exists <sess_id>", file=sys.stderr)
         sys.exit(1)
 
-    conn = get_db()
-    row = conn.execute(
-        "SELECT status FROM claims WHERE sess_id = ? AND status = 'open'", (args[0],)
-    ).fetchone()
-    conn.close()
-    sys.exit(0 if row else 1)
+    ensure_init()
+    rows = dolt_sql(
+        f"SELECT status FROM claims WHERE sess_id = {esc(args[0])} AND status = 'open'",
+        expect_rows=True
+    )
+    sys.exit(0 if rows else 1)
 
 def cmd_init():
-    conn = get_db()
-    n = conn.execute("SELECT COUNT(*) FROM claims").fetchone()[0]
-    conn.close()
-    print(f"✅ brain.db prêt — table claims ({n} entrées)")
+    n = ensure_init()
+    print(f"✅ brain-dolt prêt — table claims ({n} entrées)")
 
 def cmd_help():
     print("Usage: bsi-claim.sh <open|close|close-stale|exists|init>")
@@ -215,7 +237,7 @@ def cmd_help():
     print("  close <sess_id> [--result X]")
     print("  close-stale       — ferme les claims open > TTL")
     print("  exists <sess_id>  — exit 0 si open, exit 1 sinon")
-    print("  init              — crée brain.db + table si absent")
+    print("  init              — vérifie Dolt repo + table claims")
 
 commands = {
     "open": cmd_open,

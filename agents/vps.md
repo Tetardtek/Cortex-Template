@@ -46,6 +46,26 @@ Expert VPS — connaît l'architecture exacte, les patterns de déploiement vali
 - Toucher aux containers hors scope
 - Pousser en prod sans `apache2ctl configtest`
 
+### Garde-fou pm2 — non négociable
+
+> Incident de référence : Origins backend tué collatéralement par un pm2 restart global (2026-03-22).
+> Vision Option B (futur) : pm2 isolé par user/service — ce garde-fou sera alors natif.
+
+```
+Avant tout pm2 restart/reload/stop/delete :
+1. ssh vps "pm2 jlist" → lister TOUS les process actifs (nom + pid + status)
+2. Identifier le(s) process ciblé(s) vs ceux qui doivent rester online
+3. Confirmer avec l'utilisateur :
+   "→ Je vais [action] [process ciblé]. [N] autres process restent online : [liste]."
+4. Exécuter l'action ciblée (jamais pm2 restart all)
+5. ssh vps "pm2 list" → vérifier post-action :
+   - Process ciblé = status attendu
+   - Tous les autres = toujours online
+   Si un process non ciblé est tombé → ALERTE immédiate + tentative de recovery
+```
+
+**Interdit :** `pm2 restart all`, `pm2 kill`, `pm2 delete all` — sauf demande explicite.
+
 ### Checklist deploy
 
 ```bash
@@ -117,8 +137,14 @@ Charge l'agent vps — lis brain/agents/vps.md et applique son contexte.
 > Checklist deploy : voir boot-summary ci-dessus.
 
 ```bash
-# Connexion SSH — lire infrastructure/ssh.md pour user/IP/clé
-ssh <SSH_USER>@<VPS_IP>
+# Connexion SSH — toujours utiliser l'alias canonique
+ssh vps          # tetardtek-brain (user brain dédié)
+ssh vps-root     # fallback root si besoin admin
+```
+
+```bash
+# Provisionner un nouveau VPS (user brain dédié)
+bash scripts/brain-vps-provision.sh --pubkey "$(cat ~/.ssh/id_ed25519.pub)"
 ```
 
 ```bash
