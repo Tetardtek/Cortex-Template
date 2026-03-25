@@ -158,6 +158,15 @@ EOF
   ok "brain-compose.local.yml créé"
 fi
 
+# ── Étape 3.1 — PATHS.md (remplacer les placeholders) ─────────────────────────
+if grep -q '<BRAIN_ROOT>' "$BRAIN_ROOT/PATHS.md" 2>/dev/null; then
+  sed -i "s|<BRAIN_ROOT>|$BRAIN_ROOT|g" "$BRAIN_ROOT/PATHS.md"
+  sed -i "s|<HOME>|$HOME|g" "$BRAIN_ROOT/PATHS.md"
+  ok "PATHS.md configuré ($BRAIN_ROOT)"
+else
+  info "PATHS.md déjà configuré — skip"
+fi
+
 # ── Lock kernel push (nouvelle machine = readonly) ────────────────────────────
 git -C "$BRAIN_ROOT" remote set-url --push origin no_push
 ok "Kernel push lockée (write_mode: readonly_kernel)"

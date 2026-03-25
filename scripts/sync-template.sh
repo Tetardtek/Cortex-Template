@@ -65,6 +65,31 @@ for f in $KERNEL_FILES; do
   fi
 done
 
+# --- Profil (CLAUDE.md.example + collaboration.md) ---
+echo ""
+echo "── profil/ ─────────────────────────────────────"
+if [ -z "$DRY" ]; then
+  mkdir -p "$TEMPLATE_DIR/profil"
+  for pf in CLAUDE.md.example collaboration.md; do
+    [ -f "$BRAIN_ROOT/profil/$pf" ] && cp "$BRAIN_ROOT/profil/$pf" "$TEMPLATE_DIR/profil/$pf" && echo "  ✅ profil/$pf"
+  done
+else
+  echo "  (dry) profil/CLAUDE.md.example profil/collaboration.md"
+fi
+
+# --- Fichiers racine template (examples, licence) ---
+echo ""
+echo "── fichiers template ─────────────────────────────"
+TEMPLATE_ROOT_FILES="MYSECRETS.example brain-compose.local.yml.example"
+for f in $TEMPLATE_ROOT_FILES; do
+  if [ -f "$BRAIN_ROOT/$f" ]; then
+    [ -z "$DRY" ] && cp "$BRAIN_ROOT/$f" "$TEMPLATE_DIR/$f"
+    echo "  ✅ $f"
+  elif [ -f "$TEMPLATE_DIR/$f" ]; then
+    echo "  ℹ️  $f (template-only, pas de source brain/)"
+  fi
+done
+
 # --- Workflows ---
 echo ""
 echo "── workflows/ ──────────────────────────────────"

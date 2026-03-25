@@ -3,7 +3,8 @@
 # Usage: bash scripts/brain-template-push.sh
 #
 # Workflow : export local → scp → restart brain-engine sur VPS
-# Prérequis : VPS_IP et VPS_SSH_USER dans MYSECRETS
+# Prérequis : VPS_IP, VPS_SSH_USER, VPS_TEMPLATE_PATH dans MYSECRETS
+# VPS_TEMPLATE_PATH optionnel — défaut : /home/tetardtek/Dev/Cortex-Template
 
 set -euo pipefail
 
@@ -19,6 +20,8 @@ fi
 
 VPS_IP=$(grep '^VPS_IP=' "$SECRETS" | cut -d= -f2-)
 VPS_USER=$(grep '^VPS_SSH_USER=' "$SECRETS" | cut -d= -f2-)
+VPS_TEMPLATE_PATH=$(grep '^VPS_TEMPLATE_PATH=' "$SECRETS" 2>/dev/null | cut -d= -f2- || true)
+VPS_TEMPLATE_PATH="${VPS_TEMPLATE_PATH:-/home/tetardtek/Dev/Cortex-Template}"
 
 if [[ -z "$VPS_IP" || -z "$VPS_USER" ]]; then
     echo "❌ VPS_IP ou VPS_SSH_USER manquant dans MYSECRETS" >&2
@@ -32,14 +35,18 @@ bash "${BRAIN_ROOT}/scripts/brain-template-export.sh" "$TEMPLATE_DB"
 # Step 2 : SCP
 echo ""
 echo "2/3 Push vers VPS..."
-scp -q "$TEMPLATE_DB" "${VPS_USER}@${VPS_IP}:~/Dev/Brain/brain-template.db"
+scp -q "$TEMPLATE_DB" "${VPS_USER}@${VPS_IP}:${VPS_TEMPLATE_PATH}/brain-template.db"
 echo "✅ brain-template.db transféré"
 
-# Step 3 : Restart
+# Step 3 : Restart brain-engine (si systemd disponible, sinon skip)
 echo ""
 echo "3/3 Restart brain-engine..."
-ssh "${VPS_USER}@${VPS_IP}" "sudo systemctl restart brain-engine"
-echo "✅ brain-engine redémarré"
+if ssh "${VPS_USER}@${VPS_IP}" "systemctl is-active brain-engine >/dev/null 2>&1"; then
+    ssh "${VPS_USER}@${VPS_IP}" "sudo systemctl restart brain-engine"
+    echo "✅ brain-engine redémarré"
+else
+    echo "ℹ️  brain-engine pas en systemd — skip restart"
+fi
 
 echo ""
-echo "🏁 Template déployé sur VPS — brain.tetardtek.com sert le template."
+echo "🏁 Template déployé sur VPS (${VPS_TEMPLATE_PATH})"
